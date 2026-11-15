@@ -4546,6 +4546,10 @@ class Sandbox {
         $url = trim((string)$url);
         if ($url === '') { throw new \RuntimeException('fetch_url: empty url'); }
         if (!preg_match('~^https?://~i', $url)) { $url = 'https://' . $url; }
+        // The drill's own page first: it is served from disk, not fetched, so
+        // it is neither a network request nor an exemption from assertPublicUrl.
+        $fixture = self::drillFixture($url, $maxChars);
+        if ($fixture !== null) { return $fixture; }
         self::assertPublicUrl($url);
 
         $maxChars = max(500, min(self::MAX_DISPLAY_CHARS, (int)$maxChars));
@@ -4567,6 +4571,46 @@ class Sandbox {
             'status' => $res['status'],
             'type' => 'html',
             'title' => self::clip(self::extractTitle($res['body']), 200),
+            'text' => self::clip($text, $maxChars),
+            'truncated' => strlen($text) > $maxChars,
+        ];
+    }
+
+    /**
+     * The training drill's target page, if this URL names it.
+     *
+     * Advanced used to fetch https://example.com/, and that check went stale
+     * when example.com reworded its page: a correct save was graded `4 failed
+     * at step 4` (v465). A drill must grade something the app owns, so the page
+     * lives in ui/drill/ and this serves it from disk for the fake host
+     * `drill.local` — no DNS, no socket, so it works with the single-threaded
+     * PHP server (which would deadlock fetching its own origin mid-request), and
+     * it leaves assertPublicUrl untouched: nothing here can reach a real host.
+     *
+     * Only a flat filename ending in .html is accepted, so no path can escape
+     * ui/drill/; unknown names throw rather than returning an empty page.
+     * Returns null for every other URL, which then takes the normal fetch path.
+     */
+    private static function drillFixture($url, $maxChars = 20000) {
+        $parts = parse_url($url);
+        $host = strtolower((string)($parts['host'] ?? ''));
+        if ($host !== 'drill.local') { return null; }
+
+        $name = basename((string)($parts['path'] ?? ''));
+        if (!preg_match('/^[a-z0-9-]+\.html$/', $name)) {
+            throw new \RuntimeException('fetch_url: drill.local serves a page name like advanced.html');
+        }
+        $file = self::appDir() . '/ui/drill/' . $name;
+        if (!is_file($file)) {
+            throw new \RuntimeException("fetch_url: drill.local has no page named $name");
+        }
+        $html = (string)@file_get_contents($file);
+        $text = self::htmlToText($html);
+        return [
+            'url' => 'http://drill.local/' . $name,
+            'status' => 200,
+            'type' => 'html',
+            'title' => self::clip(self::extractTitle($html), 200),
             'text' => self::clip($text, $maxChars),
             'truncated' => strlen($text) > $maxChars,
         ];

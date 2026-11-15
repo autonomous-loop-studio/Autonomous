@@ -7,22 +7,22 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=458';
-import { K } from '../storage.js?v=458';
-import { persistence } from '../persistence.js?v=458';
-import { api } from '../api.js?v=458';
-import { isNoTokenError } from '../apiError.js?v=458';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=458';
-import { errText } from '../api.js?v=458';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=458';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=458';
-import { snapshot } from '../rateGovernor.js?v=458';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass } from '../training.js?v=458';
-import { resetBrowserEnabled } from '../toolManifest.js?v=458';
-import { perf } from '../perf.js?v=458';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=458';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=458';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=458';
+import { store } from '../store.js?v=463';
+import { K } from '../storage.js?v=463';
+import { persistence } from '../persistence.js?v=463';
+import { api } from '../api.js?v=463';
+import { isNoTokenError } from '../apiError.js?v=463';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=463';
+import { errText } from '../api.js?v=463';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=463';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=463';
+import { snapshot } from '../rateGovernor.js?v=463';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=463';
+import { resetBrowserEnabled } from '../toolManifest.js?v=463';
+import { perf } from '../perf.js?v=463';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=463';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=463';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=463';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -1116,6 +1116,34 @@ export class Sidebar {
     }
   }
 
+  /**
+   * Move the previous run's drill folder aside, once, when Start is pressed.
+   *
+   * Every pass writes its own file (...-p1.txt, ...-p2.txt) and the pass counter
+   * resets on Start, so a new run would otherwise reuse the last run's names.
+   * One rename into a date-stamped folder keeps both runs' evidence and deletes
+   * nothing. It happens before the kickoff, when no agent is mid-pass and no
+   * display step is holding a file open — moving the folder after every pass
+   * would race the automatic Continue and can fail on a Windows file handle. A
+   * failure here is logged and ignored: the pass counter alone keeps this run
+   * collision-free.
+   */
+  async _archiveTrainingFolder() {
+    try {
+      const listing = await api.sandbox('list', { path: 'training', limit: 500 });
+      const entries = (listing && listing.entries) || [];
+      if (!entries.length) return '';
+      // 20261114-231845, from the ISO stamp: readable, sortable, no spaces.
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
+      const to = `training-runs/${stamp}/training`;
+      await api.sandbox('move', { from: 'training', to });
+      return to;
+    } catch (err) {
+      console.warn('[training] could not archive the previous drill folder; it stays in place:', err);
+      return '';
+    }
+  }
+
   async _startTraining(close) {
     const tm = store.get('settings.trainingMode') || {};
     const difficulty = trainingDifficulty(tm);
@@ -1163,6 +1191,10 @@ export class Sidebar {
         return;
       }
     }
+    // Put last run's files aside before anything is armed, so the pass counter
+    // this run starts at 1 cannot land on the previous run's names.
+    const archived = await this._archiveTrainingFolder();
+    if (archived) console.info('[training] previous drill folder moved to', archived);
     // Before arming: the kickoff must be the first message in a clean session.
     const fresh = await this._openTrainingSession();
     // drillResumes/drillFails are counters now, not a budget: the loop is
@@ -1172,10 +1204,13 @@ export class Sidebar {
     const cleanPassTarget = targetEl
       ? Math.max(0, Math.min(99, Math.floor(Number(targetEl.value) || 0)))
       : Math.max(0, Math.floor(Number(tm.cleanPassTarget) || 0));
-    store.set('settings.trainingMode', { ...tm, difficulty, active: true, startedAt: Date.now(), drillResumes: 0, drillFails: 0, cleanPassTarget });
+    // pass: 1 is the run's first drill file (...-p1.txt). It is bumped once per
+    // completed pass, so every pass in this run writes a file nothing has used.
+    store.set('settings.trainingMode', { ...tm, difficulty, active: true, startedAt: Date.now(), pass: 1, drillResumes: 0, drillFails: 0, cleanPassTarget });
     // A new run starts with a blank scoreboard: last run's verdicts describe
     // different calls and would sit in the strip as if they were current.
     store.set('trainingVerdicts', {});
+    store.set('trainingPassLog', {});
     persistence.set('settings', store.get('settings'));
     const modeLabel = `${trainingDifficultyLabel(difficulty)} · ${tasks.length} steps`;
     store.emit('toast', {
@@ -1246,8 +1281,10 @@ export class Sidebar {
     // A new pass should replace the previous report rather than stack a second
     // modal on top of it; the final report does the same when training stops.
     document.querySelectorAll('.training-summary-overlay').forEach(el => el.remove());
-    const verdicts = Object.values(store.get('trainingVerdicts') || {})
-      .filter(v => v && Number(v.passes) > 0)
+    // Entries, not values: the per-pass file list is keyed by agent id.
+    const verdicts = Object.entries(store.get('trainingVerdicts') || {})
+      .filter(([, v]) => v && Number(v.passes) > 0)
+      .map(([id, v]) => ({ id, ...v }))
       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
     if (!verdicts.length) return;
 
@@ -1266,11 +1303,21 @@ export class Sidebar {
         .map(x => `${x.n}× step ${x.step}`);
       const breakdown = counts.length ? counts.join(' · ')
         : (fails ? `${fails} failed attempt${fails === 1 ? '' : 's'}` : 'no failed attempts');
+      // Every completed pass, with the file it wrote, so a pass can be verified
+      // by opening the file rather than trusting the counter. Capped: a long
+      // unattended run must not push the summary off the screen.
+      const logged = Array.isArray((store.get('trainingPassLog') || {})[v.id])
+        ? (store.get('trainingPassLog') || {})[v.id].slice(-12)
+        : [];
+      const passLines = logged.length
+        ? logged.map(p => `<div class="training-pass-line">${esc(formatPassLine(p))}</div>`).join('')
+        : '<div class="training-pass-line">no completed pass yet</div>';
       return `<div class="training-summary-row">
         <div class="training-summary-name">${esc(v.name || 'Agent')}</div>
         <div class="training-summary-title">${livePass ? 'Training Pass Complete' : 'Training Complete'} (${esc(label)})</div>
         <div class="training-summary-line">${passes} pass${passes === 1 ? '' : 'es'} · ${fails} failed attempt${fails === 1 ? '' : 's'}${clean ? ` · ${clean} clean` : ''}</div>
         <div class="training-summary-breakdown">${esc(breakdown)}</div>
+        ${passLines}
       </div>`;
     }).join('');
 
@@ -2230,6 +2277,11 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
           <div style="display:flex;gap:6px;margin-top:6px">
             <button class="btn btn-secondary btn-sm" id="sbBindRetry">BIND FILE TOOLS</button>
           </div>
+          <div class="form-hint" style="margin-top:10px">Two-pass drill check. Writes two test files in <code>training/</code> with the same tools an agent uses — no model, no approval — then reads them back to prove a second pass does not start on the first pass's bytes. Nothing is deleted: both files stay there as proof.</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn btn-secondary btn-sm" id="sbDrillSelfTest">RUN TWO-PASS SELF-TEST</button>
+          </div>
+          <div class="form-hint" id="sbDrillSelfTestResult" style="white-space:pre-line"></div>
         </div>
 
         <div class="cfg-sublabel">Remote access <span class="form-hint-inline">while no token is set</span></div>
@@ -2644,6 +2696,7 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
     this._loadProjectDir();
     this._loadBindState();
     document.getElementById('sbBindRetry')?.addEventListener('click', () => this._rebindFileTools());
+    document.getElementById('sbDrillSelfTest')?.addEventListener('click', () => this._runDrillSelfTest());
 
     // MCP servers live server-side (config.json); render the cached list and
     // refresh from the server in the background.
@@ -4109,6 +4162,64 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
    * uses, then reports the verdict in the line above and as a toast, so the
    * answer appears where the question was asked.
    */
+  /**
+   * Prove the drill's per-pass file mechanics with no model and no approval.
+   *
+   * The loop that wasted an evening was a file question, not a model question:
+   * pass 2 opened the file pass 1 had finished. This runs both passes through
+   * the SAME tool entries an agent calls (write_file, then the two anchored
+   * edit_file calls), then reads each file back from the server and compares
+   * the bytes. It uses a fixed probe agent id, so it cannot touch a real
+   * agent's drill file or the pass counter, and it deletes nothing — the two
+   * files stay as the evidence.
+   */
+  async _runDrillSelfTest() {
+    const btn = document.getElementById('sbDrillSelfTest');
+    const out = document.getElementById('sbDrillSelfTestResult');
+    const want = 'training\ndrill 2 passed (exact match)';
+    const lines = [];
+    const say = (text, bad = false) => {
+      if (!out) return;
+      out.textContent = text;
+      out.style.color = bad ? 'var(--accent-red)' : 'var(--accent-green)';
+    };
+    if (btn) { btn.disabled = true; btn.textContent = 'RUNNING…'; }
+    say('Running two passes…');
+    const agent = { id: 'agent_drill_selftest' };
+    try {
+      for (const pass of [1, 2]) {
+        const file = trainingFileFor(agent, 'hard', pass);
+        const wrote = await TOOL_REGISTRY.write_file.run({ path: file, content: 'training' }, null, {});
+        if (!/^wrote \d+ bytes/.test(String(wrote))) throw new Error(`write_file said: ${wrote}`);
+        await TOOL_REGISTRY.edit_file.run({
+          path: file, old_string: 'training', new_string: 'training\ndrill 2 passed',
+        }, null, {});
+        await TOOL_REGISTRY.edit_file.run({
+          path: file, old_string: 'drill 2 passed', new_string: 'drill 2 passed (exact match)',
+        }, null, {});
+        const read = await api.sandbox('read', { path: file });
+        const body = String(read.content || '').replace(/\r\n/g, '\n');
+        if (body.trimEnd() !== want) {
+          say(`FAILED at pass ${pass} — ${file}\n`
+            + `wanted: ${JSON.stringify(want)}\n`
+            + `read:   ${JSON.stringify(body.slice(0, 200))}`, true);
+          store.emit('toast', { message: `Drill self-test failed at pass ${pass}`, type: 'error' });
+          return;
+        }
+        lines.push(`pass ${pass} · ${file} · wrote ${read.bytes} bytes · 2 edits · ends at the drill's two lines ✓`);
+        say(lines.join('\n'));
+      }
+      say(`${lines.join('\n')}\n\nTwo passes, two files, and the first pass's bytes were never touched — the loop's cause is gone.`
+        + '\nWrites went through the tools an agent calls; nothing was deleted.', false);
+      store.emit('toast', { message: 'Drill self-test passed — two passes, two files', type: 'success' });
+    } catch (err) {
+      say(`Self-test failed: ${errText(err)}`, true);
+      store.emit('toast', { message: `Drill self-test failed: ${errText(err)}`, type: 'error' });
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'RUN TWO-PASS SELF-TEST'; }
+    }
+  }
+
   _rebindFileTools() {
     const { unbound } = bindSandboxNow(api);
     this._loadBindState();

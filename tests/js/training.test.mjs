@@ -28,8 +28,8 @@ if (!version) {
 const {
   TRAINING_THROTTLE, TRAINING_DIR, TRAINING_FILE, TRAINING_FILE_TOKEN, TRAINING_TASKS, TRAINING_TASKS_EASY,
   TRAINING_TASKS_ADVANCED, TRAINING_TASKS_FRONTIER, TRAINING_TASKS_BROWSER, DRILL_CHECKS_ADVANCED,
-  DRILL_CHECKS_FRONTIER, DRILL_CHECKS_BROWSER, TRAINING_BROWSER_TOKEN,
-  trainingFileFor, isTrainingActive, trainingStepList, trainingBlockFor, trainingKickoffFor, trainingResumeFor,
+  DRILL_CHECKS_FRONTIER, DRILL_CHECKS_BROWSER, TRAINING_BROWSER_TOKEN, TRAINING_PAGE_URL,
+  trainingFileFor, trainingFileNow, trainingFileMatchFor, trainingPassOf, formatPassLine, isTrainingActive, trainingStepList, trainingBlockFor, trainingKickoffFor, trainingResumeFor,
   shouldResumeDrill, reachedCleanTarget, drillStripTitle, trainingDifficulty, trainingTasksFor, trainingChecksFor, showsEveryPass,
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
 } = await import(`../../ui/js/training.js?v=${version}`);
@@ -85,7 +85,11 @@ ok(showSteps.some(t => t.tool === 'show_command'), 'show_command is practiced');
 ok(!('TRAINING_RESUME_LIMIT' in trainingModule),
   'no resume budget is exported: the loop is closed and unbounded');
 ok(TRAINING_DIR === 'training' && TRAINING_FILE === 'training/training.txt', 'drill folder/default file constants');
-eq(trainingFileFor({ id: 'agent_abc123' }), 'training/training-agent-abc123.txt', 'an agent gets a file named after its id');
+eq(trainingFileFor({ id: 'agent_abc123' }), 'training/training-agent-abc123-p1.txt', 'an agent gets a file named after its id');
+eq(trainingFileFor({ id: 'agent_abc123' }, 'hard', 2), 'training/training-agent-abc123-p2.txt',
+  'a second pass writes a file with its own name');
+ok(trainingFileFor({ id: 'agent_a' }, 'hard', 1) !== trainingFileFor({ id: 'agent_a' }, 'hard', 2),
+  'two passes never share one drill file');
 ok(trainingFileFor({ id: 'agent_a' }) !== trainingFileFor({ id: 'agent_b' }),
   'two agents never share one drill file');
 eq(trainingStepList().length, TRAINING_TASKS.length, 'step list covers every task');
@@ -114,8 +118,15 @@ eq(trainingStepList(null, 'hard').length, 17, 'the dialog can list the hard step
 
 // Advanced is the fetch → save → show pipeline behind "show_url URL > log.txt".
 eq(TRAINING_TASKS_ADVANCED.length, 8, 'advanced mode has 8 steps');
-ok(TRAINING_TASKS_ADVANCED.some(t => t.tool === 'fetch_url' && t.label.includes('example.com')),
-  'advanced fetches a page with fetch_url');
+ok(TRAINING_TASKS_ADVANCED.some(t => t.tool === 'fetch_url' && t.label.includes('{page}')),
+  'advanced fetches the drill page with fetch_url');
+{
+  // The page must be the app's own: a public site that rewords itself graded a
+  // correct save as a failure (v465), and no follow-up release can prevent that.
+  const filled = TRAINING_TASKS_ADVANCED[2].label.split('{page}').join(TRAINING_PAGE_URL);
+  ok(filled.includes('http://drill.local/advanced.html') && !filled.includes('{page}'),
+    'the advanced fetch step names the app-served drill page, not a public site');
+}
 ok(TRAINING_TASKS_ADVANCED.some(t => t.tool === 'write_file' && t.label.includes('{file}')),
   'advanced saves the fetched page to the agent log file');
 ok(TRAINING_TASKS_ADVANCED.some(t => t.label.includes('cannot redirect')),
@@ -123,9 +134,9 @@ ok(TRAINING_TASKS_ADVANCED.some(t => t.label.includes('cannot redirect')),
 ok(TRAINING_TASKS_ADVANCED.some(t => t.tool === 'show_file'), 'advanced shows the saved copy');
 eq(trainingTasksFor('advanced'), TRAINING_TASKS_ADVANCED, 'advanced selects its own table');
 eq(trainingChecksFor('advanced'), DRILL_CHECKS_ADVANCED, 'advanced selects its own checks');
-eq(trainingFileFor({ id: 'agent_adv' }, 'advanced'), 'training/advanced-agent-adv.txt',
+eq(trainingFileFor({ id: 'agent_adv' }, 'advanced'), 'training/advanced-agent-adv-p1.txt',
   'advanced gets its own per-agent log file');
-eq(trainingFileFor({ id: 'agent_adv' }), 'training/training-agent-adv.txt',
+eq(trainingFileFor({ id: 'agent_adv' }), 'training/training-agent-adv-p1.txt',
   'the default file stays the hard drill file');
 eq(trainingStepList(null, 'advanced').length, 8, 'the dialog can list the advanced steps');
 
@@ -189,7 +200,64 @@ ok(block.includes(drillFile), 'block names this agent\'s drill file');
 ok(block.includes('OWN drill file'), 'block forbids touching another agent\'s file');
 ok(trainingBlockFor({ id: 'agent_other' }).includes(trainingFileFor({ id: 'agent_other' })),
   'each agent\'s block names its own file');
-ok(trainingStepList().some(s => s.includes('training/training-<agent>.txt')),
+
+// One file per PASS: the file an agent is handed changes when a pass ends, so
+// no pass starts against the previous pass's finished bytes. The number lives
+// in the store, so the block, the step labels and the verdict cannot disagree
+// about which file this pass is using.
+store.set('settings.trainingMode', { active: true, startedAt: 1 });
+eq(trainingFileNow({ id: 'agent_test' }), 'training/training-agent-test-p1.txt',
+  'the live drill file is pass 1 before any pass completes');
+store.set('settings.trainingMode', { active: true, startedAt: 1, pass: 2 });
+eq(trainingFileNow({ id: 'agent_test' }), 'training/training-agent-test-p2.txt',
+  'the second pass writes a file nothing has used');
+ok(trainingBlockFor({ id: 'agent_test' }).includes('training/training-agent-test-p2.txt'),
+  'the prompt block follows the stored pass');
+ok(trainingStepList({ id: 'agent_test' }).some(s => s.includes('training/training-agent-test-p2.txt')),
+  'the step labels follow the stored pass');
+eq(trainingPassOf({}), 1, 'a run with no stored pass is pass 1');
+eq(trainingPassOf({ pass: 0 }), 1, 'pass 0 is not a pass');
+eq(trainingPassOf({ pass: '3' }), 3, 'a stored pass reads back as a number');
+const drillMatch = trainingFileMatchFor({ id: 'agent_test' });
+ok(drillMatch.test(JSON.stringify({ path: 'training/training-agent-test-p1.txt' })),
+  'the verdict matcher accepts pass 1');
+ok(drillMatch.test(JSON.stringify({ path: 'training/training-agent-test-p2.txt' })),
+  'the verdict matcher accepts pass 2');
+ok(!drillMatch.test(JSON.stringify({ path: 'training/training-agent-other-p1.txt' })),
+  'the verdict matcher refuses another agent\'s file');
+ok(!drillMatch.test(JSON.stringify({ path: 'training/training-agent-test-evil-p1.txt' })),
+  'the verdict matcher does not match a lookalike name');
+
+// The run report lists each pass and the file it wrote, so a pass can be
+// verified by opening that file instead of trusting the scoreboard.
+eq(formatPassLine({ pass: 2, file: 'training/training-agent-test-p2.txt', clean: true, failures: 0 }),
+  'pass 2 · training/training-agent-test-p2.txt · clean', 'a pass line names the pass, its file and its verdict');
+ok(formatPassLine({ pass: 1, file: 'f.txt', clean: false, failures: 3 }).endsWith('3 failed attempts'),
+  'a dirty pass says how many attempts failed');
+ok(formatPassLine({ pass: 1, file: 'f.txt', clean: false, failures: 1 }).endsWith('1 failed attempt'),
+  'one failure is singular');
+// A failure line quotes the error the pass hit first, so the report answers
+// "what went wrong" and not only "where".
+ok(formatPassLine({
+  pass: 2, file: 'f.txt', clean: false, failures: 2, step: 8,
+  reason: 'str_replace: old string not found.',
+}).endsWith('2 failed attempts · first at step 8: "str_replace: old string not found."'),
+  'a failed pass quotes its first error and the step it happened on');
+ok(formatPassLine({
+  pass: 1, file: 'f.txt', clean: false, failures: 1, step: 5, reason: 'x'.repeat(300),
+}).includes('…'), 'a long error is clipped rather than printed whole');
+ok(!formatPassLine({ pass: 1, file: 'f.txt', clean: true, reason: 'ignored' }).includes('first at step'),
+  'a clean pass never prints a failure reason');
+eq(formatPassLine(null), '', 'no entry prints no line');
+eq(formatPassLine({ pass: 0, file: 'f.txt', clean: true }), 'pass 1 · f.txt · clean',
+  'an unusable pass number prints as pass 1');
+// The self-test writes these two paths; they must be distinct and stable.
+eq(trainingFileFor({ id: 'agent_drill_selftest' }, 'hard', 1),
+  'training/training-agent-drill-selftest-p1.txt', 'the self-test writes its own pass-1 file');
+eq(trainingFileFor({ id: 'agent_drill_selftest' }, 'hard', 2),
+  'training/training-agent-drill-selftest-p2.txt', 'the self-test writes its own pass-2 file');
+store.set('settings.trainingMode', { active: true, startedAt: 1 });
+ok(trainingStepList().some(s => s.includes('training/training-<agent>-p1.txt')),
   'the operator-facing step list stays generic across agents');
 for (const t of TRAINING_TASKS) ok(block.includes(t.tool), `block lists ${t.tool}`);
 // The display family is taught by name even though only one is practiced, and
@@ -211,20 +279,40 @@ store.set('trainingVerdicts', {});
 
 // --- complete synthetic passes for the new tables ---------------------------
 const advFile = trainingFileFor({ id: 'agent_test' }, 'advanced');
+// The text ui/drill/advanced.html serves, marker and all.
+const drillPageText = 'Drill page\n\nThis page is served by the app itself, from ui/drill/advanced.html. '
+  + 'DRILL-PAGE-v1 \u2014 the redirect half of show_url URL > log.txt is a real file, and this sentence is what proves the file holds the page.';
 const advancedCalls = [
   { tool: 'think', arg: 'plan', status: 'ok' },
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },
-  { tool: 'fetch_url', arg: { url: 'https://example.com/' }, status: 'ok', result: 'URL: https://example.com/ (HTTP 200)\n\nExample Domain' },
-  { tool: 'write_file', arg: { path: advFile, content: '<title>Example Domain</title>' }, status: 'ok' },
-  { tool: 'read_file', arg: { path: advFile }, status: 'ok', result: '<title>Example Domain</title>' },
-  { tool: 'show_url', arg: { url: 'https://example.com/' }, status: 'ok', result: 'Example Domain' },
-  { tool: 'show_file', arg: { path: advFile }, status: 'ok', result: '<title>Example Domain</title>' },
+  { tool: 'fetch_url', arg: { url: TRAINING_PAGE_URL }, status: 'ok', result: 'URL: http://drill.local/advanced.html (HTTP 200, Drill page)\n\n' + drillPageText },
+  { tool: 'write_file', arg: { path: advFile, content: drillPageText }, status: 'ok' },
+  { tool: 'read_file', arg: { path: advFile }, status: 'ok', result: drillPageText },
+  { tool: 'show_url', arg: { url: TRAINING_PAGE_URL }, status: 'ok', result: drillPageText },
+  { tool: 'show_file', arg: { path: advFile }, status: 'ok', result: drillPageText },
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },
 ];
 const advancedVerdict = drillVerdict(advancedCalls, advFile, 'advanced');
 ok(advancedVerdict.complete && advancedVerdict.clean,
   'a complete advanced pass grades clean');
 eq(advancedVerdict.totalSteps, 8, 'advanced verdict uses the 8-step table');
+
+// The drill now grades a page the app serves itself, so the marker is ours and
+// nothing outside this repo can invalidate a pass. A save of some OTHER page —
+// correct behaviour for the wrong target — still fails, which is what keeps the
+// step about the fetched page rather than about "a write happened".
+const otherPageCalls = advancedCalls.map(c => (c.tool === 'write_file'
+  ? { ...c, arg: { path: advFile, content: 'This domain is for use in documentation examples without needing permission. This is not a service.' } }
+  : c));
+ok(!drillVerdict(otherPageCalls, advFile, 'advanced').complete,
+  'saving a different page than the drill page still fails the write step');
+
+// A stub save is still refused: this checks the text, not merely "a write ran".
+const stubWrite = advancedCalls.map(c => (c.tool === 'write_file'
+  ? { ...c, arg: { path: advFile, content: 'saved' } } : c));
+const stubVerdict = drillVerdict(stubWrite, advFile, 'advanced');
+ok(!stubVerdict.complete && stubVerdict.failures >= 1,
+  'a placeholder save still fails the write step');
 
 const frontierCalls = [
   { tool: 'think', arg: 'plan', status: 'ok' },
@@ -318,7 +406,8 @@ store.set('trainingVerdicts', {});
 const advancedBlock = trainingBlockFor({ id: 'agent_test' });
 ok(advancedBlock.includes('fetch_url gets a page'), 'advanced block names fetch_url');
 ok(advancedBlock.includes('show_url only DISPLAYS'), 'advanced block explains the display/tool split');
-ok(advancedBlock.includes('Example Domain'), 'advanced block names the page it verifies');
+ok(advancedBlock.includes('holds the page text'),
+  'the block asks for the saved page text, not a phrase the page may stop serving');
 ok(advancedBlock.includes(trainingFileFor({ id: 'agent_test' }, 'advanced')),
   'advanced block names the agent log file');
 ok(advancedBlock.includes('final todo_write'), 'advanced block names its completion step');
@@ -371,7 +460,7 @@ eq(normalizeCustomSteps(Array.from({ length: CUSTOM_STEP_MAX + 5 }, () => ({ too
 eq(trainingTasksFor('custom', customSteps).length, 2, 'custom selects the saved table');
 eq(trainingChecksFor('custom', customSteps).length, 2, 'custom checks align with its steps');
 eq(trainingStepList(null, 'custom', customSteps)[0],
-  '1. read_file — Read training/training-<agent>.txt and find hello (must include “HELLO”)',
+  '1. read_file — Read training/training-<agent>-p1.txt and find hello (must include “HELLO”)',
   'custom step list fills {file} and names the expected phrase');
 const customFile = trainingFileFor({ id: 'agent_test' }, 'custom');
 const customCalls = [
@@ -395,7 +484,7 @@ eq(emptyCustom.complete, false, 'an empty custom drill never completes');
 store.set('settings.trainingMode', { active: true, startedAt: 5, difficulty: 'custom', customSteps });
 const customBlock = trainingBlockFor({ id: 'agent_test' });
 ok(customBlock.includes('read_file'), 'custom block lists the saved tool');
-ok(customBlock.includes('Read training/training-agent-test.txt and find hello'),
+ok(customBlock.includes('Read training/training-agent-test-p1.txt and find hello'),
   'custom block fills {file} in the saved instruction');
 ok(customBlock.includes('must include “HELLO”'), 'custom block states the expected phrase');
 ok(customBlock.includes('expected phrase'), 'custom block explains the optional content check');

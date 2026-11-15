@@ -72,7 +72,7 @@ Six failures every operator hits in the first evening, and the code path that an
 | **It loops and burns the budget** | A hard step ceiling and a wall-clock deadline per turn, bounded steering, an acyclic `ask_agent` chain (A→B→A is refused), and duplicate-call suppression. When a ceiling is reached the transcript names it: *"You used all N tool calls on this task."* A runaway hits a wall, not your wallet. |
 | **The conversation falls out of the window** | Budgeted against the model's **real** window, then compacted: old tool exchanges keep their head and tail, the newest turns survive, oversized results are cut. A 128k model is not replayed as if it had 6k. |
 | **It forgets by the next session** | Private notes plus a deliberately small shared collective, with `adopt` so a shared fact can become its own. Injected as **recollection, not instructions** — the agent reads what it learned instead of being told what to do. |
-| **You can't tell whether any of it works** | Fixed **6-, 8-, 9-, 12- and 17-step drills** — Frontier on the desktop, Browser in the built-in browser, the rest in one sandbox folder — or your own steps, worked in order and **retried until every step passes** — never skipped. The call that actually executed is what gets remembered as the winning syntax, and the score to chase is a full pass, 0 retries. |
+| **You can't tell whether any of it works** | Fixed **6-, 8-, 9-, 12- and 17-step drills** — Frontier on the desktop, Browser in the built-in browser, the rest in one sandbox folder — or your own steps, worked in order and **retried until every step passes** — never skipped. Each pass writes its own file (`…-p2.txt`), so a fresh pass never starts on the last one's bytes, every pass is still there to inspect, the run report lists each pass with its file, and a two-pass self-test in Config — or `php tools/drill-selftest.php` from a terminal — proves the file mechanics with no model at all. The call that actually executed is what gets remembered as the winning syntax, and the score to chase is a full pass, 0 retries. |
 
 If a model is capable and still useless, it is usually one of those six — and each one has a
 code path here rather than a paragraph of advice.
@@ -133,11 +133,11 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v461** — current | Browser opens a visible window by default; headless is opt-in; `window_type` verifies the typed text on screen. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
-| **v460** | Read/edit calls keep foreign path and range arguments; Hard drill steps name the exact tools; native ranged reads work. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v460) |
-| **v459** | Easy/Hard drill selector and a fresh session per Start. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v459) |
-| **v458** | Two agents drill side by side in their own files. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v458) |
-| **v457** | Per-agent training files so parallel passes cannot collide. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v457) |
+| **v466** — current | The Advanced drill fetches the app's own page, so a public site can never fail a correct pass again. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v465** | The Advanced drill grades the page example.com actually serves, so a correct save stops being counted as a failure. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v465) |
+| **v464** | The two-pass drill check from a terminal, and the report quotes the error each failed pass hit. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v464) |
+| **v463** | A two-pass drill self-test in Config, and the run report names the file every pass wrote. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v463) |
+| **v462** | Every training pass writes its own drill file, so a second pass never starts on the first pass's bytes. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v462) |
 
 Running an older copy? **Config → Updates → INSTALL UPDATE…** updates in place and keeps `storage/`.
 Every release, including the open-testing builds before these two, is listed on
@@ -1901,8 +1901,8 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🌐 v461 — the Browser drill opens a window you can actually watch
-*`browser_open` now shows a visible Chrome/Edge window by default; `"headless":true` is the opt-in exception. The Browser drill’s step 3 refuses a headless result and tells the model to retry with `"headless":false`; the Browser screen’s checkbox follows the running mode, and switching to visible restarts a headless instance cleanly. `window_open` brings the named program to the front, and `window_type` reads the window back through Windows UI Automation so its result says whether the text actually landed; the Frontier drill requires that read-back. Verified live with NEMOTRON-3-ULTRA: Browser 9/9, one clean pass, zero failed attempts, in an unobstructed Edge window. The head-to-head teaser now sits in the README and the Pages site. JS 42 files / 1,360 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 460 → 461, `APP_VERSION` 457 → 458.*
+### 📄 v466 — the Advanced drill owns its page, and the drill fixtures are audited
+*The Advanced steps no longer fetch a page nobody here controls: step 3 fetches `http://drill.local/advanced.html`, which the app serves from `ui/drill/advanced.html` on disk — no network, so it always answers, and only a flat `*.html` name in `ui/drill/` is answered while loopback and LAN fetches stay refused. The page carries `DRILL-PAGE-v1`, which the write and read-back steps grade and a new test pins to the grader, so a correct save cannot be graded failed again. The rest of the drills were audited the same way: Frontier's typing step no longer matches PHP's exact sentence, and the remaining checks grade the drill's own file, its own taught strings or the app's own page. JS 42 files / 1,395 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 465 → 466, `APP_VERSION` 462 → 463.*
 
 ---
 

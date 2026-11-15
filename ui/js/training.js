@@ -17,7 +17,7 @@
 // todo_write, and the drill that last worked stays in the run transcript and
 // the todo list. The operator ends the drill with Stop on the same button.
 
-import { store } from './store.js?v=458';
+import { store } from './store.js?v=463';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -32,6 +32,18 @@ export const TRAINING_FILE_TOKEN = '{file}';
  *  works at the root and under the Apache /router mount alike. */
 export const TRAINING_BROWSER_PATH = 'ui/drill/browser.html';
 export const TRAINING_BROWSER_TOKEN = '{browser}';
+/**
+ * The Advanced drill's target: a page THIS APP serves, not a public site.
+ *
+ * It used to fetch https://example.com/, and example.com quietly changed its
+ * wording (v465): a model that fetched the page and saved its text correctly
+ * was graded `4 failed at step 4` and rewrote a good file until it gave up. A
+ * drill must not depend on a page nobody here controls, so the page now lives
+ * in ui/drill/ and is served from disk by Sandbox::drillFixture() — no host is
+ * contacted, and the drill cannot drift again without someone editing this repo.
+ */
+export const TRAINING_PAGE_URL = 'http://drill.local/advanced.html';
+export const TRAINING_PAGE_TOKEN = '{page}';
 /** A saved custom drill is capped so a bad paste cannot make an endless pass. */
 export const CUSTOM_STEP_MAX = 50;
 
@@ -52,30 +64,108 @@ export function normalizeCustomSteps(raw) {
   }).filter(step => step.tool && step.instruction);
 }
 
-/**
- * The drill file for one agent.
- *
- * Every active agent trains in the SAME sandbox, so one shared training.txt
- * let two passes collide: agent B's completed output was what agent A's step 7
- * read, A's step 8 then added a second "drill 2 passed" line, and A's step 9
- * could not match uniquely ("old string appears 2 times"). A file per agent
- * makes the drill's own state private to the pass that produced it.
- */
-export function trainingFileFor(agent, difficulty = 'hard') {
+/** The leading folder of a drill file: the hard drill's, or Advanced's log. */
+const drillStem = (difficulty) => (difficulty === 'advanced' ? 'advanced' : 'training');
+
+/** The agent part of a drill file name: short, filesystem-safe, stable. */
+const drillSlug = (agent) => {
   const raw = String((agent && (agent.id || agent.code || agent.name)) || 'agent');
-  const slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(-48) || 'agent';
-  const stem = difficulty === 'advanced' ? 'advanced' : 'training';
-  return `${TRAINING_DIR}/${stem}-${slug}.txt`;
+  return raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(-48) || 'agent';
+};
+
+/**
+ * The pass currently being drilled, 1-based.
+ *
+ * Stored as `settings.trainingMode.pass`: Start resets it to 1 and a completed
+ * pass bumps it once, so every surface of one pass resolves the same number.
+ * A missing or unusable value is pass 1, which is also what an install that
+ * predates this setting reads.
+ */
+export function trainingPassOf(mode) {
+  const n = Math.floor(Number(mode && mode.pass));
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
+
+/** The stored pass, for callers that only have an agent and a difficulty. */
+export function trainingPassNow() {
+  try { return trainingPassOf(store.get('settings.trainingMode')); } catch { return 1; }
+}
+
+/**
+ * The drill file for one agent and one pass.
+ *
+ * Two collisions shaped this name. Every active agent trains in the SAME
+ * sandbox, so one shared training.txt let two agents collide (v457): agent B's
+ * completed output was what agent A's step 7 read, and A's step 9 then matched
+ * two lines. Then consecutive PASSES collided even in a per-agent file: pass 2
+ * started against pass 1's finished bytes, so the agent either refused to
+ * create a file that already existed or could no longer match the text its
+ * edits expect, and the drill's retry-until-it-passes rule turned that into a
+ * loop. A pass number in the name gives every pass a file nothing has written.
+ *
+ * The suffix stays three characters on purpose: models have to copy the path
+ * out of their prompt, and the long per-agent name was already enough to stall
+ * a run (v458). The pass is filled in by the app, so no extra call is asked of
+ * the agent — Easy mode is not made harder by any of this.
+ */
+export function trainingFileFor(agent, difficulty = 'hard', pass = 1) {
+  return `${TRAINING_DIR}/${drillStem(difficulty)}-${drillSlug(agent)}-p${trainingPassOf({ pass })}.txt`;
+}
+
+/** The drill file for the pass in progress (the store's pass). */
+export function trainingFileNow(agent, difficulty = 'hard') {
+  return trainingFileFor(agent, difficulty, trainingPassNow());
+}
+
+/**
+ * The agent's drill file for ANY pass, as a matcher.
+ *
+ * The verdict walks a history that can hold several passes, and those calls
+ * name the file their own pass was given. Grading that history against one
+ * path would re-judge pass 1 against pass 2's name and report failures that
+ * never happened — so the verdict takes this matcher instead, and each call is
+ * judged against the generation of the file it actually named. The unnumbered
+ * spelling is accepted too: a transcript from before this change still names
+ * it, and a resumed context may quote one.
+ */
+export function trainingFileMatchFor(agent, difficulty = 'hard') {
+  return new RegExp(`${TRAINING_DIR}/${drillStem(difficulty)}-${drillSlug(agent)}(?:-p\\d+)?\\.txt`);
+}
+
+/**
+ * One line of the run report's per-pass list: which pass, which file it wrote,
+ * and whether the app judged it clean.
+ *
+ * Pure, so the report and its test cannot drift apart. The whole point of
+ * printing the path is that the operator can open that file and see the bytes
+ * the pass really produced, instead of trusting the scoreboard.
+ */
+export function formatPassLine(entry) {
+  if (!entry) return '';
+  const pass = Math.max(1, Math.floor(Number(entry.pass)) || 1);
+  const failures = Math.max(0, Math.floor(Number(entry.failures)) || 0);
+  const verdict = entry.clean ? 'clean' : `${failures} failed attempt${failures === 1 ? '' : 's'}`;
+  // A failed pass is only useful if it says WHAT failed: the error a model kept
+  // hitting is the difference between "this model is bad at edits" and "this
+  // step's wording is wrong". Whitespace is flattened and the text is clipped,
+  // because a tool refusal can be a whole paragraph.
+  const reason = String(entry.reason || '').replace(/\s+/g, ' ').trim();
+  const step = Math.max(0, Math.floor(Number(entry.step)) || 0);
+  const why = (!entry.clean && reason)
+    ? ` · first at step ${step || '?'}: "${reason.length > 120 ? reason.slice(0, 120) + '…' : reason}"`
+    : '';
+  return `pass ${pass} · ${String(entry.file || '')} · ${verdict}${why}`;
 }
 
 /** Generic wording for surfaces that describe the drill to the operator. */
 const fileForSteps = (agent, difficulty = 'hard') => agent
-  ? trainingFileFor(agent, difficulty)
-  : `${TRAINING_DIR}/${difficulty === 'advanced' ? 'advanced' : 'training'}-<agent>.txt`;
+  ? trainingFileNow(agent, difficulty)
+  : `${TRAINING_DIR}/${drillStem(difficulty)}-<agent>-p${trainingPassNow()}.txt`;
 const fillFile = (text, agent, difficulty = 'hard') =>
   String(text).split(TRAINING_FILE_TOKEN).join(fileForSteps(agent, difficulty));
 const browserDrillUrl = () => new URL('../drill/browser.html', import.meta.url).href;
 const fillBrowser = (text) => String(text).split(TRAINING_BROWSER_TOKEN).join(browserDrillUrl());
+const fillPage = (text) => String(text).split(TRAINING_PAGE_TOKEN).join(TRAINING_PAGE_URL);
 
 /**
  * Training mode is a closed loop: while it is armed, EVERY finished turn is
@@ -161,10 +251,10 @@ export const TRAINING_TASKS_EASY = [
 export const TRAINING_TASKS_ADVANCED = [
   { tool: 'think', label: 'Think one sentence about the fetch → save → show pipeline before touching anything.' },
   { tool: 'todo_write', label: 'Write the Advanced steps as your todo list, first one in_progress.' },
-  { tool: 'fetch_url', label: 'Fetch https://example.com/ with fetch_url and read the page text. This is the read half of “show_url URL > log.txt”: show_url only displays a page and cannot redirect into a file.' },
+  { tool: 'fetch_url', label: 'Fetch {page} with fetch_url and read the page text. This is the read half of “show_url URL > log.txt”: show_url only displays a page and cannot redirect into a file. {page} is served by this app itself, so it always answers.' },
   { tool: 'write_file', label: 'Save that fetched page text to {file} with write_file — the redirect half, done as a real file. (Asks approval — wait for it.)' },
-  { tool: 'read_file', label: 'Read {file} back with read_file and confirm the saved page still says “Example Domain”.' },
-  { tool: 'show_url', label: 'Show the live page with show_url at https://example.com/ — the page text on screen is your reply. This ends the turn; the drill resumes after it.' },
+  { tool: 'read_file', label: 'Read {file} back with read_file and confirm it holds the page text you just fetched.' },
+  { tool: 'show_url', label: 'Show the live page with show_url at {page} — the page text on screen is your reply. This ends the turn; the drill resumes after it.' },
   { tool: 'show_file', label: 'Show the saved copy with show_file at {file} — the file on screen proves the redirect, not just the fetch. This ends the turn; the drill resumes after it.' },
   { tool: 'todo_write', label: 'Mark every step completed and put your one-line summary (what was fetched, where it was saved) in the last item — this completes the 8-step Advanced pass.' },
 ];
@@ -213,11 +303,25 @@ const argText = (call) => {
   catch { return String((call && call.arg) || '').toLowerCase(); }
 };
 const resultText = (call) => String((call && call.result) || '').toLowerCase();
-const namesTrainingFile = (call, file) => argText(call).includes(String(file || TRAINING_FILE).toLowerCase());
+/** Does this call name the drill file? `file` is a path or a matcher. */
+const namesTrainingFile = (call, file) => {
+  const text = argText(call);
+  if (file instanceof RegExp) return file.test(text);
+  return text.includes(String(file || TRAINING_FILE).toLowerCase());
+};
 /** The edit_file arguments as sent, before the case-folding argText() applies. */
 const editArg = (call) => (call && call.arg && typeof call.arg === 'object' && !Array.isArray(call.arg)) ? call.arg : {};
 const showsTraining = (call) => /training/.test(resultText(call));
-const showsExample = (call) => /example domain/i.test(resultText(call));
+/**
+ * The marker on the drill's own page (ui/drill/advanced.html).
+ *
+ * Both sides of the grade depend on THIS string: the page carries it, and the
+ * checks look for it in the saved content and in the read-back. It is ours, so
+ * it cannot go stale the way example.com's wording did — and tests/php/
+ * drillPage.test.php fails if the page and this module ever disagree.
+ */
+const DRILL_PAGE_MARKER = /drill-page-v1/i;
+const showsDrillPage = (call) => DRILL_PAGE_MARKER.test(resultText(call));
 
 /**
  * What each step can be CHECKED on, beyond "the call returned ok".
@@ -280,11 +384,17 @@ export const DRILL_CHECKS_EASY = [
 export const DRILL_CHECKS_ADVANCED = [
   null,                                                                     // 1 think
   null,                                                                     // 2 todo_write
-  (c) => /example\.com/i.test(argText(c)) && showsExample(c),                // 3 fetch_url
-  (c, file) => namesTrainingFile(c, file) && /example domain/i.test(argText(c)), // 4 write_file
-  (c, file) => namesTrainingFile(c, file) && showsExample(c),                // 5 read_file
-  (c) => /example\.com/i.test(argText(c)) && showsExample(c),                // 6 show_url
-  (c, file) => namesTrainingFile(c, file) && showsExample(c),                // 7 show_file
+  (c) => /drill\.local/i.test(argText(c)) && /HTTP 200/i.test(resultText(c)), // 3 fetch_url
+  // The saved CONTENT is what this step is about, so it must be real page text
+  // and not a summary or a placeholder: length plus the page's own marker.
+  (c, file) => {
+    const a = (c && c.arg && typeof c.arg === 'object' && !Array.isArray(c.arg)) ? c.arg : {};
+    const content = typeof a.content === 'string' ? a.content : '';
+    return namesTrainingFile(c, file) && content.length >= 40 && DRILL_PAGE_MARKER.test(content);
+  },                                                                        // 4 write_file
+  (c, file) => namesTrainingFile(c, file) && showsDrillPage(c),              // 5 read_file
+  (c) => /drill\.local/i.test(argText(c)) && showsDrillPage(c),              // 6 show_url
+  (c, file) => namesTrainingFile(c, file) && showsDrillPage(c),              // 7 show_file
   null,                                                                     // 8 todo_write
 ];
 
@@ -296,7 +406,11 @@ export const DRILL_CHECKS_FRONTIER = [
   (c) => /notepad/i.test(argText(c)),                                       // 4 window_open
   (c) => /notepad/i.test(argText(c))
     && /"text"\s*:\s*"hello!"/.test(argText(c))
-    && /read back from the window.*the typed text is there/i.test(resultText(c)), // 5 window_type
+    // Any wording that reports a read-back, and never one that says it could not
+    // read the window: that sentence is the app's own, and pinning it word for
+    // word meant a copy edit in PHP could silently break the drill.
+    && /read back from the window/i.test(resultText(c))
+    && !/unverified|could not be read back|could not read/i.test(resultText(c)), // 5 window_type
   null,                                                                     // 6 todo_write
 ];
 
@@ -370,7 +484,7 @@ const DIFFICULTY_INFO = {
   },
   advanced: {
     label: 'Advanced',
-    hint: 'Advanced runs an 8-step fetch → save → show pipeline: fetch_url reads https://example.com/, write_file keeps it as the log, then show_url and show_file prove the live page and the saved copy.',
+    hint: 'Advanced runs an 8-step fetch → save → show pipeline: fetch_url reads the app\u2019s own drill page, write_file keeps it as the log, then show_url and show_file prove the live page and the saved copy.',
   },
   frontier: {
     label: 'Frontier',
@@ -438,6 +552,11 @@ function trainingEnding(difficulty, total = 0) {
  * still running, skipped because a display tool ended the turn, or waiting on
  * an approval never prove a step passed -- and a skipped call is not a
  * failure either.
+ *
+ * `file` is a drill path or a RegExp. A path grades every pass against that
+ * one file; a matcher from trainingFileMatchFor grades each call against the
+ * generation of the agent's file that call named, which is what a history
+ * spanning several passes needs.
  */
 export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', customSteps = undefined) {
   const tasks = trainingTasksFor(difficulty, customSteps);
@@ -455,7 +574,7 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
   }
   const blank = () => ({
     step: 0, failures: 0, failureCounts: {}, retries: 0, pending: false,
-    failedAt: null, offStep: 0, offTool: '', lastFailure: null,
+    failedAt: null, offStep: 0, offTool: '', lastFailure: null, firstFailure: null,
   });
   let cur = blank();
   let passes = 0;
@@ -479,6 +598,10 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
     cur.failures++;
     cur.failureCounts[stepNo] = (cur.failureCounts[stepNo] || 0) + 1;
     if (cur.failedAt === null) cur.failedAt = stepNo;
+    // The FIRST failure is what the report quotes: later ones are usually the
+    // model repeating it, and quoting the last would name a symptom of the
+    // symptom instead of the thing that went wrong.
+    if (cur.firstFailure === null) cur.firstFailure = { step: stepNo, result: String(failedResult || '') };
     cur.lastFailure = { step: stepNo, result: String(failedResult || '') };
   };
 
@@ -560,6 +683,11 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
   }
   // While a new pass is in progress the judgement is still the finished one.
   const judged = complete ? cur : last;
+  // Which pass the failure text describes: the finished one when another has
+  // already started, otherwise the pass being watched. A pass that never
+  // completed has no `last` at all, and its first error is exactly what the
+  // operator needs to see — so it is not left blank.
+  const reported = complete ? cur : (last || cur);
   // The Frontier typing step is the one place where a successful-looking call
   // can still be a failure: the app now reads the window back, and if that
   // read-back says unverified, the operator needs the next action in the strip,
@@ -604,6 +732,10 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
     offStep: cur.offStep,
     offTool: cur.offTool,
     nextTool: complete ? '' : (tasks[cur.step]?.tool || ''),
+    // The error the judged pass hit first, so the report can quote it instead
+    // of only counting it. Empty when the pass had no failed attempt.
+    failureReason: reported && reported.firstFailure ? reported.firstFailure.result : '',
+    failureStep: reported && reported.firstFailure ? reported.firstFailure.step : null,
     retryHint,
   };
 }
@@ -681,7 +813,7 @@ export function showsEveryPass(mode) {
 /** Short numbered recap for the popup dialog. */
 export function trainingStepList(agent = null, difficulty = 'hard', customSteps = undefined) {
   return trainingTasksFor(difficulty, customSteps)
-    .map((t, i) => `${i + 1}. ${t.tool} — ${fillBrowser(fillFile(t.label, agent, difficulty))}${t.expect ? ` (must include “${t.expect}”)` : ''}`);
+    .map((t, i) => `${i + 1}. ${t.tool} — ${fillBrowser(fillPage(fillFile(t.label, agent, difficulty)))}${t.expect ? ` (must include “${t.expect}”)` : ''}`);
 }
 
 /**
@@ -700,8 +832,8 @@ export function trainingKickoffFor(difficulty = null) {
   const mode = store.get('settings.trainingMode') || {};
   const diff = difficulty || trainingDifficulty(mode);
   const tasks = trainingTasksFor(diff, mode.customSteps);
-  const stepLabel = (label) => fillBrowser(String(label).split(TRAINING_FILE_TOKEN)
-    .join(diff === 'advanced' ? 'your log file' : 'your drill file'));
+  const stepLabel = (label) => fillBrowser(fillPage(String(label).split(TRAINING_FILE_TOKEN)
+    .join(diff === 'advanced' ? 'your log file' : 'your drill file')));
   const steps = tasks.map((t, i) => `${i + 1}. ${t.tool}: ${stepLabel(t.label)}${t.expect ? ` (must include “${t.expect}”)` : ''}`).join('\n');
   const ending = trainingEnding(diff, tasks.length);
   const custom = diff === 'custom';
@@ -780,7 +912,7 @@ export function trainingBlockFor(agent = null) {
   const browser = difficulty === 'browser';
   const custom = difficulty === 'custom';
   const file = fileForSteps(agent, difficulty);
-  const steps = tasks.map((t, i) => `${i + 1}. ${t.tool}: ${fillBrowser(fillFile(t.label, agent, difficulty))}${t.expect ? ` (must include “${t.expect}”)` : ''}`).join('\n');
+  const steps = tasks.map((t, i) => `${i + 1}. ${t.tool}: ${fillBrowser(fillPage(fillFile(t.label, agent, difficulty)))}${t.expect ? ` (must include “${t.expect}”)` : ''}`).join('\n');
   const mine = agent ? (store.get('trainingVerdicts') || {})[agent.id] : null;
   const total = tasks.length;
   const recorded = mine && Number.isFinite(Number(mine.step)) ? Math.max(0, Number(mine.step)) : null;

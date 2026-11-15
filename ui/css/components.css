@@ -2338,6 +2338,16 @@ body.agent-reordering .provider-card:hover {
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
+/* Per-pass list in the run report: the file each completed pass wrote. Shown
+   so a pass can be verified by opening it, not by trusting the counter. */
+.training-pass-line {
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.5;
+  font-family: monospace;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
 .training-summary-breakdown {
   margin-top: 3px;
   font-size: 10px;

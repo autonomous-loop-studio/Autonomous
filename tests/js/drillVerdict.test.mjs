@@ -23,7 +23,7 @@ if (!version) {
   console.error('Cannot read APP_VERSION from ui/js/store.js.');
   process.exit(1);
 }
-const { TRAINING_TASKS, TRAINING_TASKS_EASY, DRILL_CHECKS, DRILL_CHECKS_EASY, drillVerdict, drillVerdictText } =
+const { TRAINING_TASKS, TRAINING_TASKS_EASY, DRILL_CHECKS, DRILL_CHECKS_EASY, drillVerdict, drillVerdictText, trainingFileMatchFor } =
   await import(`../../ui/js/training.js?v=${version}`);
 const { parseToolCalls, TOOL_REGISTRY } =
   await import(`../../ui/js/tools.js?v=${version}`);
@@ -161,6 +161,43 @@ eq(DRILL_CHECKS_EASY.length, TRAINING_TASKS_EASY.length, 'every easy step has a 
     'two agents: agent A\'s pass reads clean against its own file');
   eq(drillVerdict(mapped(b), b).clean, true,
     'two agents: agent B\'s pass reads clean against its own file');
+}
+
+// A history that spans several passes. Each pass's calls name the file that
+// pass was given, and the verdict must judge them against THEIR file — grading
+// the whole history against the newest path would report pass 1 as a wall of
+// failures that never happened, which is exactly what a per-pass name must not
+// cause.
+{
+  const p1 = 'training/training-agent-drill-p1.txt';
+  const p2 = 'training/training-agent-drill-p2.txt';
+  const mapped = (file) => cleanPass().map(c => ({
+    ...c,
+    arg: JSON.parse(JSON.stringify(c.arg).replaceAll('training/training.txt', file)),
+  }));
+  const history = mapped(p1).concat(mapped(p2));
+  const v = drillVerdict(history, trainingFileMatchFor({ id: 'agent_drill' }));
+  eq(v.passes, 2, 'two passes are counted');
+  eq(v.cleanPasses, 2, 'both passes still read clean');
+  eq(v.failuresTotal, 0, 'pass 1 is not re-graded against pass 2\'s file');
+  ok(v.complete && v.clean, 'a two-pass history spanning two files grades clean');
+  eq(drillVerdict(mapped(p2), p1).clean, false,
+    'a pass naming another generation of the file is not clean');
+}
+
+// A failed pass quotes the error that caused it: the report needs the text a
+// model kept running into, not only the step number it happened on. The FIRST
+// failure is the one quoted — later ones are usually the same refusal again.
+{
+  const calls = cleanPass();
+  calls.splice(7, 1, call('edit_file',
+    { path: 'training/training.txt', old_string: 'training', new_string: 'training\ndrill 2 passed' },
+    'error', 'str_replace: old string not found. Read the file first.'));
+  const v = drillVerdict(calls);
+  eq(v.failureStep, 8, 'the verdict names the step that failed first');
+  ok(v.failureReason.includes('old string not found'), 'and quotes the error itself');
+  eq(drillVerdict(cleanPass()).failureReason, '', 'a clean pass carries no failure reason');
+  eq(drillVerdict(cleanPass()).failureStep, null, 'and no failed step');
 }
 
 // Clean passes are counted separately from completed ones.

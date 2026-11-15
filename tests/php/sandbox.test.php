@@ -779,6 +779,32 @@ try {
     echo "  SKIP: git not available (" . substr($e->getMessage(), 0, 60) . ")\n";
 }
 
+// 53. The drill's file per pass. Two passes, two files, each starting blank and
+// ending at the same bytes -- and re-editing a FINISHED file is shown to be the
+// corruption the per-pass name prevents (the doubled line that made the next
+// edit ambiguous, which is the loop training mode used to sit in).
+$drill1 = 'training/training-agent-audit-p1.txt';
+$drill2 = 'training/training-agent-audit-p2.txt';
+$drillEnd = "training\ndrill 2 passed (exact match)";
+Sandbox::writeFile($drill1, 'training', 'write', $writeDir);
+Sandbox::strReplace($drill1, 'training', "training\ndrill 2 passed", false, $writeDir);
+Sandbox::strReplace($drill1, 'drill 2 passed', 'drill 2 passed (exact match)', false, $writeDir);
+Sandbox::writeFile($drill2, 'training', 'write', $writeDir);
+Sandbox::strReplace($drill2, 'training', "training\ndrill 2 passed", false, $writeDir);
+Sandbox::strReplace($drill2, 'drill 2 passed', 'drill 2 passed (exact match)', false, $writeDir);
+ok(Sandbox::readText($drill1, $writeDir)['content'] === $drillEnd,
+    'drill: pass 1 ends at the expected two lines');
+ok(Sandbox::readText($drill2, $writeDir)['content'] === $drillEnd,
+    'drill: pass 2 ends at the same two lines, written to its own file');
+// The failure this fixes: a second pass against the finished file, instead of a
+// fresh one, appends the line a second time and can no longer match uniquely.
+Sandbox::strReplace($drill1, 'training', "training\ndrill 2 passed", false, $writeDir);
+ok(substr_count(Sandbox::readText($drill1, $writeDir)['content'], 'drill 2 passed') === 2,
+    'drill: re-editing a finished file doubles its line');
+throws(function () use ($writeDir, $drill1) {
+    Sandbox::strReplace($drill1, 'drill 2 passed', 'drill 2 passed (exact match)', false, $writeDir);
+}, 'drill: the doubled line is ambiguous, which is the retry loop per-pass files avoid', 'appears 2 times');
+
 // --- cleanup ----------------------------------------------------------
 Sandbox::removePath($writeDir . '/m1.txt', $writeDir);
 Sandbox::removePath($writeDir . '/m2.txt', $writeDir);
@@ -787,6 +813,7 @@ Sandbox::removePath($writeDir . '/edit.txt', $writeDir);
 Sandbox::removePath($writeDir . '/dup.txt', $writeDir);
 Sandbox::removePath($writeDir . '/ins.txt', $writeDir);
 Sandbox::removePath($writeDir . '/amb.txt', $writeDir);
+Sandbox::removePath($writeDir . '/training', $writeDir);
 Sandbox::removePath($writeDir . '/unz', $writeDir);
 Sandbox::removePath($writeDir . '/arch.zip', $writeDir);
 Sandbox::removePath($writeDir . '/test.txt', $writeDir);
