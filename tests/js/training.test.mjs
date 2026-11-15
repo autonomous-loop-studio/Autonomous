@@ -29,10 +29,10 @@ const {
   TRAINING_THROTTLE, TRAINING_DIR, TRAINING_FILE, TRAINING_FILE_TOKEN, TRAINING_TASKS, TRAINING_TASKS_EASY,
   TRAINING_TASKS_ADVANCED, TRAINING_TASKS_FRONTIER, TRAINING_TASKS_BROWSER, DRILL_CHECKS_ADVANCED,
   DRILL_CHECKS_FRONTIER, DRILL_CHECKS_BROWSER, TRAINING_BROWSER_TOKEN, TRAINING_PAGE_URL,
-  trainingFileFor, trainingFileNow, trainingFileMatchFor, trainingPassOf, formatPassLine, isTrainingActive, trainingStepList, trainingBlockFor, trainingKickoffFor, trainingResumeFor,
+  trainingFileFor, trainingFileNow, trainingFileCheckFor, trainingPassOf, formatPassLine, isTrainingActive, trainingStepList, trainingBlockFor, trainingKickoffFor, trainingResumeFor,
   shouldResumeDrill, reachedCleanTarget, drillStripTitle, trainingDifficulty, trainingTasksFor, trainingChecksFor, showsEveryPass,
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
-  drillPassFile,
+  drillPassFile, drillWriteRefusal,
 } = await import(`../../ui/js/training.js?v=${version}`);
 const trainingModule = await import(`../../ui/js/training.js?v=${version}`);
 const { store } = await import(`../../ui/js/store.js?v=${version}`);
@@ -219,15 +219,13 @@ ok(trainingStepList({ id: 'agent_test' }).some(s => s.includes('training/trainin
 eq(trainingPassOf({}), 1, 'a run with no stored pass is pass 1');
 eq(trainingPassOf({ pass: 0 }), 1, 'pass 0 is not a pass');
 eq(trainingPassOf({ pass: '3' }), 3, 'a stored pass reads back as a number');
-const drillMatch = trainingFileMatchFor({ id: 'agent_test' });
-ok(drillMatch.test(JSON.stringify({ path: 'training/training-agent-test-p1.txt' })),
-  'the verdict matcher accepts pass 1');
-ok(drillMatch.test(JSON.stringify({ path: 'training/training-agent-test-p2.txt' })),
-  'the verdict matcher accepts pass 2');
-ok(!drillMatch.test(JSON.stringify({ path: 'training/training-agent-other-p1.txt' })),
-  'the verdict matcher refuses another agent\'s file');
-ok(!drillMatch.test(JSON.stringify({ path: 'training/training-agent-test-evil-p1.txt' })),
-  'the verdict matcher does not match a lookalike name');
+// Grading follows the pass counter: each call must name the file of the pass it
+// belongs to, not any generation of the name. The looser rule let a second pass
+// rewrite the first pass's log and still read clean.
+const drillFileOf = trainingFileCheckFor({ id: 'agent_test' });
+eq(drillFileOf(1), 'training/training-agent-test-p1.txt', 'pass 1 is graded against its own file');
+eq(drillFileOf(2), 'training/training-agent-test-p2.txt', 'pass 2 is graded against a different file');
+ok(typeof drillFileOf === 'function', 'the pass is resolved while the history is walked, not up front');
 
 // The run report lists each pass and the file it wrote, so a pass can be
 // verified by opening that file instead of trusting the scoreboard.
@@ -332,6 +330,44 @@ ok(!stubVerdict.complete && stubVerdict.failures >= 1,
   eq(drillPassFile([]), '', 'a drill with no write step reports no file');
   eq(drillPassFile([{ tool: 'show_file', arg: { path: advFile } }]), '',
     'showing a file is not writing it, so it cannot name the pass file');
+}
+
+// Each pass must write ITS file. Pass 2 rebuilding its todo list from pass 1's —
+// path and all — used to overwrite pass 1's evidence and still count as clean,
+// because the write step accepted any pass's file.
+{
+  const checker = trainingFileCheckFor({ id: 'agent_test' }, 'advanced');
+  eq(drillVerdict(advancedCalls, checker, 'advanced').passes, 1, 'one pass grades as one pass');
+  const reused = drillVerdict([...advancedCalls, ...advancedCalls], checker, 'advanced');
+  ok(!reused.complete && reused.failedAt === 4,
+    'a pass that rewrote the previous pass\'s file fails its write step');
+  const file2 = advFile.replace(/-p1\.txt$/, '-p2.txt');
+  const own = advancedCalls.map(c => (['write_file', 'read_file', 'show_file'].includes(c.tool)
+    ? { ...c, arg: { ...c.arg, path: file2 } }
+    : c));
+  const two = drillVerdict([...advancedCalls, ...own], checker, 'advanced');
+  ok(two.complete && two.clean && two.passes === 2,
+    'two passes that each wrote their own file still grade clean');
+}
+
+// The refusal has to fire BEFORE the write, or the pass it is protecting has
+// already been overwritten. Only this run's own drill files are policed.
+{
+  const agent = { id: 'agent_test' };
+  const p2 = 'training/advanced-agent-test-p2.txt';
+  const msg = drillWriteRefusal('write_file', { path: 'training/advanced-agent-test-p1.txt' }, agent, 'advanced', 2);
+  ok(msg.includes(p2) && msg.includes('another pass'), 'a write back to the previous pass\'s file is refused, and names the right one');
+  eq(drillWriteRefusal('write_file', { path: p2 }, agent, 'advanced', 2), '', 'the pass\'s own file is not refused');
+  eq(drillWriteRefusal('read_file', { path: 'training/advanced-agent-test-p1.txt' }, agent, 'advanced', 2), '',
+    'reading an earlier pass\'s file stays allowed — refusing that would hide the evidence');
+  eq(drillWriteRefusal('write_file', { path: 'training/advanced-agent-other-p1.txt' }, agent, 'advanced', 2), '',
+    'another agent\'s drill file is not this guard\'s business');
+  eq(drillWriteRefusal('write_file', { path: 'src/app.js' }, agent, 'advanced', 2), '',
+    'ordinary project files are untouched');
+  ok(drillWriteRefusal('edit_file', { path: 'training/advanced-agent-test-p1.txt' }, agent, 'advanced', 2),
+    'edit_file is guarded too, not just write_file');
+  ok(drillWriteRefusal('write_file', 'training/advanced-agent-test-p1.txt', agent, 'advanced', 2),
+    'a bare path argument is guarded as well');
 }
 
 const frontierCalls = [

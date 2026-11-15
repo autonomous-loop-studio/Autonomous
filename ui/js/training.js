@@ -17,7 +17,7 @@
 // todo_write, and the drill that last worked stays in the run transcript and
 // the todo list. The operator ends the drill with Stop on the same button.
 
-import { store } from './store.js?v=467';
+import { store } from './store.js?v=469';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -128,8 +128,8 @@ export function trainingFileNow(agent, difficulty = 'hard') {
  * spelling is accepted too: a transcript from before this change still names
  * it, and a resumed context may quote one.
  */
-export function trainingFileMatchFor(agent, difficulty = 'hard') {
-  return new RegExp(`${TRAINING_DIR}/${drillStem(difficulty)}-${drillSlug(agent)}(?:-p\\d+)?\\.txt`);
+export function trainingFileCheckFor(agent, difficulty = 'hard') {
+  return (pass) => trainingFileFor(agent, difficulty, pass);
 }
 
 /**
@@ -531,6 +531,35 @@ function trainingEnding(difficulty, total = 0) {
 }
 
 /**
+ * Why a write must not run, or '' when it may.
+ *
+ * Grading a wrong-pass write as a failure (v468) catches it, but by then the
+ * write has already happened: a pass that rebuilt its todo list from the
+ * previous pass's overwrote that pass's evidence before the step was refused.
+ * The evidence is the point of writing one file per pass, so the refusal has to
+ * come before the tool runs. The model gets an ordinary tool error naming the
+ * file it should have used, which is the same correction the drill's reminder
+ * gives it, only sooner and without the damage.
+ *
+ * Only this run's own drill files are checked: anything outside
+ * `training/<stem>-<agent>-pN.txt` is somebody else's business, and the pass's
+ * own file (or a non-file tool) is never refused.
+ */
+export function drillWriteRefusal(tool, arg, agent, difficulty = undefined, pass = undefined) {
+  if (tool !== 'write_file' && tool !== 'edit_file' && tool !== 'append_file') return '';
+  const diff = difficulty || trainingDifficulty(store.get('settings.trainingMode') || {});
+  const n = pass === undefined ? trainingPassNow() : pass;
+  const raw = typeof arg === 'string' ? arg : (arg && (arg.path || arg.file)) || '';
+  const path = String(raw).trim().replace(/\\/g, '/');
+  if (!path) return '';
+  const mine = trainingFileFor(agent, diff, n);
+  const family = `${TRAINING_DIR}/${drillStem(diff)}-${drillSlug(agent)}`;
+  if (!path.startsWith(family)) return '';
+  if (path === mine) return '';
+  return `drill pass ${n} writes ${mine}, not ${path} — ${path} belongs to another pass of this run, and each pass keeps its own file. Write ${mine}.`;
+}
+
+/**
  * The file a pass actually wrote, read from the tool records rather than from
  * the pass counter.
  *
@@ -579,10 +608,13 @@ export function drillPassFile(history) {
  * an approval never prove a step passed -- and a skipped call is not a
  * failure either.
  *
- * `file` is a drill path or a RegExp. A path grades every pass against that
- * one file; a matcher from trainingFileMatchFor grades each call against the
- * generation of the agent's file that call named, which is what a history
- * spanning several passes needs.
+ * `file` is a drill path, a RegExp, or a function from trainingFileCheckFor
+ * that maps a pass number to that pass's file. The function is what the app
+ * uses: grading every call against whatever generation of the name it happens
+ * to mention let a second pass rewrite the FIRST pass's log and still count as
+ * clean, because the file it wrote was not the file the app had just told it to
+ * write. Walked per pass, a wrong-pass write fails its step and the drill tells
+ * the agent which file is its own.
  */
 export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', customSteps = undefined) {
   const tasks = trainingTasksFor(difficulty, customSteps);
@@ -647,6 +679,9 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
 
     const want = tasks[cur.step];
     const check = checks[cur.step];
+    // The file of the pass this call belongs to, resolved as the walk goes: a
+    // history can hold several passes, and each one has its own file.
+    const fileNow = typeof file === 'function' ? file(passes + 1) : file;
     const key = `${tool}|${argText(call)}`;
     const retry = lastKey === key && lastStatus === 'error';
     lastKey = key;
@@ -654,7 +689,7 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
 
     // A check only judges a call that SUCCEEDED: a pending approval, an error
     // and a still-running call have produced no artefact to inspect.
-    const checkOk = !check || status !== 'ok' || check(call, file);
+    const checkOk = !check || status !== 'ok' || check(call, fileNow);
 
     // Another tool never advances the drill, and it is not an attempt at this
     // step either. It is still recorded: a run of calls for other steps is what

@@ -133,9 +133,9 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v467** — current | The training report counts the passes that ran, not a replayed commit of one. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v469** — current | Every training pass must write its own drill file, so one pass can't overwrite another's evidence. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v467** | The training report names the file each pass actually wrote, and lists every pass it counts. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v467) |
 | **v466** | The Advanced drill fetches the app's own page, so a public site can never fail a correct pass again. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v466) |
-| **v465** | The Advanced drill grades the page example.com actually serves, so a correct save stops being counted as a failure. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v465) |
 | **v464** | The two-pass drill check from a terminal, and the report quotes the error each failed pass hit. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v464) |
 | **v463** | A two-pass drill self-test in Config, and the run report names the file every pass wrote. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v463) |
 
@@ -1901,8 +1901,8 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🧮 v467 — the report names the file each pass actually wrote
-*A live Advanced run graded 8/8 clean and its report listed pass 2 against `…-p2.txt` — a file no pass wrote. Pass 2 had really run; it copied its own earlier todo list, wrote `…-p1.txt` again, and the report filed it under the name the pass counter had already moved to. Each pass is now filed under the file its own records name, so the report points at a file you can actually open, and it lists every pass it counts instead of stopping one short. JS 42 files / 1,400 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 466 → 467, `APP_VERSION` 463 → 467.*
+### 📁 v469 — each pass writes its own file, and cannot borrow the last one
+*The write step used to accept any pass's file, so a second pass that copied its own earlier todo list wrote `…-p1.txt` again and overwrote pass 1's evidence. Grading now follows the pass counter, and the write itself is refused before the tool runs when it names another pass's file — the agent gets an ordinary error naming the right path, so it corrects in the next step and no file is touched. JS 42 files / 1,409 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 467 → 469, `APP_VERSION` 467 → 469.*
 
 ---
 

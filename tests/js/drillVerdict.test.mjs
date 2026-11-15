@@ -23,7 +23,7 @@ if (!version) {
   console.error('Cannot read APP_VERSION from ui/js/store.js.');
   process.exit(1);
 }
-const { TRAINING_TASKS, TRAINING_TASKS_EASY, DRILL_CHECKS, DRILL_CHECKS_EASY, drillVerdict, drillVerdictText, trainingFileMatchFor } =
+const { TRAINING_TASKS, TRAINING_TASKS_EASY, DRILL_CHECKS, DRILL_CHECKS_EASY, drillVerdict, drillVerdictText, trainingFileCheckFor } =
   await import(`../../ui/js/training.js?v=${version}`);
 const { parseToolCalls, TOOL_REGISTRY } =
   await import(`../../ui/js/tools.js?v=${version}`);
@@ -176,7 +176,7 @@ eq(DRILL_CHECKS_EASY.length, TRAINING_TASKS_EASY.length, 'every easy step has a 
     arg: JSON.parse(JSON.stringify(c.arg).replaceAll('training/training.txt', file)),
   }));
   const history = mapped(p1).concat(mapped(p2));
-  const v = drillVerdict(history, trainingFileMatchFor({ id: 'agent_drill' }));
+  const v = drillVerdict(history, trainingFileCheckFor({ id: 'agent_drill' }));
   eq(v.passes, 2, 'two passes are counted');
   eq(v.cleanPasses, 2, 'both passes still read clean');
   eq(v.failuresTotal, 0, 'pass 1 is not re-graded against pass 2\'s file');
