@@ -17,7 +17,7 @@
 // todo_write, and the drill that last worked stays in the run transcript and
 // the todo list. The operator ends the drill with Stop on the same button.
 
-import { store } from './store.js?v=469';
+import { store } from './store.js?v=470';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -984,7 +984,15 @@ export function trainingBlockFor(agent = null) {
     : complete
       ? `- YOUR recorded position: pass complete (${total}/${total}) — start a fresh pass at step 1.\n`
       : `- YOUR recorded position: ${step}/${total} — next is step ${step + 1}${next ? ` (${next.tool})` : ''}. Resume there; never restart the pass early.\n`;
+  // The pass file, up front. A model that rebuilt its todo list from the last
+  // pass copied that pass's path with it and wrote the old file; the path was
+  // buried in a rule halfway down this block, after the steps. Said first, and
+  // named as the only file for THIS pass, it is much harder to miss.
+  const fileLine = (frontier || browser || custom)
+    ? ''
+    : `YOUR FILE FOR THIS PASS: ${file} — every file step reads and writes exactly that path. A path from an earlier pass, or one copied out of your own todo list, is the WRONG file.\n`;
   const opening = `[TRAINING MODE — paced drill, ~50% request rate. Nothing else matters until training mode is switched off.]\n`
+    + fileLine
     + (frontier
       ? `Work ONLY these steps, in order, on the real desktop. Do not answer other questions, do not open unrelated programs, do not start other work — if asked anything else, finish the current drill step first and say the drill comes first.\n`
       : browser

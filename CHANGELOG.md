@@ -15,6 +15,10 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 📌 The pass file is the first thing the drill says *(`VERSION` 469 → 470, cache-buster v469 → v470)*
+
+*A model kept rebuilding its todo list from the previous pass and copying the old path along with it, so pass 2 wrote pass 1's file — and the drill's own reminder named the right file only at the END of the message, behind the block and the steps, where a model following its remembered plan never looked. The file now leads. `trainingBlockFor` opens with `YOUR FILE FOR THIS PASS: training/…-p2.txt — every file step reads and writes exactly that path. A path from an earlier pass, or one copied out of your own todo list, is the WRONG file.` before the step list, and the per-turn reminder before Continue opens with the path instead of appending it. Desktop, browser and custom drills get no file line, because they are not file drills. Tests pin it: the block leads with the pass file, the leading path follows the pass counter into pass 2, the previous pass's file is not offered up front, and a Frontier block carries no file line at all. JS 42 files / 1,413 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14.*
+
 ## 📁 Each pass writes its own file, and cannot borrow the last one *(`VERSION` 467 → 469, cache-buster v467 → v469)*
 
 *A drill grades the pass it is in, but until now it graded the file NAME loosely: the write step accepted any pass's file. A second pass that rebuilt its todo list from the first — path and all — wrote `…-p1.txt` again, overwrote pass 1's evidence, and still counted as clean. v467 made the report tell the truth about that; this release stops it happening, in two steps.*

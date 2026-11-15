@@ -467,6 +467,25 @@ ok(advancedBlock.includes('holds the page text'),
 ok(advancedBlock.includes(trainingFileFor({ id: 'agent_test' }, 'advanced')),
   'advanced block names the agent log file');
 ok(advancedBlock.includes('final todo_write'), 'advanced block names its completion step');
+// The pass file leads, and follows the pass counter. A model that rebuilt its
+// todo list from the previous pass copied that pass's path with it and wrote
+// the old file; the path used to sit in a rule midway down the block.
+{
+  const head = advancedBlock.split('\n').slice(0, 3).join('\n');
+  ok(head.includes(`YOUR FILE FOR THIS PASS: ${trainingFileFor({ id: 'agent_test' }, 'advanced')}`),
+    'the block leads with this pass\'s file, before the steps');
+  store.set('settings.trainingMode', { active: true, startedAt: 3, difficulty: 'advanced', pass: 2 });
+  const p2Block = trainingBlockFor({ id: 'agent_test' });
+  ok(p2Block.split('\n').slice(0, 3).join('\n')
+    .includes(`YOUR FILE FOR THIS PASS: ${trainingFileFor({ id: 'agent_test' }, 'advanced', 2)}`),
+    'the leading file follows the pass counter for the second pass');
+  ok(!p2Block.split('\n').slice(0, 3).join('\n').includes(trainingFileFor({ id: 'agent_test' }, 'advanced', 1)),
+    'the previous pass\'s file is not offered up front');
+  store.set('settings.trainingMode', { active: true, startedAt: 3, difficulty: 'frontier' });
+  ok(!trainingBlockFor({ id: 'agent_test' }).includes('YOUR FILE FOR THIS PASS'),
+    'a desktop drill is not handed a sandbox file');
+  store.set('settings.trainingMode', { active: true, startedAt: 3, difficulty: 'advanced' });
+}
 const advancedKickoff = trainingKickoffFor();
 ok(advancedKickoff.includes('8. todo_write:'), 'advanced kickoff lists all 8 steps');
 ok(advancedKickoff.includes('Advanced pass'), 'advanced kickoff names the pass length');

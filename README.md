@@ -133,10 +133,10 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v469** — current | Every training pass must write its own drill file, so one pass can't overwrite another's evidence. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v470** — current | The drill block and every Continue lead with this pass's file, so a model can't reuse the last pass's path. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v469** | Every training pass must write its own drill file, so one pass can't overwrite another's evidence. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v469) |
 | **v467** | The training report names the file each pass actually wrote, and lists every pass it counts. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v467) |
 | **v466** | The Advanced drill fetches the app's own page, so a public site can never fail a correct pass again. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v466) |
-| **v464** | The two-pass drill check from a terminal, and the report quotes the error each failed pass hit. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v464) |
 | **v463** | A two-pass drill self-test in Config, and the run report names the file every pass wrote. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v463) |
 
 Running an older copy? **Config → Updates → INSTALL UPDATE…** updates in place and keeps `storage/`.
@@ -1901,8 +1901,8 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📁 v469 — each pass writes its own file, and cannot borrow the last one
-*The write step used to accept any pass's file, so a second pass that copied its own earlier todo list wrote `…-p1.txt` again and overwrote pass 1's evidence. Grading now follows the pass counter, and the write itself is refused before the tool runs when it names another pass's file — the agent gets an ordinary error naming the right path, so it corrects in the next step and no file is touched. JS 42 files / 1,409 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 467 → 469, `APP_VERSION` 467 → 469.*
+### 📌 v470 — the pass file is the first thing the drill says
+*A model kept reusing the previous pass's todo list and copying its path, so pass 2 wrote pass 1's file. The drill block now opens with “YOUR FILE FOR THIS PASS: …” before the steps, and the reminder before each Continue leads with the same path instead of burying it at the end. Desktop, browser and custom drills are unchanged. JS 42 files / 1,413 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 469 → 470, `APP_VERSION` 469 → 470.*
 
 ---
 
