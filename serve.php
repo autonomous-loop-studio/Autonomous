@@ -21,7 +21,8 @@
 //         tooling the app never loads -- its .mjs sources are ordinary static
 //         text, so without this they were simply handed out. Do not relax this.
 //       - /api/* (except direct .php): the api/index.php front controller.
-//       - anywhere.php except /api/index.php: refused. Under php -S a requested
+//       - anywhere.php except /api/index.php and the two IDE entry points
+//         (ide/index.php, ide/api.php): refused. Under php -S a requested
 //         .php file would otherwise execute, including src/ classes.
 //       - real files: served with a content type plus the .htaccess cache rules
 //         (HTML never cached, JS/CSS revalidated).
@@ -300,7 +301,17 @@ foreach (explode('/', $uri) as $part) {
 }
 // Exact $uri, not the lower-cased copy: /API/index.php is a case variant of the
 // front controller, and serving it as a static file would print PHP source.
-if (substr($lowerUri, -4) === '.php' && $uri !== '/api/index.php') {
+// The IDE (ide/) has its own two entry points, allowlisted here for the same
+// reason api/index.php is: they are first-party PHP, everything else stays
+// refused (see the ide/README for why the IDE needs real PHP). Both the root
+// shape and the /router-mount shape are accepted, like the API below.
+$idePhp = false;
+$ideFile = '';
+if (preg_match('#^(?:/router)?/ide/(index|api)\.php$#', $uri, $ideM)) {
+    $idePhp = true;
+    $ideFile = '/ide/' . $ideM[1] . '.php';
+}
+if (substr($lowerUri, -4) === '.php' && $uri !== '/api/index.php' && !$idePhp) {
     http_response_code(403);
     header('Content-Type: text/plain');
     echo "Forbidden\n";
@@ -317,6 +328,18 @@ if (substr($lowerUri, -4) === '.php' && $uri !== '/api/index.php') {
 if ($uri === '/api' || strpos($uri, '/api/') === 0) {
     $_SERVER['SCRIPT_NAME'] = ($mountedAtRouter ? '/router' : '') . '/api/index.php';
     require $ROOT . '/api/index.php';
+    return true;
+}
+
+// 2b. The IDE app's own entry points (ide/index.php + ide/api.php). They need
+// PHP to run: index.php relaxes the X-Frame-Options header so the studio can
+// host it as a same-origin screen, and api.php is the IDE's file backend.
+// SCRIPT_NAME stays the browser-facing path so the IDE's relative fetches
+// (api.php) resolve under either mount; everything else under ide/ is static
+// and falls through to branch 3.
+if ($idePhp) {
+    $_SERVER['SCRIPT_NAME'] = $uri;
+    require $ROOT . $ideFile;
     return true;
 }
 

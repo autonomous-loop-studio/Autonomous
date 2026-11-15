@@ -18,9 +18,11 @@
  *
  * Current value and where the others go:
  *   * ui/index.html + index.html : <span id="appVersion"> and every ?v=
+ *   * ui/index.html + index.html : <html data-build="...">, which langs.js
+ *                                appends to the Prism vendor scripts it injects
  *   * every `from './x.js?v='`   : this number
  */
-export const APP_VERSION = 470;
+export const APP_VERSION = 474;
 
 class Store {
   constructor() {

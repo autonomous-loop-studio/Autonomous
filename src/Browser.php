@@ -417,9 +417,11 @@ class Browser
         $u = self::checkUrl($url);
         return self::withCdp(fn($c) => $c->navigate($u));
     }
+    /** One frame, JPEG. The panel reads `img` + `mime`; `png` stays for any
+     *  client written before the switch (it is simply absent now). */
     public static function screenshot()
     {
-        return ['png' => self::withCdp(fn($c) => $c->screenshot())];
+        return ['img' => self::withCdp(fn($c) => $c->screenshot()), 'mime' => 'image/jpeg'];
     }
     public static function click($x, $y)
     {

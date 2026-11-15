@@ -1,0 +1,14 @@
+# IDE .htaccess — this folder is also opened as a same-origin iframe by the
+# main app (the apps notch under the header). The root .htaccess stamps
+# X-Frame-Options: DENY on every response, which would block that iframe too.
+# SAMEORIGIN keeps the guard (no other site may embed the IDE) while letting
+# the studio host it as one of its screens. Per-directory merge runs the
+# child's Header directive after the parent's, so this set wins.
+<IfModule mod_headers.c>
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# The IDE is its own little app; its HTML must never be cached either.
+<FilesMatch "\.php$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+</FilesMatch>

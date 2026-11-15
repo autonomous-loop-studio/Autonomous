@@ -307,6 +307,10 @@
   justify-content: center;
   border: 2px solid var(--bg-secondary);
 }
+/* [hidden] has to win: an explicit `display` outranks the user-agent
+   `[hidden] { display: none }`, so the count badge sat on the bell at zero
+   notifications (an empty red dot) no matter what the JS said. */
+.notif-badge[hidden] { display: none; }
 
 .notif-dropdown {
   position: absolute;

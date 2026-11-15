@@ -17,7 +17,7 @@
                                  sidebar.js floats onto <body> (inline z-index,
                                  so it does not live in this ladder's CSS)
      1200   API Lab drawer       .lab-drawer
-     1250   built-in Browser     .browser-screen
+     1250   built-in Browser     .browser-screen  (ui/css/browser.css)
      1300   DIALOGS              .modal-bg, .modal-overlay   <-- this file
      2000   toasts + approvals   .toast-container, .approve-veil
      60000  API-locked banner

@@ -18,11 +18,14 @@ no cached asset changed, so it cannot report one.
 1. **Bump `VERSION`** — replace the number on its last line. Plain integer, only
    ever increasing, and never *below* `APP_VERSION` (a test fails if it is).
 2. **Bump `APP_VERSION` only if you touched anything under `ui/` or
-   `index.html`.** When you do, it must change in **three** places together, or a
-   browser mixes a new module with an old one:
+   `index.html`.** When you do, it must change in **four** places together, or
+   a browser mixes a new module with an old one:
    - the `APP_VERSION` constant in `ui/js/store.js`
    - every `?v=` module import under `ui/js/**`
    - the `<script>` / `<link>` tags in `index.html` and `ui/index.html`
+   - the `<html data-build="…">` attribute in `index.html` and `ui/index.html`
+     — not an asset tag, so the search below misses it, and it is the cache key
+     `langs.js` appends to the Prism vendor scripts it injects at runtime
 
    ```bash
    OLD=346 NEW=347
@@ -30,7 +33,8 @@ no cached asset changed, so it cannot report one.
    for f in $(grep -rl "v=$OLD" --include=*.js --include=*.html ui index.html); do
      sed -i "s/v=$OLD/v=$NEW/g" "$f"
    done
-   grep -ro "v=$OLD" --include=*.js --include=*.html ui index.html | wc -l   # must print 0
+   sed -i "s/data-build=\"$OLD\"/data-build=\"$NEW\"/" index.html ui/index.html
+   grep -ro "v=$OLD\|data-build=\"$OLD\"" --include=*.js --include=*.html ui index.html | wc -l   # must print 0
    ```
 
 3. **Add a [CHANGELOG](CHANGELOG.md) entry.** Say which numbers moved, and say

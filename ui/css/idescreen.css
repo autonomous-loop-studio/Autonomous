@@ -1,0 +1,67 @@
+/*
+ * Copyright 2026 M. Bryce Hudson
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* IDE screen — the studio-side host for ide/index.php.
+   Sits above the other full-window apps (routing chart is 400, its overlays
+   520), because it is a whole app, not a drawer. The iframe carries the IDE's
+   own theme system, so nothing inside is themed here. */
+
+.ide-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: none;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+.ide-screen.open { display: flex; }
+
+.ide-screen-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.ide-screen-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: var(--glow-cyan);
+}
+.ide-screen-title { font-size: 12px; letter-spacing: 0.16em; font-weight: 700; }
+.ide-screen-hint { font-size: 10px; color: var(--text-dim); }
+.ide-screen-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.ide-screen-btn:first-of-type { margin-left: auto; }
+.ide-screen-btn svg { width: 14px; height: 14px; }
+.ide-screen-btn:hover, .ide-screen-btn:focus-visible {
+  color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border-color: var(--border);
+  outline: none;
+}
+
+.ide-screen-frame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: var(--bg-primary);
+}

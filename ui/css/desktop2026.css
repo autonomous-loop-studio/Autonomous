@@ -238,10 +238,14 @@
      [hidden] rule, which is why switching the floor off used to do nothing. */
   html.d26 .d26-floor[hidden] { display: none; }
 
-  /* Node metrics card: the reference look, just rounder, with the light run. */
+  /* Node metrics card: the reference look, just rounder, with the light run.
+     Solid, always. It floats over the brightest part of the map, and the glass
+     treatment here is what let the floating floor read through the metrics. */
   html.d26 .t3d-popup {
     border-radius: 16px;
     --d26-c: var(--c, #00e5ff);
+    background-color: #05080d;
+    background-image: none;
   }
 
   html.d26 .t3d-popup::before {

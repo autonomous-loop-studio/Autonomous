@@ -223,9 +223,18 @@ class Cdp
         return ['url' => $j['url'] ?? '', 'title' => $j['title'] ?? ''];
     }
 
-    public function screenshot()
+    /**
+     * One frame of the page. JPEG (quality ~80) instead of PNG: the panel
+     * polls this every couple of seconds, and PNG of a photo-rich page is
+     * megabytes while the JPEG is a few hundred KB — the single biggest
+     * "the Browser screen is slow" win. Agents never consume screenshots
+     * (their tools are open/click/type/read/wait), so nothing else changes.
+     */
+    public function screenshot($format = 'jpeg', $quality = 80)
     {
-        $r = $this->send('Page.captureScreenshot', ['format' => 'png'], 30);
+        $params = ['format' => $format];
+        if ($format === 'jpeg') $params['quality'] = (int)$quality;
+        $r = $this->send('Page.captureScreenshot', $params, 30);
         return $r['data'] ?? '';
     }
 

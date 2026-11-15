@@ -30,10 +30,10 @@
 //    above the apps drop-down; panels tuck away while a node card is open
 //  - chat: drag-to-widen, expand-to-screen, adjustable background alpha
 
-import { store } from './store.js?v=470';
-import { persistence } from './persistence.js?v=470';
-import { planDrawer } from './drawerState.js?v=470';
-import { resolveIface, normalizeIface, IFACE_EVENT } from './ifaceMode.js?v=470';
+import { store } from './store.js?v=474';
+import { persistence } from './persistence.js?v=474';
+import { planDrawer } from './drawerState.js?v=474';
+import { resolveIface, normalizeIface, IFACE_EVENT } from './ifaceMode.js?v=474';
 
 const MQ = window.matchMedia('(min-width: 1025px)');
 const root = document.documentElement;
@@ -81,7 +81,7 @@ function ensureCss() {
   if (document.querySelector('link[data-d26]')) return;
   const l = document.createElement('link');
   l.rel = 'stylesheet';
-  l.href = 'ui/css/desktop2026.css?v=470';
+  l.href = 'ui/css/desktop2026.css?v=474';
   l.dataset.d26 = '1';
   document.head.appendChild(l);
 }
@@ -1096,7 +1096,14 @@ function injectChatControls() {
 
 // ------------------------------------------------------- the map floor
 function injectFloor() {
-  const host = document.querySelector('#rightPanel .right-panel-body');
+  // Hosted INSIDE the map's own stacking context. `.topology-container` is
+  // `isolation: isolate`, so a floor living beside it painted after the whole
+  // map subtree -- including the node card, which is how the screen-blended
+  // grid ended up drawn over an opaque card ("I can see the map through it").
+  // Inside, z-index 0 puts it over the canvas and under the card (z-index 20),
+  // which is what a floor under the map is supposed to look like.
+  const host = document.querySelector('#rightPanel .topology-container')
+    || document.querySelector('#rightPanel .right-panel-body');
   if (!host || host.querySelector('.d26-floor')) return;
   const C = 500;
   let rings = '';
