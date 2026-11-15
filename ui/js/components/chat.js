@@ -7,8 +7,8 @@
 // CHAT.JS — Chat panel controller
 // ============================================
 
-import { store } from '../store.js?v=463';
-import { K as STORAGE_K } from '../storage.js?v=463';
+import { store } from '../store.js?v=467';
+import { K as STORAGE_K } from '../storage.js?v=467';
 
 const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
 
@@ -17,29 +17,29 @@ const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
  * purpose: steering is a human override, not a licence to run unbounded.
  */
 const MAX_STEER_STEPS = 8;
-import { api, errText } from '../api.js?v=463';
-import { persistence } from '../persistence.js?v=463';
-import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=463';
-import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=463';
-import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=463';
-import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=463';
-import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=463';
-import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=463';
-import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=463';
-import { usageFor } from '../rateGovernor.js?v=463';
-import { trace } from '../trace.js?v=463';
-import { offerRebind } from './rebindOffer.js?v=463';
-import { latency } from '../latency.js?v=463';
-import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=463';
-import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=463';
-import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileMatchFor, trainingPassOf, trainingDifficulty } from '../training.js?v=463';
-import { SlashCommands } from '../slashCommands.js?v=463';
-import { parseRoute, routingHelp } from '../routing.js?v=463';
-import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=463';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=463';
-import { MessageRenderer, renderToolCalls } from './message.js?v=463';
-import { createAvatar } from './avatar.js?v=463';
-import * as comms from '../commsLog.js?v=463';
+import { api, errText } from '../api.js?v=467';
+import { persistence } from '../persistence.js?v=467';
+import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=467';
+import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=467';
+import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=467';
+import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=467';
+import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=467';
+import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=467';
+import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=467';
+import { usageFor } from '../rateGovernor.js?v=467';
+import { trace } from '../trace.js?v=467';
+import { offerRebind } from './rebindOffer.js?v=467';
+import { latency } from '../latency.js?v=467';
+import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=467';
+import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=467';
+import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileMatchFor, trainingPassOf, trainingDifficulty, drillPassFile } from '../training.js?v=467';
+import { SlashCommands } from '../slashCommands.js?v=467';
+import { parseRoute, routingHelp } from '../routing.js?v=467';
+import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=467';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=467';
+import { MessageRenderer, renderToolCalls } from './message.js?v=467';
+import { createAvatar } from './avatar.js?v=467';
+import * as comms from '../commsLog.js?v=467';
 
 /**
  * How long an agent may keep working on a single task.
@@ -1253,7 +1253,7 @@ _commitAgentReply(agent, result, live) {
     this._drillLog[agent.id] = history;
     const mode = store.get('settings.trainingMode') || {};
     const difficulty = trainingDifficulty(mode);
-    return this._publishDrill(agent, drillVerdict(history, trainingFileMatchFor(agent, difficulty), difficulty, mode.customSteps));
+    return this._publishDrill(agent, drillVerdict(history, trainingFileMatchFor(agent, difficulty), difficulty, mode.customSteps), history);
   }
 
   /**
@@ -1283,12 +1283,11 @@ _commitAgentReply(agent, result, live) {
    * same numbers. Deliberately not persisted: this is run state, and writing it
    * to localStorage after every tool call would be a disk write per second.
    */
-  _publishDrill(agent, verdict) {
+  _publishDrill(agent, verdict, history = []) {
     if (!verdict) return null;
     const map = { ...(store.get('trainingVerdicts') || {}) };
     map[agent.id] = { ...verdict, name: agent.name || 'Agent' };
     store.set('trainingVerdicts', map);
-    store.emit('training:verdict', { agentId: agent.id });
     const seen = Number((this._drillPasses || {})[agent.id] || 0);
     if (verdict.passes > seen) {
       this._drillPasses = this._drillPasses || {};
@@ -1310,7 +1309,10 @@ _commitAgentReply(agent, result, live) {
       const mine = Array.isArray(passLog[agent.id]) ? passLog[agent.id].slice(-40) : [];
       mine.push({
         pass: verdict.passes,
-        file: trainingFileNow(agent, trainingDifficulty(tm)),
+        // The file this pass wrote, from its records — not the file the counter
+        // has moved on to. A pass that wrote the previous pass's file is filed
+        // under that file, so the report never points at a file nobody wrote.
+        file: drillPassFile(history) || trainingFileNow(agent, trainingDifficulty(tm)),
         clean: !!verdict.clean,
         failures: Number(verdict.failures) || 0,
         // The error this pass hit first, quoted in the report: a step number
@@ -1336,6 +1338,13 @@ _commitAgentReply(agent, result, live) {
       store.set('settings.trainingMode', { ...tm, pass: trainingPassOf(tm) + 1 });
       persistence.set('settings', store.get('settings'));
     }
+    // Announced LAST, after this pass is in the log and the counter has moved.
+    // The listener stops a run that has reached its clean-pass target and builds
+    // the final report, and it reads the pass log to list each pass's file — so
+    // emitting this first rendered a report with the counter's two passes and
+    // only the previous pass's line, the last pass missing from the very screen
+    // that was meant to prove it.
+    store.emit('training:verdict', { agentId: agent.id });
     return verdict;
   }
 
@@ -1344,7 +1353,8 @@ _commitAgentReply(agent, result, live) {
     if (!isTrainingActive()) return null;
     const mode = store.get('settings.trainingMode') || {};
     const difficulty = trainingDifficulty(mode);
-    return this._publishDrill(agent, drillVerdict(this._drillHistoryFor(agent.id, log), trainingFileMatchFor(agent, difficulty), difficulty, mode.customSteps));
+    const history = this._drillHistoryFor(agent.id, log);
+    return this._publishDrill(agent, drillVerdict(history, trainingFileMatchFor(agent, difficulty), difficulty, mode.customSteps), history);
   }
 
   /**

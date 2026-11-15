@@ -133,11 +133,11 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v466** — current | The Advanced drill fetches the app's own page, so a public site can never fail a correct pass again. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v467** — current | The training report counts the passes that ran, not a replayed commit of one. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v466** | The Advanced drill fetches the app's own page, so a public site can never fail a correct pass again. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v466) |
 | **v465** | The Advanced drill grades the page example.com actually serves, so a correct save stops being counted as a failure. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v465) |
 | **v464** | The two-pass drill check from a terminal, and the report quotes the error each failed pass hit. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v464) |
 | **v463** | A two-pass drill self-test in Config, and the run report names the file every pass wrote. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v463) |
-| **v462** | Every training pass writes its own drill file, so a second pass never starts on the first pass's bytes. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v462) |
 
 Running an older copy? **Config → Updates → INSTALL UPDATE…** updates in place and keeps `storage/`.
 Every release, including the open-testing builds before these two, is listed on
@@ -1901,8 +1901,8 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📄 v466 — the Advanced drill owns its page, and the drill fixtures are audited
-*The Advanced steps no longer fetch a page nobody here controls: step 3 fetches `http://drill.local/advanced.html`, which the app serves from `ui/drill/advanced.html` on disk — no network, so it always answers, and only a flat `*.html` name in `ui/drill/` is answered while loopback and LAN fetches stay refused. The page carries `DRILL-PAGE-v1`, which the write and read-back steps grade and a new test pins to the grader, so a correct save cannot be graded failed again. The rest of the drills were audited the same way: Frontier's typing step no longer matches PHP's exact sentence, and the remaining checks grade the drill's own file, its own taught strings or the app's own page. JS 42 files / 1,395 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 465 → 466, `APP_VERSION` 462 → 463.*
+### 🧮 v467 — the report names the file each pass actually wrote
+*A live Advanced run graded 8/8 clean and its report listed pass 2 against `…-p2.txt` — a file no pass wrote. Pass 2 had really run; it copied its own earlier todo list, wrote `…-p1.txt` again, and the report filed it under the name the pass counter had already moved to. Each pass is now filed under the file its own records name, so the report points at a file you can actually open, and it lists every pass it counts instead of stopping one short. JS 42 files / 1,400 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 466 → 467, `APP_VERSION` 463 → 467.*
 
 ---
 

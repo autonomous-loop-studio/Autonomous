@@ -17,7 +17,7 @@
 // todo_write, and the drill that last worked stays in the run transcript and
 // the todo list. The operator ends the drill with Stop on the same button.
 
-import { store } from './store.js?v=463';
+import { store } from './store.js?v=467';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -528,6 +528,32 @@ function trainingEnding(difficulty, total = 0) {
     return `After each passed step, update your todo list; the final step completes the ${total}-step Custom pass — the mode then sends Continue again, so begin a fresh pass instead of waiting.`;
   }
   return 'After each passed step, update your todo list; the summary goes in the last todo item; the final show_file ends the PASS — the mode then sends Continue again, so begin a fresh pass instead of waiting.';
+}
+
+/**
+ * The file a pass actually wrote, read from the tool records rather than from
+ * the pass counter.
+ *
+ * These are not the same thing, and assuming they were is what made a live run's
+ * report lie: pass 1 wrote `…-p1.txt`, pass 2 ran and wrote `…-p1.txt` AGAIN (it
+ * rebuilt its todo list from the first pass's and copied that path), and the
+ * report then filed pass 2 under `…-p2.txt` — the name the counter had already
+ * moved to — so the summary pointed at a file no pass had written while the real
+ * one had been overwritten. The last write_file in the history is the pass that
+ * just finished, which is the file an operator should open.
+ *
+ * Empty when the pass wrote nothing (Frontier, Browser and Custom drills have no
+ * file step); callers fall back to the expected path.
+ */
+export function drillPassFile(history) {
+  const list = Array.isArray(history) ? history : [];
+  for (let i = list.length - 1; i >= 0; i--) {
+    const call = list[i];
+    const arg = call && call.tool === 'write_file' && call.arg && typeof call.arg === 'object' ? call.arg : null;
+    const path = arg && typeof arg.path === 'string' ? arg.path.trim() : '';
+    if (path) return path;
+  }
+  return '';
 }
 
 /**

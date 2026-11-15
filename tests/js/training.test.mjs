@@ -32,6 +32,7 @@ const {
   trainingFileFor, trainingFileNow, trainingFileMatchFor, trainingPassOf, formatPassLine, isTrainingActive, trainingStepList, trainingBlockFor, trainingKickoffFor, trainingResumeFor,
   shouldResumeDrill, reachedCleanTarget, drillStripTitle, trainingDifficulty, trainingTasksFor, trainingChecksFor, showsEveryPass,
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
+  drillPassFile,
 } = await import(`../../ui/js/training.js?v=${version}`);
 const trainingModule = await import(`../../ui/js/training.js?v=${version}`);
 const { store } = await import(`../../ui/js/store.js?v=${version}`);
@@ -313,6 +314,25 @@ const stubWrite = advancedCalls.map(c => (c.tool === 'write_file'
 const stubVerdict = drillVerdict(stubWrite, advFile, 'advanced');
 ok(!stubVerdict.complete && stubVerdict.failures >= 1,
   'a placeholder save still fails the write step');
+
+// The report must name the file the pass wrote, not the file the counter has
+// moved on to. In a live run pass 2 genuinely ran and rewrote `…-p1.txt` (it
+// rebuilt its todo list from the first pass's, path and all), and the report
+// filed it under `…-p2.txt` — the counter's next name — pointing the operator at
+// a file no pass had written while the real one was overwritten.
+{
+  const file2 = advFile.replace(/-p1\.txt$/, '-p2.txt');
+  eq(drillPassFile(advancedCalls), advFile, 'a pass that wrote p1 is filed under p1');
+  eq(drillPassFile([...advancedCalls, ...advancedCalls]), advFile,
+    'a second pass that rewrote p1 is filed under p1, not under the next pass number');
+  const second = advancedCalls.map(c => (['write_file', 'read_file', 'show_file'].includes(c.tool)
+    ? { ...c, arg: { ...c.arg, path: file2 } }
+    : c));
+  eq(drillPassFile([...advancedCalls, ...second]), file2, 'a pass that wrote p2 is filed under p2');
+  eq(drillPassFile([]), '', 'a drill with no write step reports no file');
+  eq(drillPassFile([{ tool: 'show_file', arg: { path: advFile } }]), '',
+    'showing a file is not writing it, so it cannot name the pass file');
+}
 
 const frontierCalls = [
   { tool: 'think', arg: 'plan', status: 'ok' },
