@@ -7,15 +7,58 @@
 // MESSAGE.JS — Message renderer
 // ============================================
 
-import { esc, formatTime, copyToClipboard, asText, reasoningOpenByDefault, isReasoningEcho, toolValueText, renderLimitFor, toolCallSummary } from '../utils.js?v=474';
-import { renderMarkdown } from '../markdown.js?v=474';
-import { CodeBlock, splitFences } from './codeBlock.js?v=474';
-import { createAvatar } from './avatar.js?v=474';
-import { store } from '../store.js?v=474';
-import { persistence } from '../persistence.js?v=474';
-import { audio, AudioController } from '../audio.js?v=474';
+import { esc, formatTime, copyToClipboard, asText, reasoningOpenByDefault, isReasoningEcho, toolValueText, renderLimitFor, toolCallSummary } from '../utils.js?v=477';
+import { renderMarkdown } from '../markdown.js?v=477';
+import { CodeBlock, splitFences } from './codeBlock.js?v=477';
+import { createAvatar } from './avatar.js?v=477';
+import { store } from '../store.js?v=477';
+import { persistence } from '../persistence.js?v=477';
+import { audio, AudioController } from '../audio.js?v=477';
+import { numberedRows } from './lineNumbers.js?v=477';
 
 
+
+/**
+ * Fill a tool box with its text and, when there is more than one line, a
+ * number per line. These boxes wrap (`pre-wrap`), so the number rides on the
+ * line rather than in a column that would drift out of step.
+ */
+function fillCodeBox(pre, text) {
+  const rows = numberedRows(text);
+  if (!rows) {
+    pre.textContent = text;
+    return;
+  }
+  pre.classList.add('with-lines');
+  pre.appendChild(rows);
+}
+
+// Tools that change a file. Their call gets one chip: open the result in the IDE.
+const WRITE_TOOLS = new Set(['write_file', 'append_file', 'edit_file', 'str_replace',
+  'insert_at', 'apply_patch']);
+
+/** The path a file-writing call touched, or '' when it is not one of those. */
+function toolWrotePath(call) {
+  if (!call || !WRITE_TOOLS.has(String(call.tool || ''))) return '';
+  const result = call.result || {};
+  const arg = call.arg || {};
+  const path = result.path || (Array.isArray(result.paths) ? result.paths[0] : '') || arg.path || arg.file;
+  return path ? String(path) : '';
+}
+
+/** "Open in IDE" — the studio shows the IDE screen and asks it for the path. */
+function ideChip(path) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'tool-ide-chip';
+  btn.title = `Open ${path} in the IDE`;
+  btn.textContent = 'Open in IDE';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent('idescreen:open', { detail: { path } }));
+  });
+  return btn;
+}
 
 function toolPreview(arg) {
   if (arg === undefined || arg === null) return '';
@@ -117,7 +160,7 @@ function renderToolCall(call, opts) {
     label.textContent = 'Arguments';
     const pre = document.createElement('pre');
     pre.className = 'tool-call-value';
-    pre.textContent = argText;
+    fillCodeBox(pre, argText);
     body.appendChild(label);
     body.appendChild(pre);
   }
@@ -133,7 +176,7 @@ function renderToolCall(call, opts) {
     label.textContent = 'Result';
     const pre = document.createElement('pre');
     pre.className = 'tool-call-value';
-    pre.textContent = resultText;
+    fillCodeBox(pre, resultText);
     body.appendChild(label);
     body.appendChild(pre);
   } else if (status.label === 'running') {
@@ -147,6 +190,9 @@ function renderToolCall(call, opts) {
     wait.textContent = 'Waiting for your approval.';
     body.appendChild(wait);
   }
+
+  const touched = toolWrotePath(call);
+  if (touched) body.appendChild(ideChip(touched));
 
   if (body.childNodes.length) details.appendChild(body);
   return details;

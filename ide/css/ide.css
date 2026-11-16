@@ -867,3 +867,45 @@ body.tree-hidden .ide-side, body.tree-hidden .ide-gutter { display: none; }
   .ed-hl, .ed-input { font-size: 12.5px; }
   .ed-lines { font-size: 12.5px; }
 }
+
+/* ---------- "changed on disk" strip ---------- */
+/* Shown when a file you have open was written by something else while you had
+   unsaved edits. It never replaces the buffer on its own: the human picks. */
+.ide-conflict {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 176, 0, 0.12);
+  border-bottom: 1px solid rgba(255, 176, 0, 0.35);
+  color: #ffd479;
+  font-size: 11px;
+}
+
+/* `hidden` has to win: an explicit `display` outranks the user-agent rule. */
+.ide-conflict[hidden] { display: none; }
+
+.ide-conflict-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ide-conflict-btn {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid rgba(255, 176, 0, 0.45);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ide-conflict-btn:hover { background: rgba(255, 176, 0, 0.18); }
+
+/* A tab whose file changed underneath it, for a couple of seconds. */
+.ide-tab.changed .tab-name { color: #ffd479; }

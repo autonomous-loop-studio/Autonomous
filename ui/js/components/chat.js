@@ -7,8 +7,8 @@
 // CHAT.JS — Chat panel controller
 // ============================================
 
-import { store } from '../store.js?v=474';
-import { K as STORAGE_K } from '../storage.js?v=474';
+import { store } from '../store.js?v=477';
+import { K as STORAGE_K } from '../storage.js?v=477';
 
 const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
 
@@ -17,29 +17,29 @@ const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
  * purpose: steering is a human override, not a licence to run unbounded.
  */
 const MAX_STEER_STEPS = 8;
-import { api, errText } from '../api.js?v=474';
-import { persistence } from '../persistence.js?v=474';
-import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=474';
-import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=474';
-import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=474';
-import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=474';
-import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=474';
-import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=474';
-import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=474';
-import { usageFor } from '../rateGovernor.js?v=474';
-import { trace } from '../trace.js?v=474';
-import { offerRebind } from './rebindOffer.js?v=474';
-import { latency } from '../latency.js?v=474';
-import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=474';
-import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=474';
-import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal } from '../training.js?v=474';
-import { SlashCommands } from '../slashCommands.js?v=474';
-import { parseRoute, routingHelp } from '../routing.js?v=474';
-import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=474';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=474';
-import { MessageRenderer, renderToolCalls } from './message.js?v=474';
-import { createAvatar } from './avatar.js?v=474';
-import * as comms from '../commsLog.js?v=474';
+import { api, errText } from '../api.js?v=477';
+import { persistence } from '../persistence.js?v=477';
+import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=477';
+import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=477';
+import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=477';
+import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=477';
+import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=477';
+import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=477';
+import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=477';
+import { usageFor } from '../rateGovernor.js?v=477';
+import { trace } from '../trace.js?v=477';
+import { offerRebind } from './rebindOffer.js?v=477';
+import { latency } from '../latency.js?v=477';
+import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=477';
+import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=477';
+import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal } from '../training.js?v=477';
+import { SlashCommands } from '../slashCommands.js?v=477';
+import { parseRoute, routingHelp } from '../routing.js?v=477';
+import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=477';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=477';
+import { MessageRenderer, renderToolCalls } from './message.js?v=477';
+import { createAvatar } from './avatar.js?v=477';
+import * as comms from '../commsLog.js?v=477';
 
 /**
  * How long an agent may keep working on a single task.
@@ -1947,6 +1947,16 @@ _makeLiveNode(agent) {
     // and they simply aren't listed (and the API refuses them anyway).
     if (await browserEnabled()) {
       enabled = Array.from(new Set(enabled.concat(BROWSER_TOOLS)));
+    }
+
+    // The IDE tools ride along while the IDE drill is armed, the same way the
+    // browser tools do while that feature is on: the drill asks a model to
+    // write through the operator's editor, so a model cannot be in the dark
+    // about the tools it is being graded on. Outside the drill they are off —
+    // write_file already does the job for ordinary work, and every advertised
+    // tool costs prompt tokens on every request.
+    if (isTrainingActive() && trainingDifficulty(store.get('settings.trainingMode') || {}) === 'ide') {
+      enabled = Array.from(new Set(enabled.concat(IDE_TOOLS)));
     }
 
     // The operator's deny list is a policy, not a UI hint: a tool struck out

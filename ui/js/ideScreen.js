@@ -17,7 +17,7 @@
 // the user already configured ("ide:auth"), so the file API unlocks without
 // the token being pasted a second time. The token never travels in a URL.
 
-import { store } from './store.js?v=474';
+import { store } from './store.js?v=477';
 
 export class IdeScreen {
   constructor() {
@@ -50,7 +50,7 @@ export class IdeScreen {
         <button class="ide-screen-btn" id="ideScreenClose" title="Close (Esc)">✕</button>
       </div>
       <iframe class="ide-screen-frame" id="ideScreenFrame" title="IDE"
-        src="ide/index.php?v=474" allow="clipboard-write"></iframe>
+        src="ide/index.php?v=477" allow="clipboard-write"></iframe>
     `;
     this.el = el;
     this.frame = el.querySelector('#ideScreenFrame');
@@ -62,18 +62,43 @@ export class IdeScreen {
       if (e.key === 'Escape' && this.open) this.close();
     });
     el.querySelector('#ideScreenPop').addEventListener('click', () => {
-      window.open('ide/index.php?v=474', '_blank', 'noopener');
+      window.open('ide/index.php?v=477', '_blank', 'noopener');
       this.close();
     });
     // Answer the handshake every time the frame (re)loads — the IDE re-asks
     // on boot, and if the user set the token only after opening this screen,
     // the reload the IDE's lock screen triggers still gets it.
-    this.frame.addEventListener('load', () => this._sendToken());
+    this.frame.addEventListener('load', () => { this._sendToken(); this._sendOpen(); });
     window.addEventListener('message', (e) => {
       if (e.origin !== window.location.origin) return;
       if (e.source !== this.frame?.contentWindow) return;
-      if (e.data?.type === 'ide:hello') this._sendToken();
+      if (e.data?.type === 'ide:hello') { this._sendToken(); this._sendOpen(); }
     });
+  }
+
+  /**
+   * Open a file in the IDE from anywhere in the studio — the "Open in IDE" chip
+   * under a file-writing tool call. Shows the screen and asks the iframe to open
+   * the path; the request is held until the frame is listening, because a
+   * message posted before the IDE's own script runs is simply lost.
+   */
+  openPath(path) {
+    if (!path) return;
+    this.pendingOpen = String(path);
+    if (!this.open) this.show();
+    else this._sendOpen();
+  }
+
+  _sendOpen() {
+    if (!this.pendingOpen || !this.frame?.contentWindow) return;
+    const path = this.pendingOpen;
+    this.pendingOpen = '';
+    try {
+      this.frame.contentWindow.postMessage(
+        { type: 'ide:open', path },
+        window.location.origin,
+      );
+    } catch { /* frame not ready; the next load or hello retries */ }
   }
 
   _sendToken() {
@@ -94,6 +119,7 @@ export class IdeScreen {
     // A fresh token (typed into Config while this screen was closed) reaches
     // the IDE as soon as it opens.
     setTimeout(() => this._sendToken(), 50);
+    setTimeout(() => this._sendOpen(), 400);
   }
 
   close() {

@@ -31,11 +31,11 @@
 //
 // Nothing here runs arbitrary code or shells out.
 
-import { store } from './store.js?v=474';
-import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=474';
-import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=474';
-import { settingFor } from './agentConfig.js?v=474';
-import { trace } from './trace.js?v=474';
+import { store } from './store.js?v=477';
+import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=477';
+import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=477';
+import { settingFor } from './agentConfig.js?v=477';
+import { trace } from './trace.js?v=477';
 
 const NOTES_KEY = 'router_notes';
 const CUSTOM_TOOL_NAME_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -477,6 +477,41 @@ export const TOOL_REGISTRY = {
     run: () => 'browser tools are not bound yet',
   },
 
+  // --- IDE: the operator's built-in editor, on the SAME write path ---
+  // These go through ide/api.php, which records a revision exactly as a save
+  // from the editor does. That is the point of them: an agent that writes with
+  // write_file writes to the same disk but sends no revision, so an editor tab
+  // showing the file would keep stale bytes and the operator would have no way
+  // to tell. These are advertised while the IDE drill is armed (see chat.js).
+  ide_open: {
+    label: 'ide_open',
+    arg: '{"path":"ui/js/app.js","line":12}',
+    describe: 'Open a file in the operator\u2019s built-in IDE screen, optionally at a line. It changes '
+      + 'nothing on disk \u2014 use it when the operator should SEE the file being discussed.',
+    run: () => 'ide tools are not bound yet',
+  },
+  ide_read: {
+    label: 'ide_read',
+    arg: '{"path":"ui/js/app.js"}',
+    describe: 'Read a file through the IDE\u2019s own API and return it with line numbers.',
+    run: () => 'ide tools are not bound yet',
+  },
+  ide_write: {
+    label: 'ide_write',
+    arg: '{"path":"notes.txt","content":"..."}',
+    describe: 'Create or overwrite a whole file through the IDE\u2019s write path. The operator\u2019s open '
+      + 'editor reloads it, and the change is recorded as a revision.',
+    run: () => 'ide tools are not bound yet',
+  },
+  ide_edit: {
+    label: 'ide_edit',
+    arg: '{"path":"notes.txt","old_string":"a","new_string":"b"}',
+    describe: 'Exact search-and-replace through the IDE\u2019s write path. old_string must be unique '
+      + 'unless replace_all is true; an empty or ambiguous old_string is refused.',
+    needsApproval: true,
+    run: () => 'ide tools are not bound yet',
+  },
+
   // --- Desktop programs: real windows on this machine ---
   // NOT the built-in browser screen. The operator configures a list in
   // Config → Permissions → Shell access → Programs and names it there; the agent may only
@@ -719,6 +754,9 @@ export function policyNameFor(name) {
  * simply not listed, and the API refuses them anyway.
  */
 export const BROWSER_TOOLS = ['browser_open', 'browser_click', 'browser_type', 'browser_read', 'browser_wait'];
+
+/** The IDE tools, advertised while the IDE drill is armed (chat.js). */
+export const IDE_TOOLS = ['ide_write', 'ide_open', 'ide_read', 'ide_edit'];
 
 const BUILTIN_TOOL_NAMES = new Set(Object.keys(TOOL_REGISTRY));
 
@@ -1448,6 +1486,81 @@ export function bindSandboxTools(api) {
         at: Date.now(), args, result: out, agentId: from || null,
       });
     }
+  };
+
+  // IDE: the operator's editor. ide/api.php holds the token gate, the path jail
+  // and the revision log, so these stay thin on purpose — a promise wrapped
+  // round a door that already refuses is how two write paths get invented.
+  const ideRequest = async (query, body) => {
+    const read = key => { try { return store.get(key) || ''; } catch { return ''; } };
+    const headers = {};
+    const routerToken = read('settings.routerToken');
+    const sandboxToken = read('settings.sandboxToken');
+    if (routerToken) headers['X-Router-Token'] = routerToken;
+    if (sandboxToken) headers['X-Sandbox-Token'] = sandboxToken;
+    if (body) headers['Content-Type'] = 'application/json';
+    let res;
+    try {
+      res = await fetch(`ide/api.php${query}`, {
+        method: body ? 'POST' : 'GET', headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (e) {
+      throw new Error(`IDE unreachable (${e.message})`);
+    }
+    let data = null;
+    try { data = await res.json(); } catch { /* non-JSON: the status is the story */ }
+    if (!res.ok) throw new Error((data && (data.detail || data.error)) || `HTTP ${res.status}`);
+    return data || {};
+  };
+
+  const ideArg = (arg) => {
+    if (arg && typeof arg === 'object' && !Array.isArray(arg)) return arg;
+    const s = String(arg || '').trim();
+    return s ? { path: s } : {};
+  };
+
+  TOOL_REGISTRY.ide_open.run = async (arg) => {
+    const a = ideArg(arg);
+    const path = String(a.path || a.file || '').trim();
+    if (!path) return 'error: ide_open needs a "path"';
+    const line = Math.max(0, Math.floor(Number(a.line) || 0));
+    // The screen listens for this (ui/js/app.js). Nothing on disk changes.
+    window.dispatchEvent(new CustomEvent('idescreen:open', { detail: { path, line } }));
+    return `Opened ${path}${line ? ` at line ${line}` : ''} in the IDE \u2014 the operator can see it now.`;
+  };
+
+  TOOL_REGISTRY.ide_read.run = async (arg) => {
+    const path = String(ideArg(arg).path || '').trim();
+    if (!path) return 'error: ide_read needs a "path"';
+    const data = await ideRequest(`?action=read&path=${encodeURIComponent(path)}`);
+    const text = String(data.content ?? '');
+    if (!text) return `(${data.path || path} is empty)`;
+    const numbered = text.split(/\r\n|\r|\n/).map((l, i) => `${i + 1}| ${l}`).join('\n');
+    return numbered.length > MAX_DISPLAY_CHARS ? `${numbered.slice(0, MAX_DISPLAY_CHARS)}\n\u2026 (truncated)` : numbered;
+  };
+
+  TOOL_REGISTRY.ide_write.run = async (arg) => {
+    const a = ideArg(arg);
+    const path = String(a.path || '').trim();
+    if (!path) return 'error: ide_write needs a "path"';
+    if (typeof a.content !== 'string') return 'error: ide_write needs "content" (the whole file)';
+    const res = await ideRequest('', { action: 'write', path, content: a.content, actor: 'agent' });
+    return `Wrote ${res.path || path} (${Number(res.size) || a.content.length} bytes, revision ${res.rev})`;
+  };
+
+  TOOL_REGISTRY.ide_edit.run = async (arg) => {
+    const a = ideArg(arg);
+    const path = String(a.path || '').trim();
+    if (!path) return 'error: ide_edit needs a "path"';
+    const oldString = typeof a.old_string === 'string' ? a.old_string : '';
+    if (!oldString) return 'error: ide_edit needs "old_string" \u2014 it is an exact match, never an append';
+    const newString = typeof a.new_string === 'string' ? a.new_string : '';
+    const res = await ideRequest('', {
+      action: 'edit', path, old_string: oldString, new_string: newString,
+      replace_all: a.replace_all === true || String(a.replace_all).toLowerCase() === 'true',
+    });
+    return `Edited ${res.path || path}: ${Number(res.replaced) || 1} replacement(s), revision ${res.rev}`;
   };
 
   // Browser: the built-in Chrome/Edge screen. Gated server-side (403 when the

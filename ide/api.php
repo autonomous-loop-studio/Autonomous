@@ -41,6 +41,7 @@ require_once __DIR__ . '/../autoload.php';
 
 use Src\Config;
 use Src\Sandbox;
+use Src\Workspace;
 
 const MAX_READ_BYTES  = 3145728;   // 3 MB of text is plenty for one editor tab
 const MAX_WRITE_BYTES = 10485760;  // 10 MB written in one request
@@ -115,67 +116,18 @@ function out(array $payload): void {
  *     checking the deepest existing ancestor for not-yet-created files).
  */
 function resolve_path(string $rel, bool $mustExist = true): string {
-    global $ROOT;
-
-    $rel = str_replace('\\', '/', trim($rel));
-    if ($rel === '') {
-        $rel = '.';
-    }
-    if (preg_match('#^(?:[A-Za-z]:|//|\\\\|/)#', $rel)) {
-        fail(400, 'absolute paths are refused');
-    }
-
-    $parts = [];
-    foreach (explode('/', $rel) as $seg) {
-        if ($seg === '' || $seg === '.') {
-            continue;
+    try {
+        return Workspace::resolve($rel, $mustExist);
+    } catch (RuntimeException $e) {
+        $msg = $e->getMessage();
+        if (strpos($msg, 'not found') === 0) {
+            fail(404, 'not found');
         }
-        if ($seg === '..') {
-            if (!$parts) {
-                fail(400, 'path escapes the workspace');
-            }
-            array_pop($parts);
-            continue;
+        if (strpos($msg, 'not accessible') !== false) {
+            fail(403, $msg);
         }
-        $low = strtolower($seg);
-        if (in_array($low, DENIED_DIRS, true)) {
-            fail(403, "folder not accessible: {$seg}");
-        }
-        if ($low[0] === '.' && !preg_match('/^[.][A-Za-z0-9_.-]+$/', $low)) {
-            // Dot-directories other than ordinary project dotfiles (.github,
-            // .vscode, ...) are refused; a bare "." segment cannot reach here.
-            fail(403, "folder not accessible: {$seg}");
-        }
-        $parts[] = $seg;
+        fail(400, $msg);
     }
-    if (!$parts) {
-        $parts = ['.'];  // the workspace root itself, for list/info
-    }
-
-    $path = $ROOT . '/' . implode('/', $parts);
-    $real = realpath($path);
-    if ($real !== false) {
-        if (strcasecmp(substr($real, 0, strlen($ROOT)), $ROOT) !== 0) {
-            fail(400, 'path escapes the workspace');
-        }
-        return $real;
-    }
-    if ($mustExist) {
-        fail(404, 'not found');
-    }
-    // Creating something new: contain the nearest existing ancestor instead.
-    $parent = $path;
-    while (($real = @realpath($parent)) === false) {
-        $up = dirname($parent);
-        if ($up === $parent) {
-            fail(400, 'path escapes the workspace');
-        }
-        $parent = $up;
-    }
-    if (strcasecmp(substr($real, 0, strlen($ROOT)), $ROOT) !== 0) {
-        fail(400, 'path escapes the workspace');
-    }
-    return $path;
 }
 
 function is_binary_bytes(string $bytes): bool {
@@ -221,6 +173,18 @@ switch ($action) {
                 'results' => MAX_RESULTS,
             ],
             'tokenRequired' => !empty($sandboxCfg['require_token']),
+        ]);
+    }
+
+    // ---- what happened since a revision --------------------------------
+    // The IDE polls this while it is visible; the chat reads the same lines to
+    // say who edited a file. One counter for the whole tree, so "since" is
+    // exact rather than a timestamp guess.
+    case 'revs': {
+        $since = max(0, (int)($_GET['since'] ?? 0));
+        out([
+            'rev' => Workspace::currentRev(),
+            'changes' => Workspace::changes($since),
         ]);
     }
 
@@ -430,11 +394,22 @@ switch ($action) {
         if (!is_dir($dir) && !@mkdir($dir, 0777, true)) {
             fail(403, 'cannot create folder');
         }
-        if (@file_put_contents($path, $content, LOCK_EX) === false) {
-            fail(403, 'cannot write file');
+        try {
+            // Who wrote it. The IDE's own saves are the user; a tool call made on
+            // the agent's behalf says so, so the log can tell "I did that" from
+            // "an agent did that" — which is the whole reason the actor is
+            // recorded. It is a label, not an authorization: the token gate and
+            // the path jail have already decided whether this request may write
+            // at all, and the only value that changes anything is the badge the
+            // IDE draws next to the change.
+            $actor = (($input['actor'] ?? '') === 'agent') ? 'agent' : 'user';
+            $saved = Workspace::write($path, $content, $actor);
+        } catch (RuntimeException $e) {
+            fail(403, $e->getMessage());
         }
-        out(['ok' => true, 'path' => ltrim(str_replace('\\', '/', substr($path, strlen($ROOT))), '/'),
-             'size' => strlen($content)]);
+        // The revision is the IDE's own "did anything change" signal: a save
+        // here and an agent's write_file look identical to both readers.
+        out(['ok' => true, 'path' => $saved['path'], 'size' => $saved['size'], 'rev' => $saved['rev']]);
     }
 
     // ---- new file / new folder -------------------------------------------
@@ -457,6 +432,8 @@ switch ($action) {
                 fail(403, 'cannot create file');
             }
         }
+        Workspace::noteSafe($path, $type === 'dir' ? 'mkdir' : 'create', 'user',
+            $type === 'dir' ? 0 : strlen((string)($input['content'] ?? '')));
         out(['ok' => true]);
     }
 
@@ -481,15 +458,61 @@ switch ($action) {
             }
             @unlink($from);
         }
+        Workspace::noteSafe($to, 'rename', 'user', is_file($to) ? (int)@filesize($to) : 0, [
+            'from' => (string)($input['from'] ?? ''),
+        ]);
         out(['ok' => true]);
     }
 
     // ---- delete --------------------------------------------------------------
+    // ---- exact replacement, on the same write path as a save -----------
+    // The agent-facing twin of Sandbox::strReplace, but through the IDE's door,
+    // so the operator's open editor sees the change at its next poll instead of
+    // quietly drifting from what the agent believes is on disk. Ambiguity is
+    // refused rather than guessed: an old_string that appears more than once is
+    // almost always the wrong anchor.
+    case 'edit': {
+        $path = resolve_path((string)($input['path'] ?? ''));
+        $old = (string)($input['old_string'] ?? '');
+        $new = (string)($input['new_string'] ?? '');
+        if (!is_file($path)) {
+            fail(404, 'not a file');
+        }
+        if ($old === '') {
+            fail(400, 'old_string is empty');
+        }
+        $raw = (string)@file_get_contents($path);
+        $count = substr_count($raw, $old);
+        if ($count === 0) {
+            fail(409, 'old_string not found', 'Nothing in ' . basename($path) . ' matches that text.');
+        }
+        $all = !empty($input['replace_all']);
+        if ($count > 1 && !$all) {
+            fail(409, 'old_string is not unique', 'It appears ' . $count . ' times; add more context or pass replace_all.');
+        }
+        $updated = $all ? str_replace($old, $new, $raw)
+            : substr_replace($raw, $new, (int)strpos($raw, $old), strlen($old));
+        if (strlen($updated) > MAX_WRITE_BYTES) {
+            fail(413, 'too large to save');
+        }
+        try {
+            $saved = Workspace::write($path, $updated, 'agent');
+        } catch (\RuntimeException $e) {
+            fail(403, $e->getMessage());
+        }
+        out([
+            'ok' => true,
+            'path' => $saved['path'],
+            'replaced' => $all ? $count : 1,
+            'rev' => $saved['rev'],
+        ]);
+    }
     case 'delete': {
         $path = resolve_path((string)($input['path'] ?? ''));
         if (!file_exists($path)) {
             fail(404, 'not found');
         }
+        Workspace::noteSafe($path, 'delete', 'user');
         if (is_dir($path)) {
             if (!rrmdir($path)) {
                 fail(403, 'cannot delete folder (is something holding it open?)');

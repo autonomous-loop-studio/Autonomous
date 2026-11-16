@@ -2699,6 +2699,8 @@ class Sandbox {
         $append = in_array($mode, ['append', 'a'], true);
         $bytes = @file_put_contents($full, $content, $append ? FILE_APPEND : 0);
         if ($bytes === false) { throw new \RuntimeException("write_file: cannot write $full"); }
+        // One write path: the IDE polls this revision and the chat shows it.
+        \Src\Workspace::noteSafe($full, $append ? 'append' : 'write', 'agent', (int)$bytes);
         return [
             'path' => $full,
             'bytes_written' => $bytes,
@@ -2744,6 +2746,7 @@ class Sandbox {
         }
         $bytes = @file_put_contents($full, $updated);
         if ($bytes === false) { throw new \RuntimeException("str_replace: cannot write $full"); }
+        \Src\Workspace::noteSafe($full, 'edit', 'agent', (int)$bytes);
         return ['path' => $full, 'replaced' => $all ? $count : 1, 'bytes' => $bytes];
     }
 
@@ -2771,6 +2774,7 @@ class Sandbox {
         array_splice($lines, $line, 0, $block);
         $bytes = @file_put_contents($full, implode($eol, $lines));
         if ($bytes === false) { throw new \RuntimeException("insert: cannot write $full"); }
+        \Src\Workspace::noteSafe($full, 'insert', 'agent', (int)$bytes);
         return ['path' => $full, 'inserted_after' => $line, 'lines' => count($lines), 'bytes' => $bytes];
     }
 
@@ -2842,6 +2846,7 @@ class Sandbox {
                 $ensureDir($full);
                 $body = $content ? implode("\n", $content) . "\n" : '';
                 if (@file_put_contents($full, $body) === false) { throw new \RuntimeException("apply_patch: cannot write $rel"); }
+                \Src\Workspace::noteSafe($full, 'write', 'agent');
                 $results[] = ['op' => 'add', 'path' => $full, 'lines' => count($content)];
                 continue;
             }
@@ -2852,6 +2857,7 @@ class Sandbox {
                 $full = $jailTo($rel);
                 if (!is_file($full)) { throw new \RuntimeException("apply_patch: delete failed, not a file: $rel"); }
                 if (!@unlink($full)) { throw new \RuntimeException("apply_patch: cannot delete $rel"); }
+                \Src\Workspace::noteSafe($full, 'delete', 'agent');
                 $results[] = ['op' => 'delete', 'path' => $full];
                 continue;
             }
@@ -2886,6 +2892,7 @@ class Sandbox {
                     $ensureDir($dest);
                 }
                 if (@file_put_contents($dest, $updated) === false) { throw new \RuntimeException("apply_patch: cannot write $rel"); }
+                \Src\Workspace::noteSafe($dest, 'write', 'agent');
                 if ($dest !== $full) { @unlink($full); }
                 $results[] = [
                     'op' => 'update',

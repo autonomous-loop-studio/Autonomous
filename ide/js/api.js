@@ -107,6 +107,9 @@ export const ideApi = {
   setToken,
 
   info: () => call(`${API}${qs({ action: 'info' })}`),
+  // What changed on disk since a revision. The IDE polls this while it is
+  // visible; the answer is what makes an agent's write appear in the editor.
+  revs: (since = 0) => call(`${API}${qs({ action: 'revs', since })}`),
   list: (path) => call(`${API}${qs({ action: 'list', path })}`),
   read: (path) => call(`${API}${qs({ action: 'read', path })}`),
   search: (q, { path = '', caseSensitive = false, regex = false } = {}) =>

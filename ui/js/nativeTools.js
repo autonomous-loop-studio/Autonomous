@@ -139,6 +139,21 @@ export const TOOL_SCHEMAS = {
   }, ['text']),
   browser_read: obj(),
   browser_wait: obj({ ms: num('Milliseconds to wait for the page to settle') }),
+  ide_open: obj({
+    path: str('File to open in the operator\u2019s IDE screen'),
+    line: num('Line to jump to (optional)'),
+  }, ['path']),
+  ide_read: obj({ path: str('File to read through the IDE API') }, ['path']),
+  ide_write: obj({
+    path: str('File to create or overwrite'),
+    content: str('Whole file content'),
+  }, ['path', 'content']),
+  ide_edit: obj({
+    path: str('File to edit'),
+    old_string: str('Exact text to match (must be unique unless replace_all)'),
+    new_string: str('Replacement text'),
+    replace_all: bool('Replace every occurrence'),
+  }, ['path', 'old_string', 'new_string']),
   declare_goal_complete: obj({ summary: str('What was finished') }, ['summary']),
   show_file: obj({
     path: str('File to show the operator'),

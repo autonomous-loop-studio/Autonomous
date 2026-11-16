@@ -7,9 +7,9 @@
 // TOPOLOGY.JS — SVG network graph
 // ============================================
 
-import { store } from '../store.js?v=474';
-import { api } from '../api.js?v=474';
-import { esc, agentCode } from '../utils.js?v=474';
+import { store } from '../store.js?v=477';
+import { api } from '../api.js?v=477';
+import { esc, agentCode } from '../utils.js?v=477';
 
 // How long a hop stays bright while in flight, and how long it then lingers as
 // a faint record of the exchange before it fades out and is dropped.

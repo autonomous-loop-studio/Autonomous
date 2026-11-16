@@ -17,7 +17,7 @@
 // todo_write, and the drill that last worked stays in the run transcript and
 // the todo list. The operator ends the drill with Stop on the same button.
 
-import { store } from './store.js?v=474';
+import { store } from './store.js?v=477';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -65,7 +65,8 @@ export function normalizeCustomSteps(raw) {
 }
 
 /** The leading folder of a drill file: the hard drill's, or Advanced's log. */
-const drillStem = (difficulty) => (difficulty === 'advanced' ? 'advanced' : 'training');
+const drillStem = (difficulty) => (difficulty === 'advanced' ? 'advanced'
+  : difficulty === 'ide' ? 'ide' : 'training');
 
 /** The agent part of a drill file name: short, filesystem-safe, stable. */
 const drillSlug = (agent) => {
@@ -297,6 +298,29 @@ export const TRAINING_TASKS_BROWSER = [
   { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the browser opened the local drill page, “training” was typed, and “Hello, training” was read back. This completes the 9-step Browser pass.' },
 ];
 
+/**
+ * The IDE drill: the shared write path, exercised by the agent itself.
+ *
+ * Every earlier file drill proves a model can write to the sandbox. This one
+ * proves a model can write through the SAME door an operator's editor uses, so
+ * the two never diverge: `ide_write` creates the file, `ide_open` puts it in
+ * front of the operator, `ide_read` reads it back through the IDE's own API,
+ * and `ide_edit` changes it by exact replacement. Nothing here touches the
+ * sandbox tools on purpose — substituting `write_file` for `ide_write` is the
+ * failure this mode exists to catch, and its checks would pass on content that
+ * never reached the editor.
+ */
+export const TRAINING_TASKS_IDE = [
+  { tool: 'think', label: 'Think one sentence about the IDE drill: every file step goes through the operator\u2019s editor, not the sandbox tools.' },
+  { tool: 'todo_write', label: 'Write the IDE steps as your todo list, first one in_progress.' },
+  { tool: 'ide_write', label: 'Create the file with ide_write: {"path":"{file}","content":"ide drill"}. That is the only content the later steps edit.' },
+  { tool: 'ide_open', label: 'Open the same file in the operator\u2019s IDE with ide_open: {"path":"{file}"} — it appears in their editor.' },
+  { tool: 'ide_read', label: 'Read it back with ide_read: {"path":"{file}"} and confirm it says “ide drill”.' },
+  { tool: 'ide_edit', label: 'Change it through the IDE with ide_edit: old_string “ide drill”, new_string “ide drill (edited)”. Exact replacement, never an append.' },
+  { tool: 'ide_read', label: 'Read it again with ide_read: {"path":"{file}"} and confirm it now says “ide drill (edited)”.' },
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the file was created, opened, read, edited and read back through the IDE. This completes the 8-step IDE pass.' },
+];
+
 /** Terms used by the checks below, tolerant of how a model spells an argument. */
 const argText = (call) => {
   try { return JSON.stringify((call && call.arg) ?? '').toLowerCase(); }
@@ -428,6 +452,27 @@ export const DRILL_CHECKS_BROWSER = [
   null,                                                                     // 9 todo_write
 ];
 
+/**
+ * IDE checks, aligned with TRAINING_TASKS_IDE.
+ *
+ * The tool name for each step is enforced by the harness (a call to the wrong
+ * tool is off-step), so these grade only what the call and its result say: the
+ * path is this pass's file, the created content is the marker, the edit is
+ * anchored on that marker, and the second read really shows the edit.
+ */
+export const DRILL_CHECKS_IDE = [
+  null,                                                                     // 1 think
+  null,                                                                     // 2 todo_write
+  (c, file) => namesTrainingFile(c, file) && /"content"\s*:\s*"ide drill/.test(argText(c)), // 3 ide_write
+  (c, file) => namesTrainingFile(c, file),                                  // 4 ide_open
+  (c, file) => namesTrainingFile(c, file) && /ide drill/.test(resultText(c)), // 5 ide_read back
+  (c, file) => namesTrainingFile(c, file)
+    && /"old_string"\s*:\s*"[^"]*ide drill/.test(argText(c))
+    && /"new_string"\s*:\s*"[^"]*edited/.test(argText(c)),                // 6 ide_edit
+  (c, file) => namesTrainingFile(c, file) && /edited/.test(resultText(c)),   // 7 ide_read again
+  null,                                                                     // 8 todo_write
+];
+
 /** The saved custom table, or the current one when no explicit list is given. */
 function customStepsFrom(steps) {
   return normalizeCustomSteps(steps === undefined ? store.get('settings.trainingMode.customSteps') : steps);
@@ -450,7 +495,7 @@ function customChecksFrom(steps) {
 /** Which drill a mode setting selects. Unknown/legacy settings are Hard. */
 export function trainingDifficulty(mode) {
   const d = String((mode && mode.difficulty) || '').toLowerCase();
-  return ['easy', 'hard', 'advanced', 'frontier', 'browser', 'custom'].includes(d) ? d : 'hard';
+  return ['easy', 'hard', 'advanced', 'frontier', 'browser', 'ide', 'custom'].includes(d) ? d : 'hard';
 }
 
 /** The ordered task table for a difficulty. */
@@ -459,6 +504,7 @@ export function trainingTasksFor(difficulty, customSteps = undefined) {
   if (difficulty === 'advanced') return TRAINING_TASKS_ADVANCED;
   if (difficulty === 'frontier') return TRAINING_TASKS_FRONTIER;
   if (difficulty === 'browser') return TRAINING_TASKS_BROWSER;
+  if (difficulty === 'ide') return TRAINING_TASKS_IDE;
   if (difficulty === 'custom') return customTasksFrom(customSteps);
   return TRAINING_TASKS;
 }
@@ -469,6 +515,7 @@ export function trainingChecksFor(difficulty, customSteps = undefined) {
   if (difficulty === 'advanced') return DRILL_CHECKS_ADVANCED;
   if (difficulty === 'frontier') return DRILL_CHECKS_FRONTIER;
   if (difficulty === 'browser') return DRILL_CHECKS_BROWSER;
+  if (difficulty === 'ide') return DRILL_CHECKS_IDE;
   if (difficulty === 'custom') return customChecksFrom(customSteps);
   return DRILL_CHECKS;
 }
@@ -493,6 +540,10 @@ const DIFFICULTY_INFO = {
   browser: {
     label: 'Browser',
     hint: 'Browser runs a 9-step local-page demo in a visible window: open the page, read it, type “training”, click “Say hello”, wait, then read “Hello, training” back. Needs Config → Labs → Browser and Chrome or Edge.',
+  },
+  ide: {
+    label: 'IDE',
+    hint: 'IDE runs an 8-step shared-editor demo: ide_write creates your drill file, ide_open puts it in the operator\u2019s editor, ide_read proves it, ide_edit changes it by exact replacement, and a second ide_read proves the change. One write path, so the open editor updates live.',
   },
   custom: {
     label: 'Custom',
@@ -523,6 +574,9 @@ function trainingEnding(difficulty, total = 0) {
   }
   if (difficulty === 'browser') {
     return 'After each passed step, update your todo list; the final todo_write completes the 9-step Browser pass — the mode then sends Continue again, so begin a fresh pass instead of waiting. The local drill page stays open; do not navigate to other sites.';
+  }
+  if (difficulty === 'ide') {
+    return 'After each passed step, update your todo list; the final todo_write completes the 8-step IDE pass — the mode then sends Continue again, so begin a fresh pass instead of waiting. The file stays open in the operator\u2019s editor; leave it open.';
   }
   if (difficulty === 'custom') {
     return `After each passed step, update your todo list; the final step completes the ${total}-step Custom pass — the mode then sends Continue again, so begin a fresh pass instead of waiting.`;
@@ -578,7 +632,12 @@ export function drillPassFile(history) {
   const list = Array.isArray(history) ? history : [];
   for (let i = list.length - 1; i >= 0; i--) {
     const call = list[i];
-    const arg = call && call.tool === 'write_file' && call.arg && typeof call.arg === 'object' ? call.arg : null;
+    // Every tool that CREATES the pass file counts, not just the sandbox one:
+    // the IDE drill writes with ide_write, and reading only write_file left
+    // that drill's report falling back to the counter's file — the NEXT pass's
+    // name — so the report pointed at a file the pass never wrote.
+    const arg = call && call.arg && typeof call.arg === 'object'
+      && (call.tool === 'write_file' || call.tool === 'ide_write') ? call.arg : null;
     const path = arg && typeof arg.path === 'string' ? arg.path.trim() : '';
     if (path) return path;
   }
@@ -828,7 +887,8 @@ export function drillStripTitle(mode) {
   const base = difficulty === 'easy' ? 'easy drill'
     : difficulty === 'advanced' ? 'advanced drill'
       : difficulty === 'frontier' ? 'frontier drill'
-        : difficulty === 'custom' ? 'custom drill' : 'drill';
+        : difficulty === 'ide' ? 'ide drill'
+          : difficulty === 'custom' ? 'custom drill' : 'drill';
   if (!n) return base;
   return `${base} \u00b7 stop at ${n} clean pass${n === 1 ? '' : 'es'}`;
 }
@@ -971,6 +1031,7 @@ export function trainingBlockFor(agent = null) {
   const tasks = trainingTasksFor(difficulty, mode.customSteps);
   const frontier = difficulty === 'frontier';
   const browser = difficulty === 'browser';
+  const ide = difficulty === 'ide';
   const custom = difficulty === 'custom';
   const file = fileForSteps(agent, difficulty);
   const steps = tasks.map((t, i) => `${i + 1}. ${t.tool}: ${fillBrowser(fillPage(fillFile(t.label, agent, difficulty)))}${t.expect ? ` (must include “${t.expect}”)` : ''}`).join('\n');
@@ -995,8 +1056,10 @@ export function trainingBlockFor(agent = null) {
     + fileLine
     + (frontier
       ? `Work ONLY these steps, in order, on the real desktop. Do not answer other questions, do not open unrelated programs, do not start other work — if asked anything else, finish the current drill step first and say the drill comes first.\n`
-      : browser
-        ? `Work ONLY these steps, in order, in the built-in browser. Do not answer other questions, do not open unrelated pages, do not start other work — if asked anything else, finish the current drill step first and say the drill comes first.\n`
+      : ide
+        ? `Work ONLY these steps, in order, through the built-in IDE. Do not answer other questions, do not touch other files, do not start other work \u2014 if asked anything else, finish the current drill step first and say the drill comes first.\n`
+        : browser
+          ? `Work ONLY these steps, in order, in the built-in browser. Do not answer other questions, do not open unrelated pages, do not start other work — if asked anything else, finish the current drill step first and say the drill comes first.\n`
         : custom
           ? `Work ONLY these steps, in order, wherever each one directs. Do not answer other questions, do not start unrelated work — if asked anything else, finish the current drill step first and say the drill comes first.\n`
           : `Work ONLY these steps, in order, inside the "training" sandbox folder. Do not answer other questions, do not touch other files, do not start other work — if asked anything else, finish the current drill step first and say the drill comes first.\n`)
@@ -1064,6 +1127,21 @@ export function trainingBlockFor(agent = null) {
       + continueRule
       + stopRule
       + `- After each passed step, update your todo_write list so what worked is written down. The final todo_write is the summary; the local drill page stays open.`;
+  }
+
+  if (difficulty === 'ide') {
+    return opening
+      + oneStep
+      + retry
+      + `- Every file step goes through the IDE's own API: ide_write, ide_open, ide_read, ide_edit. Do not substitute write_file, read_file or edit_file \u2014 they are a different door to the same disk, and this drill exists to prove the IDE door works.\n`
+      + `- ide_write takes the WHOLE file as "content"; ide_edit is exact search-and-replace, so old_string is the text you match and new_string replaces it. An empty or ambiguous old_string is refused, so a bare append can never pass.\n`
+      + `- The file is ${file}, in the app's own tree rather than the sandbox: pass exactly that path, relative, with forward slashes.\n`
+      + `- ide_open only shows the file in the operator's editor and changes nothing on disk. The operator may be watching it, so open the real file before you edit it.\n`
+      + positionRule
+      + `- ide_edit asks the operator for approval. That pause is normal: wait for it, do not work around it, and do not narrate the call as text.\n`
+      + continueRule
+      + stopRule
+      + `- After each passed step, update your todo_write list so what worked is written down. The final todo_write is the summary; the file stays open in the IDE.`;
   }
 
   if (difficulty === 'advanced') {

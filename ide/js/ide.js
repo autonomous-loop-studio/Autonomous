@@ -19,10 +19,11 @@
 // explorer, and the parent window can hand us the token any time via
 // postMessage (see api.js).
 
-import { ideApi, ApiError } from './api.js?v=474';
-import { Editor } from './editor.js?v=474';
-import { Tree } from './tree.js?v=474';
-import { detectLang, langLabel } from './highlight.js?v=474';
+import { ideApi, ApiError } from './api.js?v=477';
+import { Editor } from './editor.js?v=477';
+import { Tree } from './tree.js?v=477';
+import { detectLang, langLabel } from './highlight.js?v=477';
+import { planChanges, describeChange } from './changes.js?v=477';
 
 const $ = (id) => document.getElementById(id);
 
@@ -259,6 +260,10 @@ async function saveDoc(doc, quiet = false) {
   doc.text = editor.value || doc.text;
   try {
     const res = await ideApi.write(doc.path, doc.text);
+    // Our own save is recorded in the same rev log the poller reads, so note it
+    // here or it comes straight back as "changed on disk" a second later.
+    recentSaves.set(doc.path, Date.now());
+    sinceRev = Math.max(sinceRev, Number(res.rev) || 0);
     doc.modified = false;
     tree?.markDirty(doc.path, false);
     renderStatus();
@@ -583,6 +588,133 @@ window.addEventListener('beforeunload', (e) => {
   }
 });
 
+// ------------------------------------------------- watching the disk ----
+// The IDE and the agents share one write path (src/Workspace.php): every save,
+// write, patch, rename and delete appends a revision. This poll is what turns
+// that into "the agent's edit appeared in my editor".
+//
+// Polling and not a socket, on purpose: this app runs under `php -S` too, which
+// is single-threaded — one held-open stream would block the very request the
+// agent is waiting on. 1.5s of a small JSON document costs nothing and behaves
+// the same on php -S, Apache and nginx.
+const WATCH_MS = 1500;
+let sinceRev = 0;
+let watchTimer = 0;
+let watching = false;
+let primed = false;                 // first answer only sets the baseline
+const recentSaves = new Map();      // path -> when we saved it ourselves
+let conflictPath = '';
+
+function startWatching() {
+  if (watching) return;
+  watching = true;
+  pollChanges();
+}
+
+async function pollChanges() {
+  clearTimeout(watchTimer);
+  watchTimer = setTimeout(pollChanges, WATCH_MS);
+  if (document.hidden) return;          // a hidden editor asks for nothing
+  if (!$('ideLock').hidden) return;    // locked: the token is the problem, not the files
+  try {
+    const res = await ideApi.revs(sinceRev);
+    const next = Number(res.rev) || 0;
+    const changes = (res.changes || []).filter((c) => {
+      const at = recentSaves.get(c.path);
+      return !(at && Date.now() - at < 4000);   // our own save echoing back
+    });
+    if (!primed) {
+      // Everything already in the log belongs to before this editor was open.
+      primed = true;
+      sinceRev = Math.max(sinceRev, next);
+      return;
+    }
+    sinceRev = Math.max(sinceRev, next);
+    if (changes.length) await applyDiskChanges(changes);
+  } catch {
+    // A poll that fails is not worth a toast every 1.5 seconds — and a 401 has
+    // already raised the lock screen through the API client.
+  }
+}
+
+async function applyDiskChanges(changes) {
+  const plan = planChanges(tabs, changes, new Set());
+  let touched = false;
+  for (const path of plan.reload) {
+    // eslint-disable-next-line no-await-in-loop
+    const done = await reloadDoc(path);
+    if (done) { flashTab(path, 'changed on disk'); touched = true; }
+  }
+  if (plan.conflict.length) {
+    showConflict(plan.conflict[plan.conflict.length - 1]);
+    touched = true;
+  }
+  if (touched || plan.ignore.length) tree?.refreshAll();
+}
+
+/** Re-read a clean buffer from disk, keeping the caret where the user left it. */
+async function reloadDoc(path) {
+  const doc = tabs.find((t) => t.path === path);
+  if (!doc || doc.modified) return false;
+  let data;
+  try {
+    data = await ideApi.read(path);
+  } catch {
+    return false;    // deleted under us: leave the buffer, the tree will drop it
+  }
+  const active = tabs[activeIdx] === doc;
+  const keepTop = active ? editor.scroll.scrollTop : doc.scrollTop;
+  const keepSel = active ? editor.input.selectionStart : doc.selStart;
+  if (active) editor.detach();
+  doc.text = data.content || '';
+  doc.modified = false;
+  doc.scrollTop = keepTop;
+  doc.selStart = Math.min(keepSel || 0, doc.text.length);
+  if (active) editor.attach(doc);
+  tree?.markDirty(path, false);
+  renderStatus();
+  return true;
+}
+
+/** Mark a tab as changed for a moment and say so once. */
+function flashTab(path, why) {
+  const i = tabs.findIndex((t) => t.path === path);
+  const el = i >= 0 ? $('tabs').children[i] : null;
+  if (el) {
+    el.classList.add('changed');
+    setTimeout(() => el.classList.remove('changed'), 2200);
+  }
+  toast(`${path} — ${why}`);
+}
+
+function showConflict(change) {
+  conflictPath = change.path;
+  $('conflictText').textContent = `${describeChange(change)} — you have unsaved edits`;
+  $('conflictBar').hidden = false;
+}
+
+function hideConflict() {
+  conflictPath = '';
+  $('conflictBar').hidden = true;
+}
+
+$('conflictLoad').addEventListener('click', async () => {
+  const path = conflictPath;
+  hideConflict();
+  if (!path) return;
+  const doc = tabs.find((t) => t.path === path);
+  if (!doc) return;
+  // Theirs wins only because the human just said so: drop the dirty flag first
+  // or reloadDoc() (correctly) refuses to touch it.
+  doc.modified = false;
+  if (await reloadDoc(path)) toast('loaded the version on disk');
+});
+$('conflictKeep').addEventListener('click', () => {
+  hideConflict();
+  toast('kept your version — saving will overwrite theirs');
+});
+$('conflictHide').addEventListener('click', hideConflict);
+
 // ------------------------------------------------------------- boot ----
 let booted = false;
 
@@ -596,6 +728,7 @@ async function boot() {
     $('wsName').textContent = info.name || 'workspace';
     initTree();
     $('ideLock').hidden = true;
+    startWatching();
   } catch (err) {
     if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
       showLock(err);
@@ -631,6 +764,11 @@ $('lockToken').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('lo
 window.addEventListener('message', (e) => {
   if (e.origin !== window.location.origin) return;
   const msg = e.data;
+  // The studio asks us to open a file — a chat tool-call's "Open in IDE".
+  if (msg && msg.type === 'ide:open' && msg.path) {
+    openFile(String(msg.path), { line: Number(msg.line) || 0 });
+    return;
+  }
   if (msg && msg.type === 'ide:auth' && msg.token) {
     ideApi.setToken(msg.token);
     if (!$('ideLock').hidden || !booted) {

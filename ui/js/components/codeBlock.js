@@ -17,9 +17,10 @@
 //
 // Logo is the local SVG when we have one, otherwise a colored letter badge.
 
-import { copyToClipboard, downloadFile } from '../utils.js?v=474';
-import { metaFor, extFor, logoFor, detectLang, highlightElement } from '../langs.js?v=474';
-import { highlightSyntax } from '../utils.js?v=474';
+import { copyToClipboard, downloadFile } from '../utils.js?v=477';
+import { metaFor, extFor, logoFor, detectLang, highlightElement } from '../langs.js?v=477';
+import { highlightSyntax } from '../utils.js?v=477';
+import { gutterFor } from './lineNumbers.js?v=477';
 
 const ICON_COPY = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5"/></svg>';
 const ICON_DOWNLOAD = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v7.5M8 9.5 5 6.5M8 9.5l3-3M2.5 13.5h11"/></svg>';
@@ -130,6 +131,13 @@ export class CodeBlock {
     // ---- body: highlighted source ----
     const pre = document.createElement('pre');
     pre.className = 'code-block-pre';
+    // Numbers go in before the code and outside it, so Prism rewrites the code
+    // and the gutter is untouched. One number per line, no wrapping here.
+    const gutter = gutterFor(this.rawCode);
+    if (gutter) {
+      pre.classList.add('with-gutter');
+      pre.appendChild(gutter);
+    }
     const code = document.createElement('code');
     code.className = `language-${this.tag}`;
     // Instant fallback paint, upgraded to Prism when it finishes loading.

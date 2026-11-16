@@ -31,7 +31,7 @@ header("Content-Security-Policy: frame-ancestors 'self'");
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="dark">
   <title>IDE // Autonomous Loop Studio</title>
-  <link rel="stylesheet" href="css/ide.css?v=474">
+  <link rel="stylesheet" href="css/ide.css?v=477">
 </head>
 <body>
   <!-- Token lock: shown when the API answers 401 and no token is known -->
@@ -79,6 +79,14 @@ header("Content-Security-Policy: frame-ancestors 'self'");
         </button>
       </div>
     </header>
+
+    <!-- One strip for "this changed on disk while you have unsaved edits" -->
+    <div class="ide-conflict" id="conflictBar" hidden>
+      <span class="ide-conflict-text" id="conflictText"></span>
+      <button class="ide-conflict-btn" id="conflictLoad" type="button">Load theirs</button>
+      <button class="ide-conflict-btn" id="conflictKeep" type="button">Keep mine</button>
+      <button class="ide-conflict-btn" id="conflictHide" type="button" title="Dismiss">✕</button>
+    </div>
 
     <!-- ============ body: tree | editor ============ -->
     <div class="ide-body">
@@ -207,6 +215,6 @@ header("Content-Security-Policy: frame-ancestors 'self'");
 
   <div class="ide-toasts" id="toasts"></div>
 
-  <script type="module" src="js/ide.js?v=474"></script>
+  <script type="module" src="js/ide.js?v=477"></script>
 </body>
 </html>

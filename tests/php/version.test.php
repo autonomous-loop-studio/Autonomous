@@ -159,17 +159,26 @@ ok($otherPages >= 1,
 // What a browser is handed: both entry pages plus everything under ui/. A
 // `?v=` that is computed (`?v=' + APP_VERSION`, `` ?v=${...} ``) is skipped on
 // purpose -- there is no number in the file to disagree.
+// `ide/` is its own page with its own cache-buster, and it was the place this
+// test could not see: the studio opened `ide/index.php?v=475` while the IDE's
+// own CSS and modules still said 474, so a browser kept yesterday's editor.
 $assets = array($root . '/index.html');
-$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/ui', FilesystemIterator::SKIP_DOTS));
-foreach ($it as $file) {
-    $name = strtolower($file->getFilename());
-    if (!preg_match('/\.(js|css|html|php)$/', $name)) {
+foreach (array('ui', 'ide') as $tree) {
+    $dir = $root . '/' . $tree;
+    if (!is_dir($dir)) {
         continue;
     }
-    if (strpos(str_replace('\\', '/', (string) $file), '/ui/vendor/') !== false) {
-        continue;   // third-party, no cache-buster of ours in it
+    $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+    foreach ($it as $file) {
+        $name = strtolower($file->getFilename());
+        if (!preg_match('/\.(js|css|html|php)$/', $name)) {
+            continue;
+        }
+        if (strpos(str_replace('\\', '/', (string) $file), '/ui/vendor/') !== false) {
+            continue;   // third-party, no cache-buster of ours in it
+        }
+        $assets[] = (string) $file;
     }
-    $assets[] = (string) $file;
 }
 sort($assets);
 

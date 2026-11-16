@@ -286,6 +286,92 @@
   color: var(--text-dim);
 }
 
+/* One chip under a file-writing tool call: hand the result to the IDE. */
+.tool-ide-chip {
+  margin-top: 6px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  color: var(--accent-cyan);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.tool-ide-chip:hover {
+  background: rgba(0, 229, 255, 0.16);
+  border-color: rgba(0, 229, 255, 0.45);
+}
+
+/* ---------- Line numbers ---------- */
+/* A box that does NOT wrap (code blocks) numbers itself from a column beside
+   the code. `position: sticky; left: 0` keeps that column in view while the
+   code scrolls sideways, and because the two share font-size and line-height,
+   every number sits on its own line. */
+.code-block-pre.with-gutter {
+  display: flex;
+  align-items: flex-start;
+  padding-left: 0;
+}
+
+.cb-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 9px 0 12px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.62;
+  color: var(--text-dim);
+  text-align: right;
+  /* Opaque on purpose: the code scrolls underneath this column. */
+  background: #05090f;
+  border-right: 1px solid var(--border);
+  user-select: none;
+}
+
+.code-block-pre.with-gutter code {
+  flex: 0 0 auto;
+  padding-left: 11px;
+}
+
+/* A box that DOES wrap (tool arguments and results) numbers each line inside
+   itself instead: a column would drift out of step as soon as a line wrapped. */
+.tool-call-value.with-lines {
+  padding: 6px 0;
+  white-space: normal;
+  word-break: normal;
+}
+
+.ln-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 0 8px;
+}
+
+.ln-n {
+  flex: 0 0 auto;
+  min-width: 2.1em;
+  text-align: right;
+  color: var(--text-dim);
+  opacity: 0.75;
+  user-select: none;
+}
+
+.ln-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ---------- Streaming reply (painted as tokens arrive) ---------- */
 .message-streaming .stream-text {
   white-space: pre-wrap;

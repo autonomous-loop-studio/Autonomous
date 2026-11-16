@@ -29,6 +29,7 @@ const {
   TRAINING_THROTTLE, TRAINING_DIR, TRAINING_FILE, TRAINING_FILE_TOKEN, TRAINING_TASKS, TRAINING_TASKS_EASY,
   TRAINING_TASKS_ADVANCED, TRAINING_TASKS_FRONTIER, TRAINING_TASKS_BROWSER, DRILL_CHECKS_ADVANCED,
   DRILL_CHECKS_FRONTIER, DRILL_CHECKS_BROWSER, TRAINING_BROWSER_TOKEN, TRAINING_PAGE_URL,
+  TRAINING_TASKS_IDE, DRILL_CHECKS_IDE,
   trainingFileFor, trainingFileNow, trainingFileCheckFor, trainingPassOf, formatPassLine, isTrainingActive, trainingStepList, trainingBlockFor, trainingKickoffFor, trainingResumeFor,
   shouldResumeDrill, reachedCleanTarget, drillStripTitle, trainingDifficulty, trainingTasksFor, trainingChecksFor, showsEveryPass,
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
@@ -643,6 +644,39 @@ store.set('settings.trainingMode', { active: true, startedAt: 1 });
 const on = limitsFor(ENDPOINT, 'k-half-check');
 eq(on.rpm, Math.max(1, Math.floor(off.rpm * TRAINING_THROTTLE)), 'armed ceiling is ~50% of disarmed');
 ok(off.rpm > 0 && plain.rpm === off.rpm, 'disarmed ceiling is untouched');
+store.set('settings.trainingMode', { active: false, startedAt: 0 });
+
+// --- The IDE drill: the shared write path, exercised by the agent ----------
+// The point of this mode is the DOOR, not the content. A model that answered it
+// with write_file would put the same bytes on the same disk and sail past a
+// content-only check while never touching the editor, so the table is pinned
+// step by step and every check is asked directly.
+const ideAgent = { id: 'agent_test' };
+const ideFile = trainingFileFor(ideAgent, 'ide', 1);
+const ideCall = (tool, arg, result) => ({ tool, arg, result });
+eq(DRILL_CHECKS_IDE.length, TRAINING_TASKS_IDE.length, 'IDE tasks and checks stay index-aligned');
+eq(trainingDifficulty({ difficulty: 'ide' }), 'ide', 'ide is a mode the settings can select');
+eq(trainingDifficultyLabel('ide'), 'IDE', 'the IDE drill has its own label');
+eq(trainingTasksFor('ide'), TRAINING_TASKS_IDE, 'tasksFor returns the IDE steps');
+eq(trainingChecksFor('ide'), DRILL_CHECKS_IDE, 'checksFor returns the IDE checks');
+ok(trainingTasksFor('ide').length === 8, 'the IDE drill is eight steps');
+ok(ideFile.startsWith(`${TRAINING_DIR}/ide-`), 'the IDE drill keeps its own file family, so no drill grades another\'s file');
+eq(drillPassFile([{ tool: 'ide_write', arg: { path: ideFile } }]), ideFile, 'an IDE pass is filed under the file ide_write actually wrote');
+eq(drillPassFile([{ tool: 'write_file', arg: { path: ideFile } }]), ideFile, 'the sandbox write still counts as the pass file');
+eq(drillPassFile([{ tool: 'ide_read', arg: { path: ideFile } }]), '', 'a read never claims to be the file a pass wrote');
+ok(DRILL_CHECKS_IDE[2](ideCall('ide_write', { path: ideFile, content: 'ide drill' }, 'Wrote it'), ideFile), 'step 3 passes on the marker content');
+ok(!DRILL_CHECKS_IDE[2](ideCall('ide_write', { path: ideFile, content: 'something else' }, 'Wrote it'), ideFile), 'step 3 fails on any other content');
+ok(DRILL_CHECKS_IDE[3](ideCall('ide_open', { path: ideFile }, 'Opened it in the IDE'), ideFile), 'step 4 passes when ide_open names the file');
+ok(DRILL_CHECKS_IDE[4](ideCall('ide_read', { path: ideFile }, '1| ide drill'), ideFile), 'step 5 passes on a read that shows the marker');
+ok(DRILL_CHECKS_IDE[5](ideCall('ide_edit', { path: ideFile, old_string: 'ide drill', new_string: 'ide drill (edited)' }, 'Edited'), ideFile), 'step 6 passes on an anchored edit');
+ok(!DRILL_CHECKS_IDE[5](ideCall('ide_edit', { path: ideFile, old_string: '', new_string: 'ide drill (edited)' }, 'error: ide_edit needs "old_string"'), ideFile), 'step 6 refuses an empty anchor, which is the append the drill exists to catch');
+ok(DRILL_CHECKS_IDE[6](ideCall('ide_read', { path: ideFile }, '1| ide drill (edited)'), ideFile), 'step 7 passes when the read shows the edit');
+ok(!DRILL_CHECKS_IDE[6](ideCall('ide_read', { path: ideFile }, '1| ide drill'), ideFile), 'step 7 fails when the read still shows the pre-edit text');
+store.set('settings.trainingMode', { active: true, difficulty: 'ide', pass: 1 });
+const ideBlock = trainingBlockFor(ideAgent);
+ok(ideBlock.includes('ide_write') && ideBlock.includes('ide_edit'), 'the IDE block lists the IDE tools by name');
+ok(ideBlock.includes(ideFile), 'the IDE block names this pass\'s file');
+ok(/Do not substitute write_file/.test(ideBlock), 'the IDE block rules out the sandbox tools by name');
 store.set('settings.trainingMode', { active: false, startedAt: 0 });
 
 console.log('-'.repeat(60));
