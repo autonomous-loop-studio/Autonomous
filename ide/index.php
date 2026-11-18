@@ -31,7 +31,7 @@ header("Content-Security-Policy: frame-ancestors 'self'");
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="dark">
   <title>IDE // Autonomous Loop Studio</title>
-  <link rel="stylesheet" href="css/ide.css?v=479">
+  <link rel="stylesheet" href="css/ide.css?v=480">
 </head>
 <body>
   <!-- Token lock: shown when the API answers 401 and no token is known -->
@@ -215,6 +215,6 @@ header("Content-Security-Policy: frame-ancestors 'self'");
 
   <div class="ide-toasts" id="toasts"></div>
 
-  <script type="module" src="js/ide.js?v=479"></script>
+  <script type="module" src="js/ide.js?v=480"></script>
 </body>
 </html>

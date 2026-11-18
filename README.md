@@ -133,7 +133,8 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v479** — current | A stale per-agent file jail is cleared instead of merely tolerated, and the IDE drill's pass files are archived like every other drill's. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v480** — current | Start can no longer hang on its own drill archive, and a stale jail named like the sandbox lands in the sandbox. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v479** | A stale per-agent file jail is cleared instead of merely tolerated, and the IDE drill's pass files are archived like every other drill's. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v479) |
 | **v478** | The floating floor is drawn again in 3D, and a moved file jail stops failing every file tool. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v478) |
 | **v477** | The IDE and the agents share one write path and one revision log, an IDE drill proves it, and `drill-run.mjs` runs any drill headlessly against a real model. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v477) |
 | **v470** | The drill block and every Continue lead with this pass's file, so a model can't reuse the last pass's path. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v470) |
@@ -1905,11 +1906,12 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v479 — a stale file jail is repaired, and the IDE drill's files are archived
+### 📌 v480 — Start cannot hang on its own archive, and a moved jail lands in the jail
 
-*A file jail can outlive the folder it names: this app gets moved, and the agent is left asking for a path that is not there. v478 taught the server to work around it; this release fixes the setting itself. `repairStaleJails()` checks every agent's jail and the global working directory against `/sandbox/status` once at boot — a jail outside the allowlist is cleared so the agent follows the global directory, and a global directory outside every root is moved to the first writable one. The decision is store-only and tested (`tests/js/staleJail.test.mjs`), and an answer with no roots repairs nothing rather than blanking paths.*
+*Two fixes that came out of running v479 rather than reading it, and both are one piece of reasoning taken too literally. `Sandbox::relocatedScope()` searched a stale file jail's path tails **longest first**, so a jail whose last folder was named like the sandbox itself resolved to `sandbox/sandbox` — the duplicate existed, so it won — and every write landed one level too deep; a live probe through this app's own old OneDrive jail reported `…/sandbox/sandbox/training`. A jail that names an allowed root's own folder now resolves to that root, checked before the tail search, and tails are tried shortest-first so a duplicate can never win again.*
 
-*The IDE drill's pass files are **archived** now. That drill writes `training/ide-<agent>-pN.txt` inside the app itself, which the sandbox jail cannot reach, so Start's archive of `sandbox/training` never moved them and a new run's pass 1 landed on the file a stopped run had left. `SrcWorkspace::archiveTrainingFolder()` moves them to `training-runs/<stamp>/training` — one rename, nothing deleted, an occupied destination refused — called through `ide/api.php` beside the sandbox half. `training-runs/` is ignored beside `training/` so the archive never shows up as untracked files.*
+*And **Start's drill archive is bounded**. `_startTraining` awaits `_archiveTrainingFolder()` before `_openTrainingSession()`, and it is that second call that aborts a turn still running — so on a server that answers one request at a time (a copy started with `php -S`) the archive requests queue behind the streaming turn and Start never reaches the kickoff: no typing, no error, nothing at all. v479 had made that chain longer by adding the IDE half. Both halves now carry a four-second `AbortSignal.timeout`, so Start proceeds with the previous folder left where it is — which is what "logged and ignored" was always supposed to mean.*
+
 ---
 
 ## 🧯 Troubleshooting

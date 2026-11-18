@@ -15,6 +15,14 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🩹 Start's archive cannot hang it, and a moved jail lands in the jail *(`VERSION` 479 → 480, cache-buster v479 → v480)*
+
+*Both came out of running v479 rather than reading it, and both are one piece of reasoning taken too literally.*
+
+*The jail: `relocatedScope()` searched a stale scope's path tails **longest first**, so a scope ending in the same folder name as an allowed root resolved to `<root>/sandbox` — and that duplicate exists on this machine, because a model writing `sandbox/...` into the sandbox creates it — so every write landed one level too deep. A live probe through this app's own old OneDrive jail reported `…/Autonomous-master/sandbox/sandbox/training`, which is why a finished drill's pass files were sitting in `sandbox/sandbox/training/` while the report named `training/`. A scope whose last segment matches a root's own folder name now resolves to that root, checked **before** the tail search, and tails are tried **shortest-first**, so a duplicate can never win the race. `tests/php/sandbox.test.php` pins both halves with the duplicate folder present.*
+
+*Start: `_startTraining` awaits `_archiveTrainingFolder()` before `_openTrainingSession()`, and it is that second call that aborts a turn still running. On a server that answers one request at a time — a copy started with `php -S` — the archive requests queue behind the streaming turn, so Start never reaches the kickoff: no typing, no error, no toast, a Start that looks exactly like an agent thinking forever. v479 had lengthened that chain by adding the IDE half. Both halves now carry `AbortSignal.timeout(4000)`, and a timeout lands in the case the code already had for a failure — logged and ignored, with the previous folder left where it is and the drill started.*
+
 ## 🗂️ A stale file jail is repaired, and the IDE drill's files are archived *(`VERSION` 478 → 479, cache-buster v478 → v479)*
 
 *Two follow-ups to v478, and both are the same problem: a file jail that outlives the folder it names.*

@@ -7,22 +7,22 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=479';
-import { K } from '../storage.js?v=479';
-import { persistence } from '../persistence.js?v=479';
-import { api } from '../api.js?v=479';
-import { isNoTokenError } from '../apiError.js?v=479';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=479';
-import { errText } from '../api.js?v=479';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=479';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=479';
-import { snapshot } from '../rateGovernor.js?v=479';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=479';
-import { resetBrowserEnabled } from '../toolManifest.js?v=479';
-import { perf } from '../perf.js?v=479';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=479';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=479';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=479';
+import { store } from '../store.js?v=480';
+import { K } from '../storage.js?v=480';
+import { persistence } from '../persistence.js?v=480';
+import { api } from '../api.js?v=480';
+import { isNoTokenError } from '../apiError.js?v=480';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=480';
+import { errText } from '../api.js?v=480';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=480';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=480';
+import { snapshot } from '../rateGovernor.js?v=480';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=480';
+import { resetBrowserEnabled } from '../toolManifest.js?v=480';
+import { perf } from '../perf.js?v=480';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=480';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=480';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=480';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -1138,14 +1138,23 @@ export class Sidebar {
    */
   async _archiveTrainingFolder() {
     const moved = [];
+    // Best-effort has to stay bounded. This is awaited BEFORE
+    // _openTrainingSession() aborts the turn that is still running, so on a
+    // server that serves one request at a time (a copy run with `php -S`) an
+    // archive request can sit behind that streaming turn forever -- and Start
+    // then types nothing at all, which reads as a hung agent. Four seconds,
+    // then the previous folder simply stays where it is.
+    const bounded = () => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+      ? AbortSignal.timeout(4000)
+      : undefined);
     try {
-      const listing = await api.sandbox('list', { path: 'training', limit: 500 });
+      const listing = await api.sandbox('list', { path: 'training', limit: 500 }, bounded());
       const entries = (listing && listing.entries) || [];
       if (entries.length) {
         // 20261114-231845, from the ISO stamp: readable, sortable, no spaces.
         const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
         const to = `training-runs/${stamp}/training`;
-        await api.sandbox('move', { from: 'training', to });
+        await api.sandbox('move', { from: 'training', to }, bounded());
         moved.push(to);
       }
     } catch (err) {
@@ -1156,7 +1165,7 @@ export class Sidebar {
     // the next run's pass 1 would land. Same one-shot rule, through the door
     // that owns the app tree.
     try {
-      const ide = await api.archiveTrainingFolder();
+      const ide = await api.archiveTrainingFolder(bounded());
       if (ide && ide.archived) moved.push(ide.archived);
     } catch (err) {
       console.warn('[training] could not archive the IDE drill folder; it stays in place:', err);

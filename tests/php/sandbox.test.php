@@ -250,6 +250,17 @@ Sandbox::writeFile('gone.txt', 'x', 'write', $goneScope);
 ok(is_file($writeDir . '/gone.txt'),
     'a scope whose folder is gone falls back to the allowlist instead of failing every file tool');
 
+// 8d-8e. The jail ITSELF moved: a scope that ends in the same folder name as an
+// allowed root is that root. A model writing "sandbox/..." into the sandbox
+// creates a stray <root>/<same name>, and preferring that duplicate nested every
+// write one level too deep -- which is what a live probe against this app found.
+@mkdir($writeDir . '/w', 0777, true);
+Sandbox::writeFile('rootprobe.txt', 'x', 'write', 'C:/old/machine/Autonomous-master/w');
+ok(is_file($writeDir . '/rootprobe.txt'),
+    'a scope that named the jail itself lands in the jail');
+ok(!is_file($writeDir . '/w/rootprobe.txt'),
+    'and not in a same-named folder inside it, however tempting that duplicate is');
+
 // 9. write file
 $wFile = $writeDir . '/test.txt';
 $wr = Sandbox::writeFile($wFile, 'hello write');

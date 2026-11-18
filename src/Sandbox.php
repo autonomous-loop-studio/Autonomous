@@ -2579,9 +2579,23 @@ class Sandbox {
         ));
         // "C:" names the machine the scope was saved on, not the path inside it.
         if ($parts && preg_match('/^[a-z]:$/i', $parts[0])) { array_shift($parts); }
-        // Longest tail first: the most specific folder that still exists wins, so
-        // a scope aimed two levels into the sandbox does not collapse onto it.
-        for ($k = count($parts); $k >= 1; $k--) {
+        // The jail WAS the sandbox itself and the app moved: the allowed root IS
+        // the answer. This is checked BEFORE the tail search because a stray
+        // `<root>/<same name>` -- which a model writing "sandbox/..." into the
+        // sandbox creates, exactly as one did on this machine -- would otherwise
+        // win that search and quietly nest every write one level too deep.
+        $last = strtolower($parts[count($parts) - 1]);
+        foreach ($roots as $root) {
+            if (strtolower(basename(rtrim(str_replace('\\', '/', $root), '/'))) === $last) {
+                return [$root];
+            }
+        }
+        // Shortest tail first: a scope that ended in .../sandbox/projectA belongs
+        // at <root>/projectA. Longer tails are still tried, for a jail that lived
+        // deeper in the tree, so the specific folder wins when it is the only one
+        // that exists -- and a duplicate never does, because the shortest match
+        // is found first.
+        for ($k = 1; $k <= count($parts); $k++) {
             $tail = implode('/', array_slice($parts, -$k));
             foreach ($roots as $root) {
                 $real = realpath($root . '/' . $tail);
