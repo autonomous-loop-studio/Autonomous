@@ -236,6 +236,20 @@ throws(function () use ($nestedW, $outside) {
     Sandbox::readFile($nestedW, null, $outside);
 }, 'scope outside roots refused');
 
+// 8a-8c. A saved scope can outlive the folder it names. Moving the app (out of
+// OneDrive, into a fresh download) leaves an agent's own file jail pointing at a
+// path nothing is at, and that used to throw for EVERY file tool on every call --
+// which is why a moved copy reads as "training mode cannot write files" instead of
+// as one stale setting. The scope is reconstructed inside the allowlist.
+$movedScope = 'C:/old/place/Autonomous-master/w/sub';
+Sandbox::writeFile('moved.txt', 'relocated', 'write', $movedScope);
+ok(is_file($writeDir . '/sub/moved.txt'),
+    'a scope under a folder that moved writes inside the folder it named, not the jail root');
+$goneScope = 'C:/old/place/Autonomous-master/w/gone-forever';
+Sandbox::writeFile('gone.txt', 'x', 'write', $goneScope);
+ok(is_file($writeDir . '/gone.txt'),
+    'a scope whose folder is gone falls back to the allowlist instead of failing every file tool');
+
 // 9. write file
 $wFile = $writeDir . '/test.txt';
 $wr = Sandbox::writeFile($wFile, 'hello write');

@@ -2556,6 +2556,45 @@ class Sandbox {
     }
 
     /**
+     * The roots a scope that no longer exists should use.
+     *
+     * An agent remembers the folder it was given. This app gets moved -- out of
+     * OneDrive, into a fresh download, onto another drive -- and that memory then
+     * names a path nothing is at. The old refusal ("sandbox directory does not
+     * exist") turned one stale setting into EVERY file tool failing for that
+     * agent, and because a training drill makes a file call on every step it
+     * read as the drill being unable to write rather than as a moved folder.
+     *
+     * The scope is relocated by its own trailing path inside an allowed root, so
+     * "the sandbox, one level in" stays one level in. When nothing by that name
+     * exists under any root the folder is simply gone, and the agent gets what an
+     * agent with no scope of its own gets: the allowlist, never more. A scope that
+     * EXISTS outside the roots is still refused above -- this reconstructs a
+     * path, it never widens one.
+     */
+    private static function relocatedScope($scope, $roots) {
+        $parts = array_values(array_filter(
+            explode('/', str_replace('\\', '/', $scope)),
+            function ($p) { return $p !== '' && $p !== '.' && $p !== '..'; }
+        ));
+        // "C:" names the machine the scope was saved on, not the path inside it.
+        if ($parts && preg_match('/^[a-z]:$/i', $parts[0])) { array_shift($parts); }
+        // Longest tail first: the most specific folder that still exists wins, so
+        // a scope aimed two levels into the sandbox does not collapse onto it.
+        for ($k = count($parts); $k >= 1; $k--) {
+            $tail = implode('/', array_slice($parts, -$k));
+            foreach ($roots as $root) {
+                $real = realpath($root . '/' . $tail);
+                if ($real === false || !is_dir($real)) { continue; }
+                $real = rtrim(str_replace('\\', '/', $real), '/');
+                $inRoot = rtrim(str_replace('\\', '/', $root), '/');
+                if ($real === $inRoot || strpos($real, $inRoot . '/') === 0) { return [$real]; }
+            }
+        }
+        return $roots;
+    }
+
+    /**
      * Narrow a global root list to the one directory an agent is assigned to.
      *
      * The scope is always checked against the global allowlist first, so a
@@ -2567,7 +2606,8 @@ class Sandbox {
         if ($scope === '') { return $roots; }
         $real = realpath($scope);
         if ($real === false || !is_dir($real)) {
-            throw new \RuntimeException("$label: sandbox directory does not exist: $scope");
+            // A SAVED scope can outlive the folder it names -- see relocatedScope().
+            return self::relocatedScope($scope, $roots);
         }
         $real = rtrim(str_replace('\\', '/', $real), '/');
         foreach ($roots as $root) {

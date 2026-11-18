@@ -15,6 +15,14 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🧱 The floor is drawn again, and a moved app stops breaking every file tool *(`VERSION` 477 → 478, cache-buster v477 → v478)*
+
+*Both of these arrived looking like one bug — training mode "refusing to write over files" — and neither was caused by stopping a drill.*
+
+*The floor: `.d26-floor` is a DOM layer inside `.topology-container` (moving it there is what stopped the screen-blended grid painting over the node card), and the 3D map appends its own root — `.t3d-root`, `inset: 0`, `background: #04070c` — to that same container **after** the floor already exists. Both are positioned, the floor sat at `z-index: 0`, so the map's opaque background painted over the whole grid and the floor was invisible whenever the map was in 3D. It survived only in the order where the floor happened to be appended last, which is why it could look fine one load and be gone the next. `z-index: 1` puts it above the map and still below the node card (`.t3d-popup`, z-index 20) — the order this layer was always meant to have.*
+
+*The writes: an agent keeps its own file jail (`sandboxRoot`), and this copy moved from `…/OneDrive/Desktop/Re-Release/…` to `…/Desktop/Autonomous-Project/…`. Every file call then carried the OLD path as its scope, and `Sandbox::scopeRoots()` threw `sandbox directory does not exist: …` for `write_file`, `read_file`, `list_dir` and everything else that touches disk — one stale setting, every tool, on every step, which is exactly what a drill is. `relocatedScope()` reconstructs a missing scope's trailing path inside an allowed root (an agent jailed one level into the sandbox stays one level in), falls back to the allowlist when nothing by that name exists under any root, and leaves the one refusal that matters alone: a scope that EXISTS outside the roots is still refused, so this reconstructs a path and never widens one. Nothing was deleted — the stopped run's `training/ide-…-p1.txt` is still there, and overwriting a pass file was never the thing being refused. `tests/php/sandbox.test.php` pins all three outcomes: a moved scope writes inside the folder it named, a scope whose folder is gone still writes through the allowlist, and a real scope outside the roots is still refused.*
+
 ## 🔗 One write path: the IDE and the agents share a revision log *(`VERSION` 475 → 477, cache-buster v474 → v477)*
 
 *The built-in IDE and the agents wrote files through two different doors. The IDE saved through `ide/api.php`; an agent wrote through `Sandbox::writeFile`. Neither knew about the other, so an agent's edit landed on disk while the editor kept its old buffer, and a human's save could land on top of a file an agent had just rewritten — with nothing, anywhere, saying either had happened. That is the whole reason "agents and the user use the IDE together" could not be built on top of it.*

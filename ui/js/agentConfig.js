@@ -20,9 +20,9 @@
 // Keeping one source per setting is what stops the UI, the resolver and the
 // call paths from disagreeing about what an agent is actually using.
 
-import { store } from './store.js?v=477';
-import { DEFAULT_HISTORY_TURNS } from './utils.js?v=477';
-import { contextLimitFor } from './harness.js?v=477';
+import { store } from './store.js?v=478';
+import { DEFAULT_HISTORY_TURNS } from './utils.js?v=478';
+import { contextLimitFor } from './harness.js?v=478';
 
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o || {}, k);
 

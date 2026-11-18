@@ -7,22 +7,22 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=477';
-import { K } from '../storage.js?v=477';
-import { persistence } from '../persistence.js?v=477';
-import { api } from '../api.js?v=477';
-import { isNoTokenError } from '../apiError.js?v=477';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=477';
-import { errText } from '../api.js?v=477';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=477';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=477';
-import { snapshot } from '../rateGovernor.js?v=477';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=477';
-import { resetBrowserEnabled } from '../toolManifest.js?v=477';
-import { perf } from '../perf.js?v=477';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=477';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=477';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=477';
+import { store } from '../store.js?v=478';
+import { K } from '../storage.js?v=478';
+import { persistence } from '../persistence.js?v=478';
+import { api } from '../api.js?v=478';
+import { isNoTokenError } from '../apiError.js?v=478';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=478';
+import { errText } from '../api.js?v=478';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=478';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=478';
+import { snapshot } from '../rateGovernor.js?v=478';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=478';
+import { resetBrowserEnabled } from '../toolManifest.js?v=478';
+import { perf } from '../perf.js?v=478';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=478';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=478';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=478';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open

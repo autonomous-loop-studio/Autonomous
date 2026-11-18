@@ -218,7 +218,13 @@
     pointer-events: none;
     opacity: 0.2;
     mix-blend-mode: screen;
-    z-index: 0;
+    /* Above the map, below the node card. This layer lives in the map's own
+       container, and the 3D map appends its root (`.t3d-root`, an opaque
+       #04070c) to that SAME container after the floor already exists -- so at
+       z-index 0 the map's background painted over the grid and the floor
+       disappeared entirely whenever the map was in 3D. 1 stays under the card
+       (`.t3d-popup`, z-index 20), which is the one thing that must stay on top. */
+    z-index: 1;
   }
 
   html.d26 .d26-floor svg {
