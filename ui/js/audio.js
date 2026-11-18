@@ -14,8 +14,8 @@
 // Transcripts come from MediaRecorder + the proxy. The older Web Speech path in
 // microphone.js still exists as a fallback for browsers without a key.
 
-import { store } from './store.js?v=480';
-import { api, errText } from './api.js?v=480';
+import { store } from './store.js?v=481';
+import { api, errText } from './api.js?v=481';
 
 /** OpenAI's per-request character ceiling. Matches MAX_CHARS in src/Audio.php. */
 const MAX_CHARS = 4000;

@@ -120,6 +120,25 @@ ok(in_array($appDirDefault, $sDef['read_roots'], true), 'the default read root i
 ok(in_array($appDirDefault, $sDef['write_roots'], true), 'the default write root is the app dir');
 ok($sDef['defaulted'] === true, 'status reports roots it defaulted');
 
+// 1a-ii. Shell access widens that default to /var/www on a host where this app
+// lives there -- but it must never move the jail OFF the app. On Windows
+// `/var/www` resolves to `C:\var\www`, so switching exec on used to replace the
+// app-dir default with a folder the app was not in, and every command refused
+// with "exec cwd: path is outside the allowed directories".
+file_put_contents($configPath, json_encode(
+    ['sandbox' => ['exec_enabled' => true]], JSON_PRETTY_PRINT));
+$sExec = Sandbox::status();
+$inJail = function ($roots) use ($appDirDefault) {
+    foreach ($roots as $root) {
+        $root = rtrim(str_replace('\\', '/', $root), '/');
+        if ($appDirDefault === $root || strpos($appDirDefault . '/', $root . '/') === 0) { return true; }
+    }
+    return false;
+};
+ok($inJail($sExec['read_roots']), 'exec on keeps the app dir inside the default read jail');
+ok($inJail($sExec['write_roots']), 'exec on keeps the app dir inside the default write jail');
+file_put_contents($configPath, json_encode($cfg, JSON_PRETTY_PRINT));   // restore
+
 // 1b. An explicit empty list is a decision, not a default: the file tools stay
 // off, which is the only way to turn them off.
 file_put_contents($configPath, json_encode(

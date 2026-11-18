@@ -107,8 +107,16 @@ class Sandbox {
         // Shell access widens the default jail to the whole of /var/www, so a
         // fresh install with exec enabled can actually grep the site. An
         // explicit read_roots/write_roots always wins.
+        //
+        // Only when THIS app actually lives under it. On Windows `/var/www`
+        // resolves to `C:\var\www`, an unrelated folder, so switching exec on
+        // replaced the app-dir default with a jail the app was not in and every
+        // command refused with "exec cwd: path is outside the allowed
+        // directories". A host whose app sits elsewhere keeps the app dir,
+        // which always contains the sandbox.
         $execOn = !empty($sb['exec_enabled']);
-        $wwwRoot = is_dir('/var/www') ? '/var/www' : null;
+        $wwwRoot = is_dir('/var/www') && $appDir !== ''
+            && strpos($appDir . '/', '/var/www/') === 0 ? '/var/www' : null;
         $defaultRoots = $execOn && $wwwRoot ? [$wwwRoot] : ($appDir ? [$appDir] : []);
         $roots = array_key_exists('read_roots', $sb) ? $list('read_roots') : $defaultRoots;
         $writes = array_key_exists('write_roots', $sb) ? $list('write_roots') : $defaultRoots;

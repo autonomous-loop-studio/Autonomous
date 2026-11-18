@@ -15,6 +15,14 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🔓 Shell access stops jailing an agent outside the app, and a fresh copy can reach its drill's exec step *(`VERSION` 480 → 481, cache-buster v480 → v481)*
+
+*A second copy on a web server reported it plainly: "fails training, fails to exec". Both came from one setting, and one path that was never this app's.*
+
+*The setting: `sandbox.exec_enabled` is off unless it is written, and that copy's `storage/config.json` held nothing but the sandbox token — so every `exec` was answered with "Shell access is disabled", and the drill's `exec ["echo","training"]` step (Hard 14, Easy 11) failed every pass it sat in. A missing `training/` folder was never the cause: the drill's first `write_file` creates it. The answer is Config → Shell access, and it is on in that copy now — no repair to run, nothing to reinstall.*
+
+*The jail: with exec on, the default read/write roots widen to `/var/www` so a fresh install can grep the site. On Windows `/var/www` resolves to `C:\var\www`, an unrelated folder, so the default stopped being the app dir and every command refused with `exec cwd: path is outside the allowed directories` — the other half of "fails to exec". The widening now happens only when this app actually lives under `/var/www`; every other host keeps the app dir, which always contains the sandbox. `tests/php/sandbox.test.php` pins the invariant rather than the host — with exec on, the app dir is still inside the default jail — so it means the same thing on a Windows checkout and on the server.*
+
 ## 🩹 Start's archive cannot hang it, and a moved jail lands in the jail *(`VERSION` 479 → 480, cache-buster v479 → v480)*
 
 *Both came out of running v479 rather than reading it, and both are one piece of reasoning taken too literally.*

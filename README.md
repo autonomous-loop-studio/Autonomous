@@ -133,7 +133,8 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v480** — current | Start can no longer hang on its own drill archive, and a stale jail named like the sandbox lands in the sandbox. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v481** — current | Shell access no longer jails an agent outside the app, so a fresh copy's drill can reach its exec step. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v480** | Start can no longer hang on its own drill archive, and a stale jail named like the sandbox lands in the sandbox. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v480) |
 | **v479** | A stale per-agent file jail is cleared instead of merely tolerated, and the IDE drill's pass files are archived like every other drill's. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v479) |
 | **v478** | The floating floor is drawn again in 3D, and a moved file jail stops failing every file tool. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v478) |
 | **v477** | The IDE and the agents share one write path and one revision log, an IDE drill proves it, and `drill-run.mjs` runs any drill headlessly against a real model. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v477) |
@@ -1906,11 +1907,11 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v480 — Start cannot hang on its own archive, and a moved jail lands in the jail
+### 📌 v481 — Shell access stops jailing an agent outside the app, and a fresh copy can reach its drill's exec step
 
-*Two fixes that came out of running v479 rather than reading it, and both are one piece of reasoning taken too literally. `Sandbox::relocatedScope()` searched a stale file jail's path tails **longest first**, so a jail whose last folder was named like the sandbox itself resolved to `sandbox/sandbox` — the duplicate existed, so it won — and every write landed one level too deep; a live probe through this app's own old OneDrive jail reported `…/sandbox/sandbox/training`. A jail that names an allowed root's own folder now resolves to that root, checked before the tail search, and tails are tried shortest-first so a duplicate can never win again.*
+*A second copy on a web server reported it plainly: "fails training, fails to exec". Both came from one setting, and one path that was never this app's. `sandbox.exec_enabled` is off unless it is written, and that copy held nothing but the sandbox token — so every `exec` was answered with "Shell access is disabled", and the drill's `exec ["echo","training"]` step failed every pass it sat in. A missing `training/` folder was never the cause; the drill's first `write_file` creates it, and the switch is Config → Shell access.*
 
-*And **Start's drill archive is bounded**. `_startTraining` awaits `_archiveTrainingFolder()` before `_openTrainingSession()`, and it is that second call that aborts a turn still running — so on a server that answers one request at a time (a copy started with `php -S`) the archive requests queue behind the streaming turn and Start never reaches the kickoff: no typing, no error, nothing at all. v479 had made that chain longer by adding the IDE half. Both halves now carry a four-second `AbortSignal.timeout`, so Start proceeds with the previous folder left where it is — which is what "logged and ignored" was always supposed to mean.*
+*The jail is the other half. With exec on, the default read/write roots widen to `/var/www` so a fresh install can grep the site — but on Windows `/var/www` resolves to `C:\var\www`, an unrelated folder, so the default stopped being the app dir and every command refused with `exec cwd: path is outside the allowed directories`. The widening now happens only when this app actually lives under `/var/www`; every other host keeps the app dir, which always contains the sandbox.*
 
 ---
 

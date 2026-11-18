@@ -17,7 +17,7 @@
 // the user already configured ("ide:auth"), so the file API unlocks without
 // the token being pasted a second time. The token never travels in a URL.
 
-import { store } from './store.js?v=480';
+import { store } from './store.js?v=481';
 
 export class IdeScreen {
   constructor() {
@@ -50,7 +50,7 @@ export class IdeScreen {
         <button class="ide-screen-btn" id="ideScreenClose" title="Close (Esc)">✕</button>
       </div>
       <iframe class="ide-screen-frame" id="ideScreenFrame" title="IDE"
-        src="ide/index.php?v=480" allow="clipboard-write"></iframe>
+        src="ide/index.php?v=481" allow="clipboard-write"></iframe>
     `;
     this.el = el;
     this.frame = el.querySelector('#ideScreenFrame');
@@ -62,7 +62,7 @@ export class IdeScreen {
       if (e.key === 'Escape' && this.open) this.close();
     });
     el.querySelector('#ideScreenPop').addEventListener('click', () => {
-      window.open('ide/index.php?v=480', '_blank', 'noopener');
+      window.open('ide/index.php?v=481', '_blank', 'noopener');
       this.close();
     });
     // Answer the handshake every time the frame (re)loads — the IDE re-asks
