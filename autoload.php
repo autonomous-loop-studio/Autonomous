@@ -52,6 +52,14 @@ if (PHP_SAPI !== 'cli' && is_file(__DIR__ . '/storage/updates/install.json')) {
     }
 }
 
+// A storage/ this request cannot write is not a slow install. It is a copy
+// where every save is dropped -- a settings toggle snaps back, a session file
+// is never made, and an agent's turn can look like a model thinking forever --
+// so the refusal has to come before the request does any work, and it has to
+// name the command that fixes it. See Src\Storage for the probe and the exact
+// line; the CLI and the installer are exempt there, on purpose.
+\Src\Storage::guard();
+
 // Helper functions
 function jsonResponse($data, $status = 200) {
     http_response_code($status);

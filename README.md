@@ -133,7 +133,8 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v481** — current | Shell access no longer jails an agent outside the app, so a fresh copy's drill can reach its exec step. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v482** — current | A read-only storage folder is refused at boot with the exact chown line, so it can never look like a hang again. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v481** | Shell access no longer jails an agent outside the app, so a fresh copy's drill can reach its exec step. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v481) |
 | **v480** | Start can no longer hang on its own drill archive, and a stale jail named like the sandbox lands in the sandbox. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v480) |
 | **v479** | A stale per-agent file jail is cleared instead of merely tolerated, and the IDE drill's pass files are archived like every other drill's. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v479) |
 | **v478** | The floating floor is drawn again in 3D, and a moved file jail stops failing every file tool. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v478) |
@@ -1907,11 +1908,11 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v481 — Shell access stops jailing an agent outside the app, and a fresh copy can reach its drill's exec step
+### 📌 v482 — A read-only storage/ is refused at boot with the chown line, not a silent hang
 
-*A second copy on a web server reported it plainly: "fails training, fails to exec". Both came from one setting, and one path that was never this app's. `sandbox.exec_enabled` is off unless it is written, and that copy held nothing but the sandbox token — so every `exec` was answered with "Shell access is disabled", and the drill's `exec ["echo","training"]` step failed every pass it sat in. A missing `training/` folder was never the cause; the drill's first `write_file` creates it, and the switch is Config → Shell access.*
+*A copy on a web server reported "the agent just hangs there". It was not the agent: `storage/` belonged to root, so every save was dropped — settings snapped back, sessions and state were never written — and nothing in the app ever checked. `Src\Storage` now probes the folder for real (a write, not `is_writable()`, which lies on cloud-synced folders) before any request does work, and answers **500 immediately**: JSON for the API and IDE, plain text for a page, with the exact `sudo chown -R www-data:www-data /var/www/app/storage` line for the user PHP is running as. A missing folder gets `sudo mkdir -p` first, and an unwritable `config.json` gets the same line.*
 
-*The jail is the other half. With exec on, the default read/write roots widen to `/var/www` so a fresh install can grep the site — but on Windows `/var/www` resolves to `C:\var\www`, an unrelated folder, so the default stopped being the app dir and every command refused with `exec cwd: path is outside the allowed directories`. The widening now happens only when this app actually lives under `/var/www`; every other host keeps the app dir, which always contains the sandbox.*
+*CLI and `install-update.php` are exempt, because the suite and the launchers run as the owner and an installer cannot be the thing that fixes the permissions it needs. Windows gets no invented chown — it names the folder and the account to give Modify rights to. `tests/php/storageGuard.test.php` pins all of it, including two real `php -S` boots: an unusable `storage/` answers 500 with the line, a healthy one answers 200.*
 
 ---
 

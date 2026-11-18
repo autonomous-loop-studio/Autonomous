@@ -22,7 +22,7 @@
  *                                appends to the Prism vendor scripts it injects
  *   * every `from './x.js?v='`   : this number
  */
-export const APP_VERSION = 481;
+export const APP_VERSION = 482;
 
 class Store {
   constructor() {

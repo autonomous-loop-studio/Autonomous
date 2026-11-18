@@ -18,9 +18,9 @@
 // and it is isolated from the main transcript. The traffic still shows on the
 // graph because chat.askAgentInline emits the normal flow events.
 
-import { store } from '../../store.js?v=481';
-import { audio } from '../../audio.js?v=481';
-import { k } from '../../storage.js?v=481';
+import { store } from '../../store.js?v=482';
+import { audio } from '../../audio.js?v=482';
+import { k } from '../../storage.js?v=482';
 
 const VOICE_KEY = k('topoAskVoice');
 const PAD = 12;

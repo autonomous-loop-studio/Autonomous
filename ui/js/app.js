@@ -7,18 +7,18 @@
 // APP.JS — Bootstrap & wiring only
 // ============================================
 
-import { store, APP_VERSION } from './store.js?v=481';
-import { K } from './storage.js?v=481';
-import { persistence, DEFAULT_AGENTS, DEFAULT_PROVIDERS } from './persistence.js?v=481';
-import { esc, downloadFile } from './utils.js?v=481';
-import { startStateSync } from './stateSync.js?v=481';
-import { api } from './api.js?v=481';
-import { repairStaleJails } from './agentConfig.js?v=481';
-import { themeManager } from './themes.js?v=481';
-import { Sidebar } from './components/sidebar.js?v=481';
-import { Chat } from './components/chat.js?v=481';
-import { TopologyGraph } from './components/topology.js?v=481';
-import { initTopoPanel } from './components/topoPanel.js?v=481';
+import { store, APP_VERSION } from './store.js?v=482';
+import { K } from './storage.js?v=482';
+import { persistence, DEFAULT_AGENTS, DEFAULT_PROVIDERS } from './persistence.js?v=482';
+import { esc, downloadFile } from './utils.js?v=482';
+import { startStateSync } from './stateSync.js?v=482';
+import { api } from './api.js?v=482';
+import { repairStaleJails } from './agentConfig.js?v=482';
+import { themeManager } from './themes.js?v=482';
+import { Sidebar } from './components/sidebar.js?v=482';
+import { Chat } from './components/chat.js?v=482';
+import { TopologyGraph } from './components/topology.js?v=482';
+import { initTopoPanel } from './components/topoPanel.js?v=482';
 
 /**
  * The 3D topology pulls in three.js (~700KB) through the import map. Loaded
@@ -27,35 +27,35 @@ import { initTopoPanel } from './components/topoPanel.js?v=481';
  * of taking the whole app down with a failed static import.
  */
 function loadTopology3D() {
-  return import('./components/topology3d/index.js?v=481')
+  return import('./components/topology3d/index.js?v=482')
     .then(m => m.Topology3D)
     .catch(err => {
       console.warn('[topology] 3D view unavailable, using the 2D chart:', err);
       return null;
     });
 }
-import { RoutingChart } from './components/routingChart.js?v=481';
-import { AgentEditor } from './components/agentEditor.js?v=481';
-import { ProviderEditor } from './components/providerEditor.js?v=481';
-import { Microphone } from './components/microphone.js?v=481';
-import { ConfigPanel } from './components/configPanel.js?v=481';
-import { ExportPanel } from './components/export.js?v=481';
-import { ThinkingPanel } from './components/thinkingPanel.js?v=481';
-import { TerminalPanel } from './components/terminalPanel.js?v=481';
-import { MetricsPanel } from './components/metricsPanel.js?v=481';
-import { TracePanel } from './components/tracePanel.js?v=481';
-import { AgentRecord } from './components/agentRecord.js?v=481';
-import { preloadAvatars, wireAvatarThinking } from './components/avatar.js?v=481';
-import { bindMemoryTools, bindSandboxNow, initCustomTools } from './tools.js?v=481';
-import { initApprovals } from './approvals.js?v=481';
-import * as memory from './memory.js?v=481';
-import { audio } from './audio.js?v=481';
-import { AlwaysOn } from './alwaysOn.js?v=481';
-import { ApiLab } from './apiLab.js?v=481';
-import { BrainLab } from './brainlab.js?v=481';
-import { IdeScreen } from './ideScreen.js?v=481';
-import { BrowserView } from './components/browserView.js?v=481';
-import { initKeyboardAvoid } from './keyboard.js?v=481';
+import { RoutingChart } from './components/routingChart.js?v=482';
+import { AgentEditor } from './components/agentEditor.js?v=482';
+import { ProviderEditor } from './components/providerEditor.js?v=482';
+import { Microphone } from './components/microphone.js?v=482';
+import { ConfigPanel } from './components/configPanel.js?v=482';
+import { ExportPanel } from './components/export.js?v=482';
+import { ThinkingPanel } from './components/thinkingPanel.js?v=482';
+import { TerminalPanel } from './components/terminalPanel.js?v=482';
+import { MetricsPanel } from './components/metricsPanel.js?v=482';
+import { TracePanel } from './components/tracePanel.js?v=482';
+import { AgentRecord } from './components/agentRecord.js?v=482';
+import { preloadAvatars, wireAvatarThinking } from './components/avatar.js?v=482';
+import { bindMemoryTools, bindSandboxNow, initCustomTools } from './tools.js?v=482';
+import { initApprovals } from './approvals.js?v=482';
+import * as memory from './memory.js?v=482';
+import { audio } from './audio.js?v=482';
+import { AlwaysOn } from './alwaysOn.js?v=482';
+import { ApiLab } from './apiLab.js?v=482';
+import { BrainLab } from './brainlab.js?v=482';
+import { IdeScreen } from './ideScreen.js?v=482';
+import { BrowserView } from './components/browserView.js?v=482';
+import { initKeyboardAvoid } from './keyboard.js?v=482';
 
 
 document.addEventListener('DOMContentLoaded', async () => {

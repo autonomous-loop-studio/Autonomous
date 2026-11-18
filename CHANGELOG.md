@@ -15,6 +15,16 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🧱 A read-only `storage/` is refused at boot with the chown line, not a silent hang *(`VERSION` 481 → 482, cache-buster v481 → v482)*
+
+*A copy on a web server reported "the agent just hangs there". It was not the agent: `storage/` belonged to root, so every save was dropped — settings snapped back, sessions and state were never written, and a turn could end with nothing recorded. Nothing in the app ever said so, because nothing checked. The fix on that box was one command; the fix here is that the app now refuses to run without it.*
+
+*`Src\Storage` probes `storage/` for real — a uniquely named file is written and removed, because `is_writable()` lies on cloud-synced folders — and `autoload.php` runs that check before a request does any work. A broken copy now answers **500 immediately** instead of looking busy: JSON for the API and IDE (`error` names the state, `detail` **is** the command), plain text for a page. The command is exact — `sudo chown -R www-data:www-data /var/www/app/storage`, with the user PHP is actually running as, read from `posix_geteuid()` and falling back to `USER`/`APACHE_RUN_USER`, and a path with a space is quoted rather than half-quoted. A missing folder gets `sudo mkdir -p` first; a folder that works but whose `config.json` cannot be written gets the same line, because that is the same silent failure with a working folder around it.*
+
+*CLI and `install-update.php` are exempt: the suite and the launchers run as the owner and report their own way, and an installer that refuses to run until permissions are fixed cannot be the thing that fixes them. Windows gets no invented chown — it names the folder and the account to give Modify rights to.*
+
+*`tests/php/storageGuard.test.php` pins the probe leaving nothing behind, a healthy storage never being refused, the exact chown string (asserted on every host through `chownLine()`, so the POSIX line is read on the Windows checkout it was written on), the missing/unwritable/config cases, the JSON-versus-text split, the CLI no-op — and boots `php -S` twice: a clone with an unusable `storage/` answers 500 with the line, a clone with a healthy one answers 200.*
+
 ## 🔓 Shell access stops jailing an agent outside the app, and a fresh copy can reach its drill's exec step *(`VERSION` 480 → 481, cache-buster v480 → v481)*
 
 *A second copy on a web server reported it plainly: "fails training, fails to exec". Both came from one setting, and one path that was never this app's.*
