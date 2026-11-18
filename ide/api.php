@@ -29,6 +29,7 @@
 //   POST {action:"write",   path, content, encoding:"text"|"base64"}
 //   POST {action:"create",  path, type:"file"|"dir"}
 //   POST {action:"rename",  from, to}
+//   POST {action:"archiveTraining", stamp?}   training/ -> training-runs/<stamp>/training
 //   POST {action:"delete",  path}     files unlinked; folders deleted recursively
 //
 // Agents use the same endpoints (that is the point of an agent-facing IDE),
@@ -462,6 +463,21 @@ switch ($action) {
             'from' => (string)($input['from'] ?? ''),
         ]);
         out(['ok' => true]);
+    }
+
+    // ---- archive the project's drill folder ---------------------------------
+    // The IDE drill writes its pass files into the APP tree, which the sandbox
+    // jail cannot reach, so Start's archive of sandbox/training never moved
+    // them. One POST, nothing deleted: training/ -> training-runs/<stamp>/training.
+    case 'archiveTraining': {
+        try {
+            $archived = Workspace::archiveTrainingFolder(
+                isset($input['stamp']) ? (string)$input['stamp'] : null
+            );
+        } catch (\RuntimeException $e) {
+            fail(409, $e->getMessage());
+        }
+        out(['ok' => true, 'archived' => $archived]);
     }
 
     // ---- delete --------------------------------------------------------------

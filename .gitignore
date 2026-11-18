@@ -95,5 +95,7 @@ storage/tunnels.json
 # The IDE's revision log and its content-addressed blobs: a history of this
 # machine's edits, rewritten on every save. Never source, never staged.
 storage/ide/
-# Drill pass files the IDE drill writes into the project root.
+# Drill pass files the IDE drill writes into the project root, and the
+# date-stamped folders Start moves them into.
 training/
+training-runs/

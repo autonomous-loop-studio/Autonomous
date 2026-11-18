@@ -178,6 +178,35 @@ $abs = Workspace::write($tmp . '/ui/js/b.js', "b\n", 'user');
 ok($abs['path'] === 'ui/js/b.js' && $abs['rev'] > 0,
     'writing by absolute in-root path is recorded relatively (' . $abs['path'] . ')', $pass, $fail, $errors);
 
+// ------------------------------------------------- drill folder archive ----
+
+// The IDE drill writes into the APP tree, which the sandbox jail cannot reach,
+// so a stopped run's pass files stayed where they were and the next run's pass 1
+// landed on top of them. The archive moves the folder once and deletes nothing.
+@mkdir($tmp . '/training', 0777, true);
+file_put_contents($tmp . '/training/ide-agent-x-p1.txt', "ide drill\n");
+$archived = Workspace::archiveTrainingFolder('20261114-231845');
+ok($archived === 'training-runs/20261114-231845/training',
+    'the drill folder is moved to a dated training-runs/ folder (' . $archived . ')',
+    $pass, $fail, $errors);
+ok(!is_dir($tmp . '/training'), 'and training/ is gone from the project root', $pass, $fail, $errors);
+ok(file_get_contents($tmp . '/training-runs/20261114-231845/training/ide-agent-x-p1.txt') === "ide drill\n",
+    'the pass file survived the move, byte for byte', $pass, $fail, $errors);
+ok(Workspace::archiveTrainingFolder('20261114-231846') === '',
+    'a call with nothing to move answers quietly', $pass, $fail, $errors);
+
+@mkdir($tmp . '/training', 0777, true);
+file_put_contents($tmp . '/training/ide-agent-y-p1.txt', "again\n");
+$msg = refused(function () { return Workspace::archiveTrainingFolder('20261114-231845'); });
+ok($msg !== null && strpos($msg, 'already exists') !== false,
+    'an occupied destination is refused instead of merging two runs together (' . var_export($msg, true) . ')',
+    $pass, $fail, $errors);
+ok(is_file($tmp . '/training/ide-agent-y-p1.txt'),
+    'and a refused archive leaves the files where they were', $pass, $fail, $errors);
+@mkdir($tmp . '/training-runs/20261114-231847', 0777, true);
+ok(Workspace::archiveTrainingFolder('20261114-231847') === 'training-runs/20261114-231847/training',
+    'the next run is moved aside under its own stamp', $pass, $fail, $errors);
+
 // ------------------------------------------------------------------- tidy
 Workspace::useRoot(null);
 rm_tree($tmp);

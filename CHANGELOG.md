@@ -15,6 +15,14 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🗂️ A stale file jail is repaired, and the IDE drill's files are archived *(`VERSION` 478 → 479, cache-buster v478 → v479)*
+
+*Two follow-ups to v478, and both are the same problem: a file jail that outlives the folder it names.*
+
+*`repairStaleJails(status)` runs once at boot on the answer from `/sandbox/status`. A per-agent `sandboxRoot` that is not inside one of the server's allowed roots is **cleared**, so the agent follows the global working directory instead of asking for a path the server will refuse; a global working directory outside every root is moved to the first writable one. v478's server-side leniency (`Sandbox::relocatedScope`) keeps the tools working in the meantime, but the setting itself was still being read by the brain-lab editor, the system prompt and the pass report — all of them describing a folder nobody has. The decision is store-only, so the test can call it directly; `app.js` persists the two slots it touched and stateSync carries the repair to every device. A status with no roots repairs **nothing**: blanking every path on a broken answer is worse than leaving a stale one in place. `tests/js/staleJail.test.mjs` pins all of it, including the sibling-path case (`C:/data/out` is a root, `C:/data/output-not-inside` is not).*
+
+*The **IDE drill's files are archived now**. That drill writes `training/ide-<agent>-pN.txt` into the app's own tree, because it writes through the editor's door — and the sandbox jail cannot reach there, so Start's one-shot archive of `sandbox/training` never saw those files. A stopped IDE run therefore left `…-p1.txt` where the next run's pass 1 would land. `SrcWorkspace::archiveTrainingFolder()` moves the folder to `training-runs/<yyyymmdd-hhmmss>/training` exactly as the sandbox archive does — one rename, nothing deleted, an occupied destination refused rather than merged — and is exposed as `POST ide/api.php?action=archiveTraining`, the writer that already owns that tree. `_archiveTrainingFolder()` runs both halves and logs-and-continues if either fails. `.gitignore` covers `training-runs/` beside `training/`. `tests/php/workspace.test.php` pins the move, the bytes, the quiet empty case and the refusal.*
+
 ## 🧱 The floor is drawn again, and a moved app stops breaking every file tool *(`VERSION` 477 → 478, cache-buster v477 → v478)*
 
 *Both of these arrived looking like one bug — training mode "refusing to write over files" — and neither was caused by stopping a drill.*

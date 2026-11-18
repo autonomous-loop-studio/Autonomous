@@ -7,17 +7,18 @@
 // APP.JS — Bootstrap & wiring only
 // ============================================
 
-import { store, APP_VERSION } from './store.js?v=478';
-import { K } from './storage.js?v=478';
-import { persistence, DEFAULT_AGENTS, DEFAULT_PROVIDERS } from './persistence.js?v=478';
-import { esc, downloadFile } from './utils.js?v=478';
-import { startStateSync } from './stateSync.js?v=478';
-import { api } from './api.js?v=478';
-import { themeManager } from './themes.js?v=478';
-import { Sidebar } from './components/sidebar.js?v=478';
-import { Chat } from './components/chat.js?v=478';
-import { TopologyGraph } from './components/topology.js?v=478';
-import { initTopoPanel } from './components/topoPanel.js?v=478';
+import { store, APP_VERSION } from './store.js?v=479';
+import { K } from './storage.js?v=479';
+import { persistence, DEFAULT_AGENTS, DEFAULT_PROVIDERS } from './persistence.js?v=479';
+import { esc, downloadFile } from './utils.js?v=479';
+import { startStateSync } from './stateSync.js?v=479';
+import { api } from './api.js?v=479';
+import { repairStaleJails } from './agentConfig.js?v=479';
+import { themeManager } from './themes.js?v=479';
+import { Sidebar } from './components/sidebar.js?v=479';
+import { Chat } from './components/chat.js?v=479';
+import { TopologyGraph } from './components/topology.js?v=479';
+import { initTopoPanel } from './components/topoPanel.js?v=479';
 
 /**
  * The 3D topology pulls in three.js (~700KB) through the import map. Loaded
@@ -26,35 +27,35 @@ import { initTopoPanel } from './components/topoPanel.js?v=478';
  * of taking the whole app down with a failed static import.
  */
 function loadTopology3D() {
-  return import('./components/topology3d/index.js?v=478')
+  return import('./components/topology3d/index.js?v=479')
     .then(m => m.Topology3D)
     .catch(err => {
       console.warn('[topology] 3D view unavailable, using the 2D chart:', err);
       return null;
     });
 }
-import { RoutingChart } from './components/routingChart.js?v=478';
-import { AgentEditor } from './components/agentEditor.js?v=478';
-import { ProviderEditor } from './components/providerEditor.js?v=478';
-import { Microphone } from './components/microphone.js?v=478';
-import { ConfigPanel } from './components/configPanel.js?v=478';
-import { ExportPanel } from './components/export.js?v=478';
-import { ThinkingPanel } from './components/thinkingPanel.js?v=478';
-import { TerminalPanel } from './components/terminalPanel.js?v=478';
-import { MetricsPanel } from './components/metricsPanel.js?v=478';
-import { TracePanel } from './components/tracePanel.js?v=478';
-import { AgentRecord } from './components/agentRecord.js?v=478';
-import { preloadAvatars, wireAvatarThinking } from './components/avatar.js?v=478';
-import { bindMemoryTools, bindSandboxNow, initCustomTools } from './tools.js?v=478';
-import { initApprovals } from './approvals.js?v=478';
-import * as memory from './memory.js?v=478';
-import { audio } from './audio.js?v=478';
-import { AlwaysOn } from './alwaysOn.js?v=478';
-import { ApiLab } from './apiLab.js?v=478';
-import { BrainLab } from './brainlab.js?v=478';
-import { IdeScreen } from './ideScreen.js?v=478';
-import { BrowserView } from './components/browserView.js?v=478';
-import { initKeyboardAvoid } from './keyboard.js?v=478';
+import { RoutingChart } from './components/routingChart.js?v=479';
+import { AgentEditor } from './components/agentEditor.js?v=479';
+import { ProviderEditor } from './components/providerEditor.js?v=479';
+import { Microphone } from './components/microphone.js?v=479';
+import { ConfigPanel } from './components/configPanel.js?v=479';
+import { ExportPanel } from './components/export.js?v=479';
+import { ThinkingPanel } from './components/thinkingPanel.js?v=479';
+import { TerminalPanel } from './components/terminalPanel.js?v=479';
+import { MetricsPanel } from './components/metricsPanel.js?v=479';
+import { TracePanel } from './components/tracePanel.js?v=479';
+import { AgentRecord } from './components/agentRecord.js?v=479';
+import { preloadAvatars, wireAvatarThinking } from './components/avatar.js?v=479';
+import { bindMemoryTools, bindSandboxNow, initCustomTools } from './tools.js?v=479';
+import { initApprovals } from './approvals.js?v=479';
+import * as memory from './memory.js?v=479';
+import { audio } from './audio.js?v=479';
+import { AlwaysOn } from './alwaysOn.js?v=479';
+import { ApiLab } from './apiLab.js?v=479';
+import { BrainLab } from './brainlab.js?v=479';
+import { IdeScreen } from './ideScreen.js?v=479';
+import { BrowserView } from './components/browserView.js?v=479';
+import { initKeyboardAvoid } from './keyboard.js?v=479';
 
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -218,6 +219,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     console.warn('State sync unavailable; using this browser\'s saved copy.', err);
   }
+
+  // A file jail saved by another machine -- or by this one before the app folder
+  // moved -- names a directory that is not there any more, and every turn then
+  // fails at its first file call with "sandbox directory does not exist". The
+  // server tolerates it (Sandbox::relocatedScope); this clears the setting so
+  // the editor, the prompt and the pass report stop advertising a dead path.
+  // Not awaited: a slow status route must never hold up the first paint.
+  api.getSandboxStatus()
+    .then(status => {
+      if (!repairStaleJails(status)) return;
+      // The store is the decision; these two are the write. stateSync mirrors a
+      // persistence.set to the server, so the repair reaches every device.
+      persistence.set('agents', store.get('agents'));
+      persistence.set('settings', store.get('settings'));
+      console.info('[sandbox] cleared a file jail the server no longer allows');
+    })
+    .catch(() => { /* status unreachable: the turn preflight warns instead */ });
 
   safeInit('customTools', () => initCustomTools());
 

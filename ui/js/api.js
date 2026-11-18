@@ -7,12 +7,12 @@
 // API.JS — PHP backend client
 // ============================================
 
-import { store } from './store.js?v=478';
-import { acquire, note429 } from './rateGovernor.js?v=478';
-import { latency } from './latency.js?v=478';
-import { detectFamily, outputText, outputUsage } from './harness.js?v=478';
-import { createNativeCallState, ingestNativeDelta, nativeCalls } from './nativeTools.js?v=478';
-import { mergeUsage, googleFinishReason, finishReasonFrom } from './streamShape.js?v=478';
+import { store } from './store.js?v=479';
+import { acquire, note429 } from './rateGovernor.js?v=479';
+import { latency } from './latency.js?v=479';
+import { detectFamily, outputText, outputUsage } from './harness.js?v=479';
+import { createNativeCallState, ingestNativeDelta, nativeCalls } from './nativeTools.js?v=479';
+import { mergeUsage, googleFinishReason, finishReasonFrom } from './streamShape.js?v=479';
 
 latency.bindStore(store);
 
@@ -570,6 +570,27 @@ class ApiClient {
       });
     }
     return this.request('POST', `/sandbox/${action}`, params || {}, signal);
+  }
+
+  /**
+   * Move the project tree's IDE drill folder aside — training/ to
+   * training-runs/<stamp>/training.
+   *
+   * The IDE drill writes INSIDE the app (`training/ide-<agent>-pN.txt`), which
+   * the sandbox jail cannot reach, so Start's sandbox archive never touched
+   * those files. `ide/api.php` owns every write in the app tree, so the move
+   * goes through that door — the same one the drill's own ide_* tools use.
+   */
+  archiveTrainingFolder() {
+    return fetch(new URL('../../ide/api.php?action=archiveTraining', import.meta.url), {
+      method: 'POST',
+      headers: this._authHeaders(),
+      body: '{}',
+    }).then(async res => {
+      const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (!res.ok) throw new Error(errText(data.error) || `IDE ${res.status}`);
+      return data;
+    });
   }
 
   // --- MCP: tools exposed by operator-configured MCP servers ---

@@ -20,9 +20,9 @@
 // Keeping one source per setting is what stops the UI, the resolver and the
 // call paths from disagreeing about what an agent is actually using.
 
-import { store } from './store.js?v=478';
-import { DEFAULT_HISTORY_TURNS } from './utils.js?v=478';
-import { contextLimitFor } from './harness.js?v=478';
+import { store } from './store.js?v=479';
+import { DEFAULT_HISTORY_TURNS } from './utils.js?v=479';
+import { contextLimitFor } from './harness.js?v=479';
 
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o || {}, k);
 
@@ -199,6 +199,70 @@ export function sandboxRootFor(agent) {
   const own = String(agent?.sandboxRoot || '').trim();
   if (own) return own;
   return String(store.get('settings.projectDir') || '').trim();
+}
+
+/** One path the way the comparisons below want it: forward slashes, no tail. */
+const normRoot = p => String(p ?? '').replace(/\\/g, '/').replace(/\/+$/, '');
+
+/**
+ * Clear a file jail the server will refuse, and point the shared directory at
+ * one that exists.
+ *
+ * A per-agent root outlives the folder it names: this app gets moved (out of
+ * OneDrive, into a fresh download, onto another drive), and the agent then asks
+ * for a path nothing is at. The server tolerates that at call time
+ * (`Sandbox::relocatedScope`), but the setting itself keeps being read by the
+ * editor, the prompt and the pass report, all of which then describe a folder
+ * the operator does not have. So the stale value is what gets fixed: an agent
+ * whose jail is not one of the server's allowed roots falls back to the global
+ * directory, and a global directory outside every root is moved to the first
+ * writable one.
+ *
+ * Touches the store only -- the caller persists (it owns the write path), so
+ * this stays a pure decision these tests can call directly. Returns true when
+ * something changed, and never acts on a status with no roots: there would be
+ * nothing to repair TO, and blanking every path on a broken answer is worse
+ * than leaving a stale one in place.
+ */
+export function repairStaleJails(status) {
+  if (!status || typeof status !== 'object') return false;
+  const roots = [];
+  for (const r of [...(status.read_roots || []), ...(status.write_roots || [])]) {
+    const p = normRoot(r);
+    if (p) roots.push(p);
+  }
+  if (!roots.length) return false;
+  const lower = roots.map(r => r.toLowerCase());
+  const inside = p => {
+    const q = normRoot(p).toLowerCase();
+    return !!q && lower.some(a => q === a || q.startsWith(a + '/'));
+  };
+
+  let changed = false;
+  const agents = store.get('agents');
+  if (Array.isArray(agents)) {
+    let touched = false;
+    const next = agents.map(a => {
+      const own = normRoot(a && a.sandboxRoot);
+      if (!own || inside(own)) return a;
+      const copy = { ...a };
+      delete copy.sandboxRoot;
+      touched = true;
+      return copy;
+    });
+    if (touched) {
+      store.set('agents', next);
+      changed = true;
+    }
+  }
+
+  const dir = normRoot(store.get('settings.projectDir'));
+  if (dir && !inside(dir)) {
+    const write = (status.write_roots || []).map(normRoot).filter(Boolean)[0] || roots[0];
+    store.set('settings.projectDir', write);
+    changed = true;
+  }
+  return changed;
 }
 
 // ---------------------------------------------------------------- profiles

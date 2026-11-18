@@ -133,7 +133,8 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v478** — current | The floating floor is drawn again in 3D, and an agent whose saved file jail points at a folder that no longer exists stops failing every file tool. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v479** — current | A stale per-agent file jail is cleared instead of merely tolerated, and the IDE drill's pass files are archived like every other drill's. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v478** | The floating floor is drawn again in 3D, and a moved file jail stops failing every file tool. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v478) |
 | **v477** | The IDE and the agents share one write path and one revision log, an IDE drill proves it, and `drill-run.mjs` runs any drill headlessly against a real model. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v477) |
 | **v470** | The drill block and every Continue lead with this pass's file, so a model can't reuse the last pass's path. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v470) |
 | **v469** | Every training pass must write its own drill file, so one pass can't overwrite another's evidence. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v469) |
@@ -1904,11 +1905,11 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v478 — the floating floor is back, and a moved app stops breaking every file tool
+### 📌 v479 — a stale file jail is repaired, and the IDE drill's files are archived
 
-*Two symptoms, two causes — and neither was training mode refusing to overwrite a file. The **floating floor** is a DOM layer inside the map's own container, and the 3D map appends its root — `.t3d-root`, an opaque `#04070c` — to that same container *after* the floor already exists. Both are positioned and the floor sat at `z-index: 0`, so the map's background painted over the whole grid: the floor survived only when it happened to be appended last, which is why it could look fine on one load and be gone on the next. It sits at `z-index: 1` now — above the map, still below the node card at 20.*
+*A file jail can outlive the folder it names: this app gets moved, and the agent is left asking for a path that is not there. v478 taught the server to work around it; this release fixes the setting itself. `repairStaleJails()` checks every agent's jail and the global working directory against `/sandbox/status` once at boot — a jail outside the allowlist is cleared so the agent follows the global directory, and a global directory outside every root is moved to the first writable one. The decision is store-only and tested (`tests/js/staleJail.test.mjs`), and an answer with no roots repairs nothing rather than blanking paths.*
 
-*The **writes**: an agent carries its own file jail (`sandboxRoot`), and this copy moved out of `…/OneDrive/Desktop/Re-Release/…` into `…/Desktop/Autonomous-Project/…`. Every file call then sent the OLD path as its scope, and `Sandbox::scopeRoots()` threw `sandbox directory does not exist` for `write_file`, `read_file`, `list_dir` and everything else that touches disk — one stale setting, every tool, on every step, which is exactly what a drill is. A missing scope is reconstructed from its own trailing path inside an allowed root (an agent jailed one level into the sandbox stays one level in) and falls back to the allowlist when nothing by that name exists under any root; a scope that **exists** outside the roots is still refused, so this rebuilds a path and never widens one. Nothing was deleted, and overwriting a pass file was never the thing being refused.*
+*The IDE drill's pass files are **archived** now. That drill writes `training/ide-<agent>-pN.txt` inside the app itself, which the sandbox jail cannot reach, so Start's archive of `sandbox/training` never moved them and a new run's pass 1 landed on the file a stopped run had left. `SrcWorkspace::archiveTrainingFolder()` moves them to `training-runs/<stamp>/training` — one rename, nothing deleted, an occupied destination refused — called through `ide/api.php` beside the sandbox half. `training-runs/` is ignored beside `training/` so the archive never shows up as untracked files.*
 ---
 
 ## 🧯 Troubleshooting

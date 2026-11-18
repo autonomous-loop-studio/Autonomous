@@ -7,22 +7,22 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=478';
-import { K } from '../storage.js?v=478';
-import { persistence } from '../persistence.js?v=478';
-import { api } from '../api.js?v=478';
-import { isNoTokenError } from '../apiError.js?v=478';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=478';
-import { errText } from '../api.js?v=478';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=478';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=478';
-import { snapshot } from '../rateGovernor.js?v=478';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=478';
-import { resetBrowserEnabled } from '../toolManifest.js?v=478';
-import { perf } from '../perf.js?v=478';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=478';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=478';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=478';
+import { store } from '../store.js?v=479';
+import { K } from '../storage.js?v=479';
+import { persistence } from '../persistence.js?v=479';
+import { api } from '../api.js?v=479';
+import { isNoTokenError } from '../apiError.js?v=479';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=479';
+import { errText } from '../api.js?v=479';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=479';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=479';
+import { snapshot } from '../rateGovernor.js?v=479';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=479';
+import { resetBrowserEnabled } from '../toolManifest.js?v=479';
+import { perf } from '../perf.js?v=479';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=479';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=479';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=479';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -1128,21 +1128,40 @@ export class Sidebar {
    * would race the automatic Continue and can fail on a Windows file handle. A
    * failure here is logged and ignored: the pass counter alone keeps this run
    * collision-free.
+   *
+   * The IDE drill is the exception to "one folder": its pass files live in the
+   * PROJECT tree (`training/ide-<agent>-pN.txt`), because that drill writes
+   * through the editor's door, and the sandbox jail cannot reach there. So the
+   * folder is archived twice -- once inside the sandbox, once through
+   * `ide/api.php` for the app's own copy -- and a failure in either half is
+   * logged and ignored for the same reason.
    */
   async _archiveTrainingFolder() {
+    const moved = [];
     try {
       const listing = await api.sandbox('list', { path: 'training', limit: 500 });
       const entries = (listing && listing.entries) || [];
-      if (!entries.length) return '';
-      // 20261114-231845, from the ISO stamp: readable, sortable, no spaces.
-      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
-      const to = `training-runs/${stamp}/training`;
-      await api.sandbox('move', { from: 'training', to });
-      return to;
+      if (entries.length) {
+        // 20261114-231845, from the ISO stamp: readable, sortable, no spaces.
+        const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
+        const to = `training-runs/${stamp}/training`;
+        await api.sandbox('move', { from: 'training', to });
+        moved.push(to);
+      }
     } catch (err) {
       console.warn('[training] could not archive the previous drill folder; it stays in place:', err);
-      return '';
     }
+    // The IDE drill's files are not in the sandbox at all, so the move above
+    // never saw them: a stopped IDE run left training/ide-<agent>-p1.txt where
+    // the next run's pass 1 would land. Same one-shot rule, through the door
+    // that owns the app tree.
+    try {
+      const ide = await api.archiveTrainingFolder();
+      if (ide && ide.archived) moved.push(ide.archived);
+    } catch (err) {
+      console.warn('[training] could not archive the IDE drill folder; it stays in place:', err);
+    }
+    return moved.join(', ');
   }
 
   async _startTraining(close) {

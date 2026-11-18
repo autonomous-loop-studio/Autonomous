@@ -427,6 +427,51 @@ class Workspace
         return ['path' => $rel, 'rev' => $rev, 'hash' => $hash, 'prev' => $prevHash, 'size' => strlen($content)];
     }
 
+    /**
+     * Move the project tree's drill folder aside: training/ -> training-runs/<stamp>/training.
+     *
+     * The IDE drill writes `training/ide-<agent>-pN.txt` into the app's own tree,
+     * which the sandbox jail cannot reach -- so Start's one-shot archive of
+     * `sandbox/training` never saw those files, and a new run's pass 1 landed on
+     * the file a stopped run had left behind. Same rule as the sandbox archive:
+     * move it once, delete nothing, and answer '' quietly when there is nothing
+     * to move. A caller that fails here still has the pass counter, which alone
+     * keeps a run collision-free -- every pass names its own file.
+     *
+     * Returns the workspace-relative destination, or '' when nothing moved.
+     */
+    public static function archiveTrainingFolder(?string $stamp = null): string
+    {
+        $from = self::resolve('training', false);
+        if (!is_dir($from)) {
+            return '';
+        }
+        $names = @scandir($from);
+        $files = array_values(array_diff($names === false ? [] : $names, ['.', '..']));
+        if (!$files) {
+            return '';
+        }
+        // 20261114-231845: readable, sortable, no spaces. A caller may pass its
+        // own, so two devices cannot pick the same name in the same second.
+        $stamp = ($stamp !== null && preg_match('/^[0-9]{8}-[0-9]{6}$/', $stamp) === 1)
+            ? $stamp
+            : gmdate('Ymd-His');
+        $rel = 'training-runs/' . $stamp . '/training';
+        $to = self::resolve($rel, false);
+        if (@file_exists($to)) {
+            throw new \RuntimeException('target already exists');
+        }
+        $parent = dirname($to);
+        if (!is_dir($parent) && !@mkdir($parent, 0777, true) && !is_dir($parent)) {
+            throw new \RuntimeException('cannot create folder');
+        }
+        if (!@rename($from, $to)) {
+            throw new \RuntimeException('cannot move training/');
+        }
+        self::noteSafe($to, 'rename', 'user', 0, ['from' => 'training']);
+        return $rel;
+    }
+
     /** Remove a file (or folder) and record it. Used by the IDE's delete. */
     public static function remove(string $rel, string $actor = 'user'): void
     {
