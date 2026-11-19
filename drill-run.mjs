@@ -92,7 +92,7 @@ const {
   trainingBlockFor, drillVerdict, drillVerdictText, trainingFileFor,
   trainingTasksFor, drillFailureNotice,
 } = await import(`./ui/js/training.js?v=${version}`);
-const { TOOL_REGISTRY, toolInstructions, runTool, bindSandboxNow } = await import(`./ui/js/tools.js?v=${version}`);
+const { TOOL_REGISTRY, toolInstructions, runTool, bindSandboxNow, aliasToolArgs } = await import(`./ui/js/tools.js?v=${version}`);
 const { nativeToolDefs } = await import(`./ui/js/nativeTools.js?v=${version}`);
 const { sandboxRootFor } = await import(`./ui/js/agentConfig.js?v=${version}`);
 const { api } = await import(`./ui/js/api.js?v=${version}`);
@@ -468,6 +468,10 @@ async function runSandboxTool(name, arg) {
 async function execute(name, arg) {
   if (name === 'think' || name === 'todo_write') return { status: 'ok', result: 'ok' };
   if (!IDE_TOOL_NAMES.includes(name)) return runSandboxTool(name, arg);
+  // Native frames arrive raw here — no parseToolCalls, no nativeToolArgs — so
+  // a pasted envelope would reach the IDE endpoint as a missing argument.
+  // Normalize with the app's own aliasing before touching the path.
+  arg = aliasToolArgs(name, arg);
   const path = String((arg && arg.path) || '').trim();
   if (!path) return { status: 'error', result: `error: ${name} needs a "path"` };
 
@@ -485,7 +489,7 @@ async function execute(name, arg) {
   }
 
   if (name === 'ide_write') {
-    if (typeof arg.content !== 'string') return { status: 'error', result: 'error: ide_write needs "content"' };
+    if (typeof arg.content !== 'string') return { status: 'error', result: `error: ide_write needs "content" (got keys: ${Object.keys(arg || {}).join(', ') || 'none'}) — send the arguments flat, not nested under "arg": {"path":"...","content":"..."}` };
     const r = await ide('', { action: 'write', path, content: arg.content, actor: 'agent' });
     if (!r.ok) return { status: 'error', result: r.text };
     return { status: 'ok', result: `Wrote ${r.data.path} (${r.data.size} bytes, revision ${r.data.rev})` };
@@ -494,7 +498,7 @@ async function execute(name, arg) {
   if (name === 'ide_edit') {
     const oldString = typeof arg.old_string === 'string' ? arg.old_string : '';
     if (!oldString) {
-      return { status: 'error', result: 'error: ide_edit needs "old_string" \u2014 it is an exact match, never an append' };
+      return { status: 'error', result: `error: ide_edit needs "old_string" (got keys: ${Object.keys(arg || {}).join(', ') || 'none'}) — send the arguments flat, not nested under "arg": {"path":"...","old_string":"...","new_string":"..."}` };
     }
     const r = await ide('', {
       action: 'edit', path, old_string: oldString,

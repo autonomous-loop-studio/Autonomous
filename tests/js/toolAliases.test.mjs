@@ -150,6 +150,28 @@ eq(aliasToolArgs('read_file', { path: 'a.txt', arg: { path: 'a.txt', range: '1-1
 eq(call('{"tool":"edit_file","path":"split.txt","arg":{"old_string":"a","new_string":"b"}}'),
   { tool: 'edit_file', arg: { path: 'split.txt', old_string: 'a', new_string: 'b' } },
   'a top-level path beside the envelope is merged back into the arguments');
+// The IDE door gets the same tolerance: a pasted envelope, foreign spellings
+// and stringified arguments must reach ide_write/ide_edit flat, or step 3 of
+// the IDE drill refuses every identical retry the way edit_file did.
+eq(aliasToolArgs('ide_write', { path: 'training/ide-a-p2.txt', arg: { path: 'training/ide-a-p2.txt', content: 'ide drill' } }),
+  { path: 'training/ide-a-p2.txt', content: 'ide drill' },
+  'a pasted arg envelope unfolds for ide_write too');
+eq(aliasToolArgs('ide_write', { arg: { file_path: 'a.txt', text: 'ide drill' } }),
+  { path: 'a.txt', content: 'ide drill' },
+  'ide_write folds foreign path and content spellings');
+eq(aliasToolArgs('ide_write', '{"path":"a.txt","content":"ide drill"}'),
+  { path: 'a.txt', content: 'ide drill' },
+  'a stringified ide_write argument is parsed before normalization');
+eq(aliasToolArgs('ide_edit', { path: 'a.txt', arg: { old_str: 'x', new_str: 'y' } }),
+  { path: 'a.txt', old_string: 'x', new_string: 'y' },
+  'ide_edit unfolds the envelope and the old_str/new_str spellings');
+eq(aliasToolArgs('ide_open', { arg: { file_path: 'a.txt', line: 3 } }),
+  { path: 'a.txt', line: 3 }, 'ide_open keeps extras like line beside the path');
+eq(aliasToolArgs('ide_read', '{"path":"a.txt"}'),
+  { path: 'a.txt' }, 'a stringified ide_read argument parses to a path object');
+eq(call('{"tool":"ide_write","path":"w.txt","arg":{"content":"ide drill"}}'),
+  { tool: 'ide_write', arg: { path: 'w.txt', content: 'ide drill' } },
+  'a top-level path beside the ide_write envelope is merged back in');
 
 // --- the transcript still gets cleaned ---------------------------------------
 // Aliasing must not break span matching: the same call is parsed for run AND for

@@ -18,7 +18,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=496';
+import { store } from './store.js?v=497';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -436,7 +436,7 @@ export const TRAINING_TASKS_IDE = [
     example: "{\"tool\":\"think\",\"arg\":\"I will use the IDE tools for every file step.\"}"},
   { tool: 'todo_write', label: 'Write the IDE steps as your todo list, first one in_progress.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
-  { tool: 'ide_write', label: 'Create the file with ide_write: {"path":"{file}","content":"ide drill"}. That is the only content the later steps edit.' ,
+  { tool: 'ide_write', label: 'Create the file with ide_write: {"path":"{file}","content":"ide drill"}. Send the arguments flat — {"path":...,"content":"..."} — not nested under a second "arg". That is the only content the later steps edit.' ,
     example: "{\"tool\":\"ide_write\",\"arg\":{\"path\":\"{file}\",\"content\":\"ide drill\"}}"},
   { tool: 'ide_open', label: 'Open the same file in the operator\u2019s IDE with ide_open: {"path":"{file}"} — it appears in their editor.' ,
     example: "{\"tool\":\"ide_open\",\"arg\":{\"path\":\"{file}\"}}"},

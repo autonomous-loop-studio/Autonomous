@@ -15,6 +15,14 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🖥️ The IDE door unfolds pasted envelopes too, ending the ide_write retry loop *(`VERSION` 496 → 497, cache-buster v496 → v497)*
+
+*The same pasted-envelope class that stalled `edit_file` before v496 reached the IDE door: the slots the model understood landed top-level (`path`) while the rest hid under `"arg"`, so `ide_write` saw the path but no `content` and refused every identical retry at IDE drill step 3. `aliasToolArgs` now normalises all four IDE tools — `ide_open`/`ide_read` through a shared `normaliseIdeArg`, `ide_edit` through the same `normaliseEditArg` as `edit_file` — folding the envelope flat, foreign path/content spellings and stringified arguments before anything touches the path. The sandbox door's `ideArg` parses stringified arguments and unfolds as a second line of defense, `drill-run.mjs` normalises with the app's own aliasing (native frames arrive raw, past the parser), and the `ide_write`/`ide_edit` refusals name the received keys plus the flat shape instead of repeating one line.*
+
+*IDE drill step 3 teaches the flat shape the way Hard step 8 does — send `{"path":...,"content":"..."}` flat, not nested under a second `"arg"` — and the same-error hint names the IDE write call on a step-3 loop. Regression tests pin the envelope, foreign spellings, stringified args and split-level slots for every IDE tool.*
+
+*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files. `VERSION` 496 → 497, `APP_VERSION` 496 → 497, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+
 ## 🔧 Pasted tool envelopes unfold instead of failing, and the drill names the flat shape *(`VERSION` 495 → 496, cache-buster v495 → v496)*
 
 *A model taught the `{"tool","arg"}` dialect sometimes pastes the whole envelope into the argument itself: the slots it understood land top-level (`path`) while the rest hides under `"arg"`. `edit_file` then saw the path but no `old_string` and refused every identical retry. A shared `unfoldNestedArg` helper now folds the envelope flat on both the markup and native paths — explicit top-level slots win on conflict and nothing silently drops — `fromToolObject` merges split-level slots (`"path"` beside `"arg"` instead of inside it), `read_file` unfolds before keeping its range, and `write_file` unfolds before folding its foreign spellings (and now drops the consumed aliases instead of passing them through).*

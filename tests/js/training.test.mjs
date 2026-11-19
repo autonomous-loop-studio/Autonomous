@@ -787,6 +787,11 @@ ok(DRILL_CHECKS_IDE[3](ideCall('ide_open', { path: ideFile }, 'Opened it in the 
 ok(DRILL_CHECKS_IDE[4](ideCall('ide_read', { path: ideFile }, '1| ide drill'), ideFile), 'step 5 passes on a read that shows the marker');
 ok(DRILL_CHECKS_IDE[5](ideCall('ide_edit', { path: ideFile, old_string: 'ide drill', new_string: 'ide drill (edited)' }, 'Edited'), ideFile), 'step 6 passes on an anchored edit');
 ok(!DRILL_CHECKS_IDE[5](ideCall('ide_edit', { path: ideFile, old_string: '', new_string: 'ide drill (edited)' }, 'error: ide_edit needs "old_string"'), ideFile), 'step 6 refuses an empty anchor, which is the append the drill exists to catch');
+ok(TRAINING_TASKS_IDE[2].label.includes('not nested under a second "arg"'),
+  'the IDE write step teaches the flat shape, the way Hard step 8 does');
+ok(drillSameErrorNotice(SAME_ERROR_HINT, TRAINING_TASKS_IDE[2], 3, 8, { id: 'a' }, 'ide')
+  .includes('Expected: {"tool":"ide_write"'),
+  'the same-error hint names the IDE write call for a step-3 loop');
 ok(DRILL_CHECKS_IDE[6](ideCall('ide_read', { path: ideFile }, '1| ide drill (edited)'), ideFile), 'step 7 passes when the read shows the edit');
 ok(!DRILL_CHECKS_IDE[6](ideCall('ide_read', { path: ideFile }, '1| ide drill'), ideFile), 'step 7 fails when the read still shows the pre-edit text');
 store.set('settings.trainingMode', { active: true, difficulty: 'ide', pass: 1 });

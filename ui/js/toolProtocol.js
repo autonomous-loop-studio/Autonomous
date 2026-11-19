@@ -30,4 +30,4 @@ export {
   learnedDialect,
   rememberDialect,
   forgetDialect,
-} from './harness.js?v=496';
+} from './harness.js?v=497';

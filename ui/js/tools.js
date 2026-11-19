@@ -31,11 +31,11 @@
 //
 // Nothing here runs arbitrary code or shells out.
 
-import { store } from './store.js?v=496';
-import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=496';
-import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=496';
-import { settingFor } from './agentConfig.js?v=496';
-import { trace } from './trace.js?v=496';
+import { store } from './store.js?v=497';
+import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=497';
+import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=497';
+import { settingFor } from './agentConfig.js?v=497';
+import { trace } from './trace.js?v=497';
 
 const NOTES_KEY = 'router_notes';
 const CUSTOM_TOOL_NAME_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -1578,8 +1578,11 @@ export function bindSandboxTools(api) {
   };
 
   const ideArg = (arg) => {
-    if (arg && typeof arg === 'object' && !Array.isArray(arg)) return arg;
-    const s = String(arg || '').trim();
+    // Second line of defense behind aliasToolArgs: a stringified object
+    // parses, a pasted envelope unfolds, and a bare path still wraps.
+    const parsed = unfoldNestedArg(parseArgObject(arg));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    const s = String(arg ?? '').trim();
     return s ? { path: s } : {};
   };
 
@@ -1607,7 +1610,7 @@ export function bindSandboxTools(api) {
     const a = ideArg(arg);
     const path = String(a.path || '').trim();
     if (!path) return 'error: ide_write needs a "path"';
-    if (typeof a.content !== 'string') return 'error: ide_write needs "content" (the whole file)';
+    if (typeof a.content !== 'string') return `error: ide_write needs "content" (got keys: ${Object.keys(a).join(', ') || 'none'}) — send the arguments flat, not nested under "arg": {"path":"...","content":"..."}`;
     const res = await ideRequest('', { action: 'write', path, content: a.content, actor: 'agent' });
     return `Wrote ${res.path || path} (${Number(res.size) || a.content.length} bytes, revision ${res.rev})`;
   };
@@ -1617,7 +1620,7 @@ export function bindSandboxTools(api) {
     const path = String(a.path || '').trim();
     if (!path) return 'error: ide_edit needs a "path"';
     const oldString = typeof a.old_string === 'string' ? a.old_string : '';
-    if (!oldString) return 'error: ide_edit needs "old_string" \u2014 it is an exact match, never an append';
+    if (!oldString) return `error: ide_edit needs "old_string" (got keys: ${Object.keys(a).join(', ') || 'none'}) — send the arguments flat, not nested under "arg": {"path":"...","old_string":"...","new_string":"..."}`;
     const newString = typeof a.new_string === 'string' ? a.new_string : '';
     const res = await ideRequest('', {
       action: 'edit', path, old_string: oldString, new_string: newString,
@@ -2871,6 +2874,32 @@ function normaliseEditArg(arg) {
 }
 
 /**
+ * IDE-door arguments with the sandbox door's tolerance.
+ *
+ * `want` is 'write' for ide_write (path plus content) or 'read' for
+ * ide_open/ide_read (path plus extras like ide_open's `line`). ide_edit
+ * goes through normaliseEditArg directly — same names as edit_file.
+ */
+function normaliseIdeArg(arg, want) {
+  arg = unfoldNestedArg(parseArgObject(arg));
+  if (!arg || typeof arg !== 'object' || Array.isArray(arg)) return arg;
+  const out = {};
+  const path = pathText(arg);
+  if (path != null) out.path = path;
+  if (want === 'write') {
+    const content = arg.content ?? arg.file_text ?? arg.text ?? arg.contents ?? arg.body;
+    if (content !== undefined) out.content = content;
+  }
+  for (const [key, value] of Object.entries(arg)) {
+    if (FILE_PATH_KEYS.includes(key) || key === 'path') continue;
+    if (want === 'write'
+      && (key === 'content' || key === 'file_text' || key === 'text' || key === 'contents' || key === 'body')) continue;
+    out[key] = value;
+  }
+  return out;
+}
+
+/**
  * Split a shell command line into argv, or null when it needs a real shell.
  *
  * exec runs one program with an argv array and has no shell, so a `bash`
@@ -2960,6 +2989,13 @@ export function aliasToolArgs(tool, arg) {
   }
   if (tool === 'read_file' || tool === 'show_file') return normaliseReadArg(arg);
   if (tool === 'edit_file') return normaliseEditArg(arg);
+  // The IDE door takes the same spellings as the sandbox one: a pasted
+  // envelope, `file_path` and friends, and `old_str`/`new_str` for ide_edit.
+  // Without this, ide_write saw the path but no content and refused every
+  // identical retry — the same loop the sandbox tools had before v496.
+  if (tool === 'ide_open' || tool === 'ide_read') return normaliseIdeArg(arg, 'read');
+  if (tool === 'ide_write') return normaliseIdeArg(arg, 'write');
+  if (tool === 'ide_edit') return normaliseEditArg(arg);
   const keys = ARG_KEY_ALIASES[tool];
   if (!keys) return arg;
   if (typeof arg === 'string' || typeof arg === 'number') return arg;

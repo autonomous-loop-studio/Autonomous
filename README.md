@@ -133,7 +133,8 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v496** — current | Pasted tool envelopes unfold instead of failing, the Hard drill teaches the flat call shape, and a same-error hint (toggleable) names it after three identical refusals. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v497** — current | The IDE door unfolds pasted envelopes too, so the IDE drill's write step stops refusing every identical retry; its errors name the flat shape instead. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v496** | Pasted tool envelopes unfold instead of failing, the Hard drill teaches the flat call shape, and a same-error hint (toggleable) names it after three identical refusals. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v496) |
 | **v495** | Both clients gate the drill todo plan the same way, through one shared path scrub, so a new pass can't reuse the last pass's file. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v495) |
 | **v494** | A todo list that lost its commas no longer stalls Easy step 2: every quoted item is recovered in order instead of returning a schema error. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v494) |
 | **v482** | A read-only storage folder is refused at boot with the exact chown line, so it can never look like a hang again. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v482) |
@@ -1911,11 +1912,11 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v496 — Pasted tool envelopes unfold, and the drill names the flat shape
+### 📌 v497 — The IDE door unfolds pasted envelopes, ending the ide_write loop
 
-*A model that pastes the whole `{"tool","arg"}` envelope into a tool's arguments got an `old_string` refusal on every identical retry. Every object tool now unfolds the envelope first — top-level slots win — the parser merges split-level slots, and the Hard drill teaches the flat shape once.*
+*The same pasted-envelope class that stalled `edit_file` reached the IDE tools: the path landed top-level while `content` hid under `"arg"`, so `ide_write` refused every identical retry at IDE drill step 3. All four IDE tools now normalise through the same aliasing — envelope unfolded, foreign spellings folded, stringified args parsed — and their refusals name the received keys plus the flat shape.*
 
-*When the same error answers one step three times, the drill now names the flat shape with the step's exact call. The hint defaults on and switches off in the Training dialog (`Same-error shape hint`). Full suite green.*
+*IDE drill step 3 teaches the flat shape, and `drill-run.mjs` normalises IDE args with the app's own aliasing. Full suite green.*
 
 
 ---

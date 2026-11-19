@@ -7,23 +7,23 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=496';
-import { K } from '../storage.js?v=496';
-import { persistence } from '../persistence.js?v=496';
-import { api } from '../api.js?v=496';
-import { isNoTokenError } from '../apiError.js?v=496';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=496';
-import { errText } from '../api.js?v=496';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=496';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=496';
-import { snapshot } from '../rateGovernor.js?v=496';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=496';
-import { resetBrowserEnabled } from '../toolManifest.js?v=496';
-import { listDialectMemos, forgetDialect, protocolLabel } from '../harness.js?v=496';
-import { perf } from '../perf.js?v=496';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=496';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=496';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=496';
+import { store } from '../store.js?v=497';
+import { K } from '../storage.js?v=497';
+import { persistence } from '../persistence.js?v=497';
+import { api } from '../api.js?v=497';
+import { isNoTokenError } from '../apiError.js?v=497';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=497';
+import { errText } from '../api.js?v=497';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=497';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=497';
+import { snapshot } from '../rateGovernor.js?v=497';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=497';
+import { resetBrowserEnabled } from '../toolManifest.js?v=497';
+import { listDialectMemos, forgetDialect, protocolLabel } from '../harness.js?v=497';
+import { perf } from '../perf.js?v=497';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=497';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=497';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=497';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
