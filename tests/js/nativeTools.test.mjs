@@ -51,6 +51,13 @@ eq(google[0].functionDeclarations[1].name, 'read_file', 'google keeps order');
 eq(nativeToolChoice('openai'), 'auto', 'openai auto choice');
 eq(nativeToolChoice('anthropic'), { type: 'auto' }, 'anthropic auto choice');
 eq(nativeToolChoice('google'), null, 'google choice is configured separately');
+eq(nativeToolChoice('openai', 'todo_write'),
+  { type: 'function', function: { name: 'todo_write' } }, 'openai can force the awaited tool');
+eq(nativeToolChoice('anthropic', 'read_file'),
+  { type: 'tool', name: 'read_file' }, 'anthropic can force the awaited tool');
+eq(nativeToolChoice('google', 'now'),
+  { mode: 'ANY', allowedFunctionNames: ['now'] }, 'google can force the awaited tool');
+eq(nativeToolChoice('openai', ''), 'auto', 'an empty force keeps automatic choice');
 
 eq(nativeToolArgs('echo', { text: 'hi' }), { arg: 'hi', note: undefined }, 'echo unwraps text');
 eq(nativeToolArgs('read_file', { path: 'a.js' }), { arg: 'a.js', note: undefined }, 'read_file unwraps path');

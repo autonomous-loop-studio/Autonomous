@@ -28,16 +28,19 @@ if (!version) {
 const {
   TRAINING_THROTTLE, TRAINING_DIR, TRAINING_FILE, TRAINING_FILE_TOKEN, TRAINING_TASKS, TRAINING_TASKS_EASY,
   TRAINING_TASKS_ADVANCED, TRAINING_TASKS_FRONTIER, TRAINING_TASKS_BROWSER, DRILL_CHECKS_ADVANCED,
-  DRILL_CHECKS_FRONTIER, DRILL_CHECKS_BROWSER, TRAINING_BROWSER_TOKEN, TRAINING_PAGE_URL,
+  DRILL_CHECKS_EASY, DRILL_CHECKS_FRONTIER, DRILL_CHECKS_BROWSER, TRAINING_BROWSER_TOKEN, TRAINING_PAGE_URL,
   TRAINING_TASKS_IDE, DRILL_CHECKS_IDE,
   trainingFileFor, trainingFileNow, trainingFileCheckFor, trainingPassOf, formatPassLine, isTrainingActive, trainingStepList, trainingBlockFor, trainingKickoffFor, trainingResumeFor,
   shouldResumeDrill, reachedCleanTarget, drillStripTitle, trainingDifficulty, trainingTasksFor, trainingChecksFor, showsEveryPass,
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
-  drillPassFile, drillWriteRefusal,
+  drillPassFile, drillWriteRefusal, drillStepRefusal,
+  trainingTaskExample, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice,
+  trainingAccuracy, todoPlanIsCurrent, DRILL_REPEAT_HINT, DRILL_REPEAT_LIMIT,
 } = await import(`../../ui/js/training.js?v=${version}`);
 const trainingModule = await import(`../../ui/js/training.js?v=${version}`);
 const { store } = await import(`../../ui/js/store.js?v=${version}`);
 const { limitsFor } = await import(`../../ui/js/rateGovernor.js?v=${version}`);
+const { TOOL_REGISTRY } = await import(`../../ui/js/tools.js?v=${version}`);
 
 let pass = 0, fail = 0;
 const errors = [];
@@ -87,8 +90,8 @@ ok(showSteps.some(t => t.tool === 'show_command'), 'show_command is practiced');
 ok(!('TRAINING_RESUME_LIMIT' in trainingModule),
   'no resume budget is exported: the loop is closed and unbounded');
 ok(TRAINING_DIR === 'training' && TRAINING_FILE === 'training/training.txt', 'drill folder/default file constants');
-eq(trainingFileFor({ id: 'agent_abc123' }), 'training/training-agent-abc123-p1.txt', 'an agent gets a file named after its id');
-eq(trainingFileFor({ id: 'agent_abc123' }, 'hard', 2), 'training/training-agent-abc123-p2.txt',
+eq(trainingFileFor({ id: 'agent_abc123' }), 'training/training-abc123-p1.txt', 'an agent gets a file named after its id');
+eq(trainingFileFor({ id: 'agent_abc123' }, 'hard', 2), 'training/training-abc123-p2.txt',
   'a second pass writes a file with its own name');
 ok(trainingFileFor({ id: 'agent_a' }, 'hard', 1) !== trainingFileFor({ id: 'agent_a' }, 'hard', 2),
   'two passes never share one drill file');
@@ -105,6 +108,19 @@ ok(TRAINING_TASKS_EASY.some(t => t.tool === 'edit_file' && t.label.includes('App
   'easy mode keeps the old append wording that step 7 is meant to diagnose');
 ok(!TRAINING_TASKS_EASY.some(t => t.tool.startsWith('show_')),
   'easy mode has no display-tool steps');
+{
+  const easyAgent = { id: 'agent_test' };
+  const easyFile = trainingFileFor(easyAgent, 'easy');
+  const easyCard = trainingTaskExample(TRAINING_TASKS_EASY[6], easyAgent, 'easy');
+  ok(easyCard.includes('"old_string":"training"') && easyCard.includes('drill 2 passed'),
+    'easy step 7 has a copyable anchored-edit card, not a bare append');
+  ok(DRILL_CHECKS_EASY[6]({ tool: 'edit_file', arg: { path: easyFile, old_string: 'training', new_string: 'training\ndrill 2 passed' } }, easyFile),
+    'easy step 7 passes the anchored edit that adds the second line');
+  ok(DRILL_CHECKS_EASY[6]({ tool: 'edit_file', arg: { path: easyFile, old_string: 'training', new_string: 'training\\ndrill 2 passed' } }, easyFile),
+    'easy step 7 accepts the literal escape the tool repairs for a drill file');
+  ok(!DRILL_CHECKS_EASY[6]({ tool: 'edit_file', arg: { path: easyFile, old_string: '\n', new_string: 'training\ndrill 2 passed' } }, easyFile),
+    'easy step 7 rejects the newline anchor that cannot match this file');
+}
 eq(trainingTasksFor('easy'), TRAINING_TASKS_EASY, 'easy selects the 12-step table');
 eq(trainingTasksFor('hard'), TRAINING_TASKS, 'hard selects the current table');
 eq(trainingDifficulty({}), 'hard', 'a missing difficulty defaults to hard');
@@ -136,9 +152,9 @@ ok(TRAINING_TASKS_ADVANCED.some(t => t.label.includes('cannot redirect')),
 ok(TRAINING_TASKS_ADVANCED.some(t => t.tool === 'show_file'), 'advanced shows the saved copy');
 eq(trainingTasksFor('advanced'), TRAINING_TASKS_ADVANCED, 'advanced selects its own table');
 eq(trainingChecksFor('advanced'), DRILL_CHECKS_ADVANCED, 'advanced selects its own checks');
-eq(trainingFileFor({ id: 'agent_adv' }, 'advanced'), 'training/advanced-agent-adv-p1.txt',
+eq(trainingFileFor({ id: 'agent_adv' }, 'advanced'), 'training/advanced-nt-adv-p1.txt',
   'advanced gets its own per-agent log file');
-eq(trainingFileFor({ id: 'agent_adv' }), 'training/training-agent-adv-p1.txt',
+eq(trainingFileFor({ id: 'agent_adv' }), 'training/training-nt-adv-p1.txt',
   'the default file stays the hard drill file');
 eq(trainingStepList(null, 'advanced').length, 8, 'the dialog can list the advanced steps');
 
@@ -208,14 +224,14 @@ ok(trainingBlockFor({ id: 'agent_other' }).includes(trainingFileFor({ id: 'agent
 // in the store, so the block, the step labels and the verdict cannot disagree
 // about which file this pass is using.
 store.set('settings.trainingMode', { active: true, startedAt: 1 });
-eq(trainingFileNow({ id: 'agent_test' }), 'training/training-agent-test-p1.txt',
+eq(trainingFileNow({ id: 'agent_test' }), 'training/training-t-test-p1.txt',
   'the live drill file is pass 1 before any pass completes');
 store.set('settings.trainingMode', { active: true, startedAt: 1, pass: 2 });
-eq(trainingFileNow({ id: 'agent_test' }), 'training/training-agent-test-p2.txt',
+eq(trainingFileNow({ id: 'agent_test' }), 'training/training-t-test-p2.txt',
   'the second pass writes a file nothing has used');
-ok(trainingBlockFor({ id: 'agent_test' }).includes('training/training-agent-test-p2.txt'),
+ok(trainingBlockFor({ id: 'agent_test' }).includes('training/training-t-test-p2.txt'),
   'the prompt block follows the stored pass');
-ok(trainingStepList({ id: 'agent_test' }).some(s => s.includes('training/training-agent-test-p2.txt')),
+ok(trainingStepList({ id: 'agent_test' }).some(s => s.includes('training/training-t-test-p2.txt')),
   'the step labels follow the stored pass');
 eq(trainingPassOf({}), 1, 'a run with no stored pass is pass 1');
 eq(trainingPassOf({ pass: 0 }), 1, 'pass 0 is not a pass');
@@ -224,8 +240,8 @@ eq(trainingPassOf({ pass: '3' }), 3, 'a stored pass reads back as a number');
 // belongs to, not any generation of the name. The looser rule let a second pass
 // rewrite the first pass's log and still read clean.
 const drillFileOf = trainingFileCheckFor({ id: 'agent_test' });
-eq(drillFileOf(1), 'training/training-agent-test-p1.txt', 'pass 1 is graded against its own file');
-eq(drillFileOf(2), 'training/training-agent-test-p2.txt', 'pass 2 is graded against a different file');
+eq(drillFileOf(1), 'training/training-t-test-p1.txt', 'pass 1 is graded against its own file');
+eq(drillFileOf(2), 'training/training-t-test-p2.txt', 'pass 2 is graded against a different file');
 ok(typeof drillFileOf === 'function', 'the pass is resolved while the history is walked, not up front');
 
 // The run report lists each pass and the file it wrote, so a pass can be
@@ -253,9 +269,9 @@ eq(formatPassLine({ pass: 0, file: 'f.txt', clean: true }), 'pass 1 · f.txt · 
   'an unusable pass number prints as pass 1');
 // The self-test writes these two paths; they must be distinct and stable.
 eq(trainingFileFor({ id: 'agent_drill_selftest' }, 'hard', 1),
-  'training/training-agent-drill-selftest-p1.txt', 'the self-test writes its own pass-1 file');
+  'training/training-lftest-p1.txt', 'the self-test writes its own pass-1 file');
 eq(trainingFileFor({ id: 'agent_drill_selftest' }, 'hard', 2),
-  'training/training-agent-drill-selftest-p2.txt', 'the self-test writes its own pass-2 file');
+  'training/training-lftest-p2.txt', 'the self-test writes its own pass-2 file');
 store.set('settings.trainingMode', { active: true, startedAt: 1 });
 ok(trainingStepList().some(s => s.includes('training/training-<agent>-p1.txt')),
   'the operator-facing step list stays generic across agents');
@@ -355,20 +371,110 @@ ok(!stubVerdict.complete && stubVerdict.failures >= 1,
 // already been overwritten. Only this run's own drill files are policed.
 {
   const agent = { id: 'agent_test' };
-  const p2 = 'training/advanced-agent-test-p2.txt';
-  const msg = drillWriteRefusal('write_file', { path: 'training/advanced-agent-test-p1.txt' }, agent, 'advanced', 2);
+  const p1 = trainingFileFor(agent, 'advanced', 1);
+  const p2 = trainingFileFor(agent, 'advanced', 2);
+  const msg = drillWriteRefusal('write_file', { path: p1 }, agent, 'advanced', 2);
   ok(msg.includes(p2) && msg.includes('another pass'), 'a write back to the previous pass\'s file is refused, and names the right one');
   eq(drillWriteRefusal('write_file', { path: p2 }, agent, 'advanced', 2), '', 'the pass\'s own file is not refused');
-  eq(drillWriteRefusal('read_file', { path: 'training/advanced-agent-test-p1.txt' }, agent, 'advanced', 2), '',
+  eq(drillWriteRefusal('read_file', { path: p1 }, agent, 'advanced', 2), '',
     'reading an earlier pass\'s file stays allowed — refusing that would hide the evidence');
-  eq(drillWriteRefusal('write_file', { path: 'training/advanced-agent-other-p1.txt' }, agent, 'advanced', 2), '',
+  eq(drillWriteRefusal('write_file', { path: trainingFileFor({ id: 'agent_other' }, 'advanced', 1) }, agent, 'advanced', 2), '',
     'another agent\'s drill file is not this guard\'s business');
   eq(drillWriteRefusal('write_file', { path: 'src/app.js' }, agent, 'advanced', 2), '',
     'ordinary project files are untouched');
-  ok(drillWriteRefusal('edit_file', { path: 'training/advanced-agent-test-p1.txt' }, agent, 'advanced', 2),
+  ok(drillWriteRefusal('edit_file', { path: p1 }, agent, 'advanced', 2),
     'edit_file is guarded too, not just write_file');
-  ok(drillWriteRefusal('write_file', 'training/advanced-agent-test-p1.txt', agent, 'advanced', 2),
+  ok(drillWriteRefusal('write_file', p1, agent, 'advanced', 2),
     'a bare path argument is guarded as well');
+  ok(drillWriteRefusal('write_file', { path: `/${p1}` }, agent, 'advanced', 2).includes(p2),
+    'a leading-slash spelling of the old pass file is guarded too');
+  ok(drillWriteRefusal('write_file', { path: `C:/Users/someone/sandbox/${p1}` }, agent, 'advanced', 2).includes(p2),
+    'an absolute sandbox path to the old pass file is guarded too');
+  eq(drillWriteRefusal('write_file', { path: `/${p2}` }, agent, 'advanced', 2), '',
+    'the leading-slash spelling of this pass\'s own file is allowed');
+  const ideP1 = trainingFileFor(agent, 'ide', 1);
+  const ideP2 = trainingFileFor(agent, 'ide', 2);
+  ok(drillWriteRefusal('ide_write', { path: ideP1 }, agent, 'ide', 2).includes(ideP2),
+    'an IDE write to the previous pass is refused, and names the right file');
+  eq(drillWriteRefusal('ide_write', { path: ideP2 }, agent, 'ide', 2), '',
+    'the IDE pass\'s own file is allowed');
+  ok(drillWriteRefusal('ide_edit', { path: ideP1 }, agent, 'ide', 2),
+    'an IDE edit to the previous pass is refused too');
+}
+
+// Grading is not enough: a model that re-runs earlier steps gets ok results and
+// the strip stays on the same step forever. The gate refuses the call before it
+// runs and names the step the app is actually waiting for.
+{
+  const prev = store.get('settings.trainingMode');
+  store.set('settings.trainingMode', { active: true, startedAt: 7, difficulty: 'advanced' });
+  const agent = { id: 'agent_gate' };
+  const at6 = { step: 6, totalSteps: 8, complete: false, nextTool: 'show_file' };
+  eq(drillStepRefusal('show_file', agent, at6), '', 'the expected step is allowed');
+  const redo = drillStepRefusal('fetch_url', agent, at6);
+  ok(redo.includes('step 7/8'), 'a redo is refused with the current position');
+  ok(redo.includes('show_file'), 'and names the call the drill waits for');
+  ok(redo.includes('Do not redo'), 'and says the drill runs in order');
+  eq(drillStepRefusal('todo_write', agent, at6), '', 'a todo status update is allowed');
+  eq(drillStepRefusal('read_file', agent, at6), '', 'read-only inspection is a scratchpad at any step');
+  eq(drillStepRefusal('think', agent, at6), '',
+    'a think scratchpad is allowed even when another step is awaited');
+  const at0 = { step: 0, totalSteps: 8, complete: false, nextTool: 'think' };
+  eq(drillStepRefusal('think', agent, at0), '', 'step 1 is the think call the drill waits for');
+  const firstSkip = drillStepRefusal('todo_write', agent, at0);
+  ok(firstSkip.includes('step 1/8') && firstSkip.includes('think'),
+    'a todo update cannot skip step 1');
+  ok(firstSkip.includes('only after a step has passed'),
+    'and it says when a todo update is allowed');
+  ok(drillStepRefusal('exec', agent, at6).includes('not part of this drill'),
+    'a tool outside the drill is refused');
+  const done = { step: 8, totalSteps: 8, complete: true, nextTool: '' };
+  eq(drillStepRefusal('think', agent, done), '', 'the first step of the next pass is allowed');
+  ok(drillStepRefusal('show_file', agent, done).includes('start the next one at step 1'),
+    'a mid-drill call after completion is refused');
+  ok(drillStepRefusal('todo_write', agent, done).includes('start the next one at step 1'),
+    'after a pass, a todo update cannot replace step 1');
+  store.set('settings.trainingMode', prev || { active: false, startedAt: 0 });
+}
+
+// The tool that caused the stall must not answer "cleared" to a usable list.
+{
+  const todo = TOOL_REGISTRY.todo_write;
+  const ctx = { agentId: 'agent_todo_test' };
+  const rendered = todo.run(['step one', 'step two'], '', ctx);
+  ok(rendered.includes('step one') && rendered.includes('step two'),
+    'todo_write accepts a plain array of strings');
+  ok(todo.run({ todos: '[{"content":"encoded","status":"in_progress"}]' }, '', ctx).includes('encoded'),
+    'todo_write accepts a JSON-encoded array, as small models send it');
+  ok(todo.run('["step one","step two"]', '', ctx).includes('step one'),
+    'todo_write accepts a bare JSON array string');
+  ok(todo.run({ items: [{ content: 'a', status: 'in_progress' }] }, '', ctx).includes('a'),
+    'todo_write accepts items[] as the list');
+  const recovered = todo.run('{"todos":[{"content": "step ", "status": "completed"},content":step 2", "status": "_progress"}}', '', ctx);
+  ok(recovered.includes('step 2') && recovered.includes('[~]'),
+    'todo_write recovers a malformed JSON string instead of stalling step 2');
+  const missingCommas = todo.run({
+    todos: '["1. think", "2. todo_write", "3. echo", "4. now "5. write_file", "6. read_file", "7. edit_file", "8. list_dir "9. glob_files", "10. grep_code", "1. exec", "12. todo_write"]',
+  }, '', ctx);
+  ok(missingCommas.includes('1. think') && missingCommas.includes('12. todo_write')
+    && missingCommas.split('\n').length === 12,
+  'todo_write recovers a quoted todo list whose commas were lost');
+  // An empty todo list must not satisfy the step: the old success answer
+  // "todo list cleared" was the false positive that made the drill look passed.
+  const easy = trainingChecksFor('easy');
+  ok(!easy[1]({ tool: 'todo_write', arg: { todos: [] }, result: 'todo list cleared' }),
+    'an empty todo does not pass easy step 2');
+  ok(easy[1]({ tool: 'todo_write', arg: ['step 1'], result: '[ ] 1. step 1' }),
+    'a real todo list passes easy step 2');
+  ok(!easy[11]({ tool: 'todo_write', arg: { todos: [] }, result: 'todo list cleared' }),
+    'an empty todo does not complete easy step 12');
+  eq(todo.run({ todos: [] }, '', ctx), 'todo list cleared',
+    'an explicit empty list still clears');
+  let refused = false;
+  try {
+    todo.run({ steps: [{ step: 1, status: 'completed' }] }, '', ctx);
+  } catch { refused = true; }
+  ok(refused, 'a list with no usable content is refused, never reported as cleared');
 }
 
 const frontierCalls = [
@@ -448,7 +554,10 @@ eq(runVerdict.failureCounts['5'], 1, 'the run remembers which step failed');
 const easyBlock = trainingBlockFor({ id: 'agent_test' });
 ok(easyBlock.includes('Append a second line'), 'easy block keeps the old append step');
 ok(easyBlock.includes('12-step pass'), 'easy block names the 12-step pass');
-ok(!easyBlock.includes('never an append'), 'easy block has no anchored-edit contract');
+ok(easyBlock.includes('Read-only inspection') && easyBlock.includes('Read the file first'),
+  'easy block allows the read that finds the exact anchor before the append');
+ok(easyBlock.includes('never an append'), 'easy block teaches the anchored edit');
+ok(easyBlock.includes('"old_string":"training"'), 'easy block carries the anchored step-7 card in its step list');
 ok(!easyBlock.includes('17. show_file:'), 'easy block never lists the 17-step ending');
 ok(easyBlock.includes(drillFile), 'easy block still names this agent\'s own file');
 ok(easyBlock.includes('never lets the drill stop'), 'easy block keeps the Continue loop');
@@ -468,6 +577,10 @@ ok(advancedBlock.includes('holds the page text'),
 ok(advancedBlock.includes(trainingFileFor({ id: 'agent_test' }, 'advanced')),
   'advanced block names the agent log file');
 ok(advancedBlock.includes('final todo_write'), 'advanced block names its completion step');
+ok(advancedBlock.includes('EVERY step is a real tool call'),
+  'advanced block says every step is a tool call, including think');
+ok(advancedBlock.includes('{"tool":"think"'),
+  'and shows the exact think call, not just the word');
 // The pass file leads, and follows the pass counter. A model that rebuilt its
 // todo list from the previous pass copied that pass's path with it and wrote
 // the old file; the path used to sit in a rule midway down the block.
@@ -560,7 +673,7 @@ eq(emptyCustom.complete, false, 'an empty custom drill never completes');
 store.set('settings.trainingMode', { active: true, startedAt: 5, difficulty: 'custom', customSteps });
 const customBlock = trainingBlockFor({ id: 'agent_test' });
 ok(customBlock.includes('read_file'), 'custom block lists the saved tool');
-ok(customBlock.includes('Read training/training-agent-test-p1.txt and find hello'),
+ok(customBlock.includes('Read training/training-t-test-p1.txt and find hello'),
   'custom block fills {file} in the saved instruction');
 ok(customBlock.includes('must include “HELLO”'), 'custom block states the expected phrase');
 ok(customBlock.includes('expected phrase'), 'custom block explains the optional content check');
@@ -580,7 +693,10 @@ store.set('trainingVerdicts', {
 const positioned = trainingBlockFor({ id: 'agent_test' });
 ok(positioned.includes('15/17') && positioned.includes('step 16') && positioned.includes('todo_write'),
   'the block names this agent\'s recorded next step');
-ok(positioned.includes('never restart the pass early'), 'the block forbids restarting early');
+ok(positioned.includes('mid-pass think is a scratchpad'),
+  'the block says a mid-pass think is a scratchpad, not a restart');
+ok(!positioned.includes('starts a new attempt'),
+  'the block no longer tells the model a think restarts the pass');
 ok(!positioned.includes('3/17'), 'the block never carries another agent\'s position');
 store.set('trainingVerdicts', { agent_test: { step: 17, totalSteps: 17, complete: true } });
 ok(trainingBlockFor({ id: 'agent_test' }).includes('fresh pass'),
@@ -589,7 +705,7 @@ store.set('trainingVerdicts', {});
 
 // The continued turn is generic: every agent reads its own position above.
 eq(trainingResumeFor(),
-  'Continue. Your TRAINING MODE block records your own position from the calls the app saw — resume there, never restart the pass early.',
+  'Continue. Your TRAINING MODE block records your own position from the calls the app saw — resume there. A think call or a read-only inspection (read_file, list_dir, glob_files, grep_code, ide_read, browser_read, window_list) is a scratchpad: it does not restart the pass or reset its steps. Only a completed pass starts the next one.',
   'the shared Continue points at the per-agent block instead of listing positions');
 
 // --- the clean-pass stopping rule -------------------------------------------
@@ -677,6 +793,112 @@ const ideBlock = trainingBlockFor(ideAgent);
 ok(ideBlock.includes('ide_write') && ideBlock.includes('ide_edit'), 'the IDE block lists the IDE tools by name');
 ok(ideBlock.includes(ideFile), 'the IDE block names this pass\'s file');
 ok(/Do not substitute write_file/.test(ideBlock), 'the IDE block rules out the sandbox tools by name');
+store.set('settings.trainingMode', { active: false, startedAt: 0 });
+
+// --- accuracy: the exact next call, the drill tool scope, the loop breaker --
+// The block used to name only `todo_write`, so a small model had to infer the
+// call envelope and three agents lost valid todo lists inside a wrong wrapper.
+// The example is rendered from the same task table the grader uses.
+store.set('settings.trainingMode', { active: true, startedAt: 9, difficulty: 'hard' });
+store.set('trainingVerdicts', { agent_test: { step: 1, totalSteps: 17, complete: false } });
+const exactBlock = trainingBlockFor({ id: 'agent_test' });
+ok(exactBlock.includes('Exact call: {'), 'the position line carries a copyable next call');
+ok(exactBlock.includes('"tool":"todo_write"') && exactBlock.includes('"arg":["step 1","step 2"]'),
+  'the example wraps a plain todo list in the tool envelope');
+ok(!exactBlock.includes('{file}') && exactBlock.includes('training/training-t-test-p1.txt'),
+  'the example resolves this agent\'s pass file, with no unfilled token');
+store.set('trainingVerdicts', {});
+store.set('settings.trainingMode', { active: true, startedAt: 9, difficulty: 'advanced' });
+eq(drillStepRefusal('show_file', { id: 'agent_test' }, { step: 1 }).includes('Next call: {"tool":"todo_write"'), true,
+  'an off-step refusal repeats the exact expected call');
+
+// A stored plan from a previous pass must not be replayed as this pass's plan.
+// It is all [x], so replaying it before step 2 tells the model the new pass is
+// already done. Only step 2's todo_write makes a plan current.
+ok(todoPlanIsCurrent('agent_test', { active: false }, {}), true,
+  'outside a drill the stored plan is always shown');
+ok(!todoPlanIsCurrent('agent_test', { active: true }, {}), false,
+  'a drill with no recorded position hides the old plan');
+ok(!todoPlanIsCurrent('agent_test', { active: true }, { agent_test: { step: 1 } }), false,
+  'before step 2 the old plan is hidden');
+ok(todoPlanIsCurrent('agent_test', { active: true }, { agent_test: { step: 2 } }), true,
+  'after step 2 the plan written by this pass is shown');
+ok(!todoPlanIsCurrent('agent_test', { active: true }, { agent_test: { step: 12, complete: true } }), false,
+  'a completed pass hides its plan until the next pass writes a new one');
+
+// The scope is the drill's own tools, nothing else.
+const advScope = trainingToolScope('advanced');
+ok(advScope.includes('fetch_url') && advScope.includes('show_file'), 'advanced scope carries the fetched-page tools');
+ok(!advScope.includes('exec') && !advScope.includes('browser_open'), 'advanced scope leaves unrelated tools out');
+const hardScope = trainingToolScope('hard');
+ok(hardScope.includes('exec') && hardScope.includes('edit_file'), 'hard scope carries the shell and edit tools');
+ok(!hardScope.includes('fetch_url'), 'hard scope does not advertise the advanced drill\'s tools');
+ok(trainingToolScope('custom', [{ tool: 'read_file', instruction: 'x' }]).join(',') === 'read_file',
+  'custom scope is exactly the saved custom tools');
+
+// Examples are single-sourced from the task table and filled per agent.
+const advTask = TRAINING_TASKS_ADVANCED[3];
+const advExample = trainingTaskExample(advTask, { id: 'agent_task' }, 'advanced');
+ok(advExample.includes('"tool":"write_file"') && advExample.includes(trainingFileFor({ id: 'agent_task' }, 'advanced')),
+  'the advanced write example names the agent\'s own page file');
+eq(trainingTaskExample(TRAINING_TASKS_ADVANCED[0], { id: 'agent_task' }, 'advanced').includes('think'), true,
+  'the first advanced example is a think call');
+
+// A repeated call is identified by tool + argument, independent of key order.
+eq(callSignature('todo_write', { b: 2, a: [1, { d: 4, c: 3 }] }),
+  callSignature('todo_write', { a: [1, { c: 3, d: 4 }], b: 2 }), 'argument key order does not split a repeat');
+ok(callSignature('todo_write', { a: 1 }) !== callSignature('todo_write', { a: 2 }),
+  'a different argument is a different attempt');
+
+eq(drillRepeatNotice(DRILL_REPEAT_HINT - 1, TRAINING_TASKS[1], 2, 17, { id: 'a' }, 'hard'), '',
+  'below the hint threshold the generic retry text stands');
+const repeatHint = drillRepeatNotice(DRILL_REPEAT_HINT, TRAINING_TASKS[1], 2, 17, { id: 'a' }, 'hard');
+ok(repeatHint.includes('Expected: {"tool":"todo_write"') && repeatHint.includes('change the argument'),
+  'the hint names the exact call and says the argument must change');
+const repeatStrong = drillRepeatNotice(DRILL_REPEAT_LIMIT, TRAINING_TASKS[1], 2, 17, { id: 'a' }, 'hard');
+ok(repeatStrong.includes('does not skip a step') && !repeatStrong.includes('Paused after'),
+  'the drill keeps retrying instead of pausing at the limit');
+const failureNotice = drillFailureNotice(TRAINING_TASKS[1], 2, 17, { id: 'a' }, 'hard');
+ok(failureNotice.includes('did not pass step 2/17') && failureNotice.includes('Next call must be exactly:'),
+  'a failed drill check names the step and the exact call');
+
+// First-try rate is per step, not per attempt: any failure on a step makes it
+// not first-try, and the worst step is the one with the most failures.
+const acc = trainingAccuracy([
+  { totalSteps: 8, failureCounts: { 2: 2 } },
+  { totalSteps: 8, failureCounts: {} },
+]);
+eq(acc.steps, 16, 'accuracy counts every step of every logged pass');
+eq(acc.firstTry, 94, 'one failed step out of sixteen is 94% first try');
+eq(acc.worstStep, 2, 'accuracy names the most-failed step');
+eq(acc.worstCount, 2, 'accuracy reports how often that step failed');
+eq(acc.passes, 2, 'accuracy counts the passes it read');
+eq(trainingAccuracy([]).steps, 0, 'no completed pass has no accuracy yet');
+
+// The judged pass carries its own failure tally for the pass log; the run-wide
+// tally stays available for the summary.
+const dirtyCalls = [
+  advancedCalls[0],
+  { tool: 'todo_write', arg: {}, status: 'error', result: 'error: todo_write needs todos' },
+  ...advancedCalls.slice(1),
+];
+const dirtyVerdict = drillVerdict(dirtyCalls, advFile, 'advanced');
+ok(dirtyVerdict.complete && !dirtyVerdict.clean, 'a pass that needed a retry still completes');
+eq(dirtyVerdict.failureCounts['2'], 1, 'the run tally attributes the failure to step 2');
+eq(dirtyVerdict.passFailureCounts['2'], 1, 'the judged pass carries its own step-2 failure');
+eq(advancedVerdict.passFailureCounts && Object.keys(advancedVerdict.passFailureCounts).length, 0,
+  'a clean pass has an empty per-pass tally');
+
+// The live position is read from the verdict, so the forced native choice and
+// the block agree on the step.
+store.set('settings.trainingMode', { active: true, startedAt: 9, difficulty: 'advanced' });
+store.set('trainingVerdicts', { agent_now: { step: 2, totalSteps: 8, complete: false } });
+const now = trainingNow({ id: 'agent_now' });
+eq(now.task.tool, 'fetch_url', 'the live position names the awaited tool');
+eq(now.step, 2, 'the live position carries the zero-based step');
+eq(now.total, 8, 'the live position carries the pass length');
+ok(now.task.example.includes('fetch_url'), 'the live position carries the call example');
+store.set('trainingVerdicts', {});
 store.set('settings.trainingMode', { active: false, startedAt: 0 });
 
 console.log('-'.repeat(60));

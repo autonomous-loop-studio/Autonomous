@@ -2466,6 +2466,18 @@ class Sandbox {
         } else {
             foreach ($roots as $root) { $candidates[] = $root . '/' . $path; }
         }
+        // A model that means "inside the sandbox" often writes a rooted
+        // spelling: /training/file. That is a real path at the filesystem
+        // root, so the absolute candidate above is outside. Try the same
+        // spelling under each root too. This can only resolve INSIDE a root,
+        // so it cannot widen the jail; it just lets the harmless near miss
+        // reach the file the model can already see.
+        if ($path[0] === '/') {
+            $relative = ltrim($path, '/');
+            if ($relative !== '') {
+                foreach ($roots as $root) { $candidates[] = $root . '/' . $relative; }
+            }
+        }
 
         foreach ($candidates as $candidate) {
             $resolved = self::resolveExisting($candidate);
@@ -2515,12 +2527,27 @@ class Sandbox {
      * turns a dead end into a retry that works.
      */
     private static function outsideHint($path, $roots) {
-        $name = basename($path);
-        if ($name === '' || $name === '.' || $name === '/') { return ''; }
-        foreach ($roots as $root) {
-            if (file_exists($root . '/' . $name) || is_dir($root . '/' . $name)) {
-                return " Did you mean \"$name\"? It is inside the sandbox (\"$root\"), "
-                    . 'and paths are addressed relative to it.';
+        $normalized = trim(str_replace('\\', '/', (string)$path));
+        $relative = ltrim($normalized, '/');
+        $name = basename($relative);
+        if ($name === '' || $name === '.' || $name === '..' || $name === '/') { return ''; }
+        // Prefer the whole relative path over the bare file name: a rooted
+        // /training/notes.txt found nothing before, because the hint looked
+        // for <root>/notes.txt instead of <root>/training/notes.txt. Trying
+        // each suffix also handles /project/training/notes.txt, whose reachable
+        // copy is <root>/training/notes.txt.
+        $parts = $relative === '' ? [] : explode('/', $relative);
+        $hints = [];
+        for ($i = 0; $i < count($parts); $i++) {
+            $hint = implode('/', array_slice($parts, $i));
+            if ($hint !== '' && $hint !== '.') { $hints[] = $hint; }
+        }
+        foreach ($hints as $hint) {
+            foreach ($roots as $root) {
+                if (file_exists($root . '/' . $hint) || is_dir($root . '/' . $hint)) {
+                    return " Did you mean \"$hint\"? It is inside the sandbox (\"$root\"), "
+                        . 'and paths are addressed relative to it.';
+                }
             }
         }
         return '';

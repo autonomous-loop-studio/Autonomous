@@ -27,9 +27,9 @@ import {
   TOOL_PATTERNS,
   CONTEXT_LIMITS,
   DEFAULT_RPM,
-} from './harness.data.js?v=482';
-import { store } from './store.js?v=482';
-import { persistence } from './persistence.js?v=482';
+} from './harness.data.js?v=495';
+import { store } from './store.js?v=495';
+import { persistence } from './persistence.js?v=495';
 
 export { API_FAMILIES };
 
@@ -257,9 +257,11 @@ export function toolProtocolFor(agent, provider, resolvedEndpoint) {
   // must not override it.
   if (family === 'anthropic') return 'anthropic';
   // Learned dialect: a choice whose calls actually EXECUTED ok on a previous
-  // turn for this exact provider::model wins over the heuristic.
+  // turn for this exact AGENT wins over the heuristic. The memo is per agent
+  // (see dialectMemoKey): two agents on the same provider+model do not share
+  // one, because the tool set and prompt that made a syntax work are theirs.
   // Feature-gated, and skipped when the operator has pinned one above.
-  const memo = learnedDialect(provider || agent?.provider, agent?.model);
+  const memo = learnedDialect(provider || agent?.provider, agent?.model, agent?.id);
   if (memo && BY_ID.has(memo)) return memo;
   return autoProtocol(provider || agent?.provider, agent?.model, family);
 }
@@ -270,56 +272,96 @@ function dialectMemoEnabled() {
   return (store.get('settings') || {}).toolDialectMemo !== false;
 }
 
-function dialectMemoKey(provider, model) {
+/** The provider+model slot, the harness-wide memory the app had before. */
+function providerMemoKey(provider, model) {
   const p = String(provider || '').trim().toLowerCase();
   const m = String(model || '').trim().toLowerCase();
   return (p || m) ? `${p}::${m}` : '';
 }
 
-/** The remembered dialect for this provider+model, or '' if none applies. */
-export function learnedDialect(provider, model) {
+/**
+ * The memo key: the AGENT first, then the provider+model it was learned on.
+ *
+ * Per-agent remains the precise answer, but it cannot be the only one: a new
+ * agent on a model that already executed a syntax has no entry, falls back to
+ * the heuristic, and repeats the same failed envelope. The provider+model
+ * slot is the harness-wide memory; the agent slot wins when it exists. A
+ * lookup without an agent uses the provider slot, so the remembered syntax is
+ * still available to a caller that only knows the model.
+ */
+function dialectMemoKey(provider, model, agentId) {
+  const p = providerMemoKey(provider, model);
+  if (!p) return '';
+  const a = String(agentId || '').trim();
+  return a ? `${a}::${p}` : p;
+}
+
+/** The dialect this agent (or, failing that, this provider+model) executed. */
+export function learnedDialect(provider, model, agentId) {
   if (!dialectMemoEnabled()) return '';
-  const key = dialectMemoKey(provider, model);
-  if (!key) return '';
   const map = (store.get('settings') || {}).toolDialectMap || {};
-  return map[key] || '';
+  const keys = [dialectMemoKey(provider, model, agentId)];
+  if (agentId) {
+    const shared = providerMemoKey(provider, model);
+    if (shared && !keys.includes(shared)) keys.push(shared);
+  }
+  for (const key of keys) {
+    const memo = key ? map[key] : '';
+    if (memo && BY_ID.has(memo)) return memo;
+  }
+  return '';
 }
 
 /**
- * Remember that `dialect` produced calls that EXECUTED successfully for this
- * provider+model. Call this only after the tool results come back ok -- a
- * reply that merely parsed (wrong args, bad path, denied) must not be
- * remembered, or one fluke parse poisons every future turn.
+ * Remember that `dialect` produced calls that EXECUTED successfully. Call this
+ * only after the tool results come back ok -- a reply that merely parsed (wrong
+ * args, bad path, denied) must not be remembered, or one fluke parse poisons
+ * every future turn.
+ *
+ * The agent slot keeps the precise answer; the provider+model slot is written
+ * too so a new agent on the same model inherits the harness's working memory.
  */
-export function rememberDialect(provider, model, dialect) {
+export function rememberDialect(provider, model, dialect, agentId) {
   if (!dialectMemoEnabled()) return;
   const d = String(dialect || '').trim().toLowerCase();
   if (!BY_ID.has(d)) return;
-  const key = dialectMemoKey(provider, model);
+  const key = dialectMemoKey(provider, model, agentId);
   if (!key) return;
   const settings = store.get('settings') || {};
   const map = { ...(settings.toolDialectMap || {}) };
-  if (map[key] === d) return;
-  map[key] = d;
+  let changed = false;
+  if (map[key] !== d) { map[key] = d; changed = true; }
+  const shared = providerMemoKey(provider, model);
+  if (agentId && shared && map[shared] !== d) { map[shared] = d; changed = true; }
+  if (!changed) return;
   store.set('settings.toolDialectMap', map);
   try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
 }
 
 /**
- * Drop the remembered dialect for this provider+model, if any. Used when the
- * operator wants a clean re-learn (and available to future failure paths
- * that prove a memo stale). A missing entry is a no-op.
+ * Drop the remembered dialect for this agent and its provider+model slot, and
+ * return the dialect that was removed ('' when there was none).
+ *
+ * Deliberately NOT gated by the Labs switch: turning the memo off must not
+ * strand entries the operator can no longer clear. Forgetting is always
+ * allowed, and the return value lets the caller say whether anything was
+ * actually dropped.
  */
-export function forgetDialect(provider, model) {
-  if (!dialectMemoEnabled()) return;
-  const key = dialectMemoKey(provider, model);
-  if (!key) return;
+export function forgetDialect(provider, model, agentId) {
+  const keys = [dialectMemoKey(provider, model, agentId), providerMemoKey(provider, model)]
+    .filter(Boolean);
   const settings = store.get('settings') || {};
-  if (!settings.toolDialectMap || !(key in settings.toolDialectMap)) return;
   const map = { ...(settings.toolDialectMap || {}) };
-  delete map[key];
+  let removed = '';
+  for (const key of keys) {
+    if (!(key in map)) continue;
+    if (!removed) removed = map[key] || '';
+    delete map[key];
+  }
+  if (!removed) return '';
   store.set('settings.toolDialectMap', map);
   try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+  return removed;
 }
 
 const LEARNED_CONTEXT_KEY = 'settings.contextLimits';

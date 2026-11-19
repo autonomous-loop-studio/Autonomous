@@ -7,14 +7,14 @@
 // MESSAGE.JS — Message renderer
 // ============================================
 
-import { esc, formatTime, copyToClipboard, asText, reasoningOpenByDefault, isReasoningEcho, toolValueText, renderLimitFor, toolCallSummary } from '../utils.js?v=482';
-import { renderMarkdown } from '../markdown.js?v=482';
-import { CodeBlock, splitFences } from './codeBlock.js?v=482';
-import { createAvatar } from './avatar.js?v=482';
-import { store } from '../store.js?v=482';
-import { persistence } from '../persistence.js?v=482';
-import { audio, AudioController } from '../audio.js?v=482';
-import { numberedRows } from './lineNumbers.js?v=482';
+import { esc, formatTime, copyToClipboard, asText, reasoningOpenByDefault, isReasoningEcho, toolValueText, renderLimitFor, toolCallSummary, scrollFollowWanted } from '../utils.js?v=495';
+import { renderMarkdown } from '../markdown.js?v=495';
+import { CodeBlock, splitFences } from './codeBlock.js?v=495';
+import { createAvatar } from './avatar.js?v=495';
+import { store } from '../store.js?v=495';
+import { persistence } from '../persistence.js?v=495';
+import { audio, AudioController } from '../audio.js?v=495';
+import { numberedRows } from './lineNumbers.js?v=495';
 
 
 
@@ -585,6 +585,21 @@ export class MessageRenderer {
     // Reasoning is plain text: no markdown, no code fences.
     inner.textContent = text;
     details.appendChild(inner);
+
+    // The finished block replaces the live one. With Auto Scroll on, keep the
+    // same follow so an open trace lands on its newest line instead of jumping
+    // back to its first line. Off leaves it at the top.
+    if (scrollFollowWanted(store.get('settings.autoScroll'), null)) {
+      const toEnd = () => {
+        // Re-check at paint time: flipping Auto Scroll off between render and
+        // the next frame must win over the scheduled follow.
+        if (scrollFollowWanted(store.get('settings.autoScroll'), null)) {
+          inner.scrollTop = inner.scrollHeight;
+        }
+      };
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(toEnd);
+      else setTimeout(toEnd, 0);
+    }
 
     return details;
   }

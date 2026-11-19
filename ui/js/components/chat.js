@@ -7,8 +7,8 @@
 // CHAT.JS — Chat panel controller
 // ============================================
 
-import { store } from '../store.js?v=482';
-import { K as STORAGE_K } from '../storage.js?v=482';
+import { store } from '../store.js?v=495';
+import { K as STORAGE_K } from '../storage.js?v=495';
 
 const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
 
@@ -17,29 +17,29 @@ const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
  * purpose: steering is a human override, not a licence to run unbounded.
  */
 const MAX_STEER_STEPS = 8;
-import { api, errText } from '../api.js?v=482';
-import { persistence } from '../persistence.js?v=482';
-import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=482';
-import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=482';
-import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=482';
-import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=482';
-import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=482';
-import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=482';
-import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=482';
-import { usageFor } from '../rateGovernor.js?v=482';
-import { trace } from '../trace.js?v=482';
-import { offerRebind } from './rebindOffer.js?v=482';
-import { latency } from '../latency.js?v=482';
-import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=482';
-import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=482';
-import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal } from '../training.js?v=482';
-import { SlashCommands } from '../slashCommands.js?v=482';
-import { parseRoute, routingHelp } from '../routing.js?v=482';
-import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=482';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=482';
-import { MessageRenderer, renderToolCalls } from './message.js?v=482';
-import { createAvatar } from './avatar.js?v=482';
-import * as comms from '../commsLog.js?v=482';
+import { api, errText } from '../api.js?v=495';
+import { persistence } from '../persistence.js?v=495';
+import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=495';
+import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=495';
+import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=495';
+import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=495';
+import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=495';
+import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=495';
+import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=495';
+import { usageFor } from '../rateGovernor.js?v=495';
+import { trace } from '../trace.js?v=495';
+import { offerRebind } from './rebindOffer.js?v=495';
+import { latency } from '../latency.js?v=495';
+import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=495';
+import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=495';
+import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal, drillStepRefusal, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice, todoPlanIsCurrent, scrubDrillFile } from '../training.js?v=495';
+import { SlashCommands } from '../slashCommands.js?v=495';
+import { parseRoute, routingHelp } from '../routing.js?v=495';
+import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=495';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=495';
+import { MessageRenderer, renderToolCalls } from './message.js?v=495';
+import { createAvatar } from './avatar.js?v=495';
+import * as comms from '../commsLog.js?v=495';
 
 /**
  * How long an agent may keep working on a single task.
@@ -902,9 +902,14 @@ export class Chat {
     if (this._drillStopRequested) { this._drillStopRequested = false; return; }
     const tm = store.get('settings.trainingMode') || {};
     if (!shouldResumeDrill(tm)) return;
+    // Keep the previous pass in the model's context. Seeing a shape that
+    // already executed is the harness memory the drill had before the cutoff;
+    // _historyFor rewrites the agent's old file path to the current pass so the
+    // memory cannot turn into "write last pass's file".
     // Nothing to continue with: an empty fleet would otherwise draw the same
     // "no active agents" line every quarter second.
-    if (!(store.get('agents') || []).some(a => a && a.active)) return;
+    const active = (store.get('agents') || []).filter(a => a && a.active);
+    if (!active.length) return;
 
     const failed = Array.isArray(results) && results.length > 0
       && results.every(r => !r || r.status !== 'fulfilled');
@@ -1290,7 +1295,7 @@ _commitAgentReply(agent, result, live) {
   _publishDrill(agent, verdict, history = []) {
     if (!verdict) return null;
     const map = { ...(store.get('trainingVerdicts') || {}) };
-    map[agent.id] = { ...verdict, name: agent.name || 'Agent' };
+    map[agent.id] = { ...verdict, name: agent.name || 'Agent', stuck: null };
     store.set('trainingVerdicts', map);
     const seen = Number((this._drillPasses || {})[agent.id] || 0);
     if (verdict.passes > seen) {
@@ -1299,8 +1304,7 @@ _commitAgentReply(agent, result, live) {
       const total = verdict.totalSteps;
       store.emit('toast', {
         message: verdict.clean
-          ? `${agent.name}: drill pass clean — ${total}/${total} steps, no failed attempts`
-          : `${agent.name}: drill pass complete — ${total}/${total} steps, ${verdict.failures} failed attempt${verdict.failures === 1 ? '' : 's'}`,
+                    ? `${agent.name}: drill pass clean — ${total}/${total} steps, 0 retries (100%)`: `${agent.name}: drill pass complete — ${total}/${total} steps, ${verdict.failures} failed attempt${verdict.failures === 1 ? '' : 's'}`,
         type: verdict.clean ? 'success' : 'info',
       });
       const tm = store.get('settings.trainingMode') || {};
@@ -1313,6 +1317,8 @@ _commitAgentReply(agent, result, live) {
       const mine = Array.isArray(passLog[agent.id]) ? passLog[agent.id].slice(-40) : [];
       mine.push({
         pass: verdict.passes,
+        totalSteps: Number(verdict.totalSteps) || 0,
+        failureCounts: { ...(verdict.passFailureCounts || {}) },
         // The file this pass wrote, from its records — not the file the counter
         // has moved on to. A pass that wrote the previous pass's file is filed
         // under that file, so the report never points at a file nobody wrote.
@@ -1352,6 +1358,47 @@ _commitAgentReply(agent, result, live) {
     return verdict;
   }
 
+  /**
+   * Count one failed drill call by its exact tool+argument signature.
+   *
+   * The same call repeated is not new information; it is the loop that burned
+   * 74 requests on one `todo_write`. After the hint threshold the model is
+   * told the exact expected call; after the limit the agent is marked stuck so
+   * its next Continue can be skipped. A different argument is a new attempt.
+   */
+  _noteDrillRepeat(agent, call, resultTextValue) {
+    if (!isTrainingActive()) return { notice: '', count: 0 };
+    const run = Number((store.get('settings.trainingMode') || {}).startedAt) || 0;
+    if (this._drillRun !== run) { this._drillRun = run; this._drillRepeats = {}; }
+    this._drillRepeats = this._drillRepeats || {};
+    const pos = trainingNow(agent);
+    if (!pos.task) return { notice: '', count: 0 };
+    const key = `${agent.id}|${pos.step}|${callSignature(call.tool, call.arg)}`;
+    const count = Number(this._drillRepeats[key] || 0) + 1;
+    this._drillRepeats[key] = count;
+    const notice = drillRepeatNotice(count, pos.task, pos.step + 1, pos.total, agent, pos.difficulty);
+    return { notice, count, step: pos.step + 1, total: pos.total };
+  }
+
+  /** A step advanced: forget this agent's repeat counts and any stuck mark. */
+  _clearDrillRepeat(agent) {
+    if (this._drillRepeats) {
+      for (const key of Object.keys(this._drillRepeats)) {
+        if (key.startsWith(`${agent.id}|`)) delete this._drillRepeats[key];
+      }
+    }
+    const all = { ...(store.get('trainingStuck') || {}) };
+    if (all[agent.id]) {
+      delete all[agent.id];
+      store.set('trainingStuck', all);
+      const map = { ...(store.get('trainingVerdicts') || {}) };
+      if (map[agent.id]) {
+        map[agent.id] = { ...map[agent.id], stuck: null };
+        store.set('trainingVerdicts', map);
+      }
+    }
+  }
+
   /** Recompute mid-turn so the strip moves as each call settles. */
   _publishDrillLive(agent, log) {
     if (!isTrainingActive()) return null;
@@ -1389,7 +1436,7 @@ _commitAgentReply(agent, result, live) {
       const text = document.createElement('span');
       text.className = (verdict.complete && verdict.clean
         ? 'drill-clean'
-        : (verdict.failures ? 'drill-bad' : (verdict.offStep ? 'drill-warn' : 'drill-count')))
+        : ((verdict.stuck || verdict.failures) ? 'drill-bad' : (verdict.offStep ? 'drill-warn' : 'drill-count')))
         + (verdict.retryHint ? ' drill-retry' : '');
       text.textContent = drillVerdictText(verdict);
       if (verdict.retryHint) row.classList.add('drill-row-retry');
@@ -1637,7 +1684,15 @@ _makeLiveNode(agent) {
       }
       node.reasonBlock.style.display = '';
     }
-    if (node.reasonEl) node.reasonEl.textContent = whole;
+    if (node.reasonEl) {
+      // The Reasoning box is its own scroll container (see .reasoning-content).
+      // Auto Scroll follows the newest token; with it off, replacing the text
+      // must not move the reader from where they were.
+      const auto = scrollFollowWanted(store.get('settings.autoScroll'), null);
+      const prior = node.reasonEl.scrollTop;
+      node.reasonEl.textContent = whole;
+      node.reasonEl.scrollTop = auto ? node.reasonEl.scrollHeight : prior;
+    }
     this._scrollToBottom();
   }
 
@@ -1703,6 +1758,16 @@ _makeLiveNode(agent) {
     return conv;
   }
 
+  _conversationMessageCount() {
+    const convs = store.get('conversations') || [];
+    let conv = convs.find(c => c.id === this.currentSessionId);
+    if (!conv) {
+      const live = store.get('currentConversation');
+      if (live && live.id === this.currentSessionId) conv = live;
+    }
+    return ((conv && conv.messages) || []).length;
+  }
+
   _historyFor(agentId) {
     const agent = (store.get('agents') || []).find(a => a.id === agentId);
     const turns = agent
@@ -1721,6 +1786,20 @@ _makeLiveNode(agent) {
     }
     const stored = (conv && conv.messages) || [];
     if (!stored.length) return [];
+    // A new pass keeps the previous transcript: copying a call shape that
+    // already worked is the harness memory the drill had before the cutoff.
+    // The one thing it must not copy is the previous pass's file, so rewrite
+    // this agent's drill-file family to the pass in progress.
+    let scrubHistory = (text) => text;
+    if (isTrainingActive() && agent) {
+      const current = trainingFileNow(agent, trainingDifficulty(store.get('settings.trainingMode') || {}));
+      const family = current.replace(/-p\d+\.txt$/i, '');
+      if (family && family !== current) {
+        const escaped = family.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const passPath = new RegExp(`${escaped}-p\\d+\\.txt`, 'gi');
+        scrubHistory = (text) => String(text).replace(passPath, current);
+      }
+    }
 
     const picked = [];
     let userTurns = 0;
@@ -1728,19 +1807,20 @@ _makeLiveNode(agent) {
     for (let i = stored.length - 1; i >= 0 && userTurns < limit; i--) {
       const m = stored[i];
       if (!m || typeof m.content !== 'string') continue;
+      const content = scrubHistory(m.content);
       if (m.role === 'user') {
-        picked.push({ role: 'user', content: m.content });
+        picked.push({ role: 'user', content });
         userTurns++;
       } else if (m.role === 'agent') {
         // Failure notices are stored as agent messages. Replaying them would
         // teach the model that it previously answered "Relay request failed".
-        if (isFailureNotice(m.content)) continue;
+        if (isFailureNotice(content)) continue;
         // Replies are NOT filtered by agentId: agents get deleted and recreated,
         // which orphans their old ids, and a strict match silently dropped every
         // past reply — the model then saw only bare user turns and behaved as
         // if it had no memory. Sibling replies are included instead, capped.
         if (replies >= limit) continue;
-        picked.push({ role: 'assistant', content: m.content, mine: m.agentId === agentId });
+        picked.push({ role: 'assistant', content, mine: m.agentId === agentId });
         replies++;
       }
     }
@@ -1959,6 +2039,19 @@ _makeLiveNode(agent) {
       enabled = Array.from(new Set(enabled.concat(IDE_TOOLS)));
     }
 
+    // While training, the drill IS the tool set. The task table names every
+    // tool the active pass can use; advertising the other forty-odd tools only
+    // adds choices and prompt tokens. The drill's own tools are unioned in
+    // first so an agent whose panel never ticked write_file can still be
+    // drilled (the IDE/browser drills already append theirs the same way),
+    // then the scope filter drops everything else. The deny list below still
+    // wins if the operator struck one of these out.
+    if (isTrainingActive()) {
+      const tm = store.get('settings.trainingMode') || {};
+      const scope = new Set(trainingToolScope(trainingDifficulty(tm), tm.customSteps));
+      enabled = Array.from(new Set([...enabled, ...scope])).filter(t => scope.has(t));
+    }
+
     // The operator's deny list is a policy, not a UI hint: a tool struck out
     // in Config is neither advertised to the model nor runnable, even by an
     // agent saved before the deny and even when a model names it anyway.
@@ -2045,7 +2138,11 @@ _makeLiveNode(agent) {
     // two wasted requests every turn -- a measured runner advertised tool
     // support, accepted every schema, and never once sent a tool_calls frame
     // (0/24). Native is still tried for models with no memo.
-    if (nativeMode && learnedDialect(agent.provider, agent.model)) nativeMode = false;
+    if (nativeMode && learnedDialect(agent.provider, agent.model, agent.id)) nativeMode = false;
+    // Set when a provider rejects the forced tool_choice a drill sends. The
+    // same step is retried with automatic choice before native tools are
+    // dropped entirely.
+    let forcedChoiceRejected = false;
     const describeTool = name => TOOL_REGISTRY[name]?.describe || name;
     const nativeDefinitions = () => nativeToolDefs(
       enabled.map(name => ({ name, description: describeTool(name) })),
@@ -2065,10 +2162,19 @@ _makeLiveNode(agent) {
       const tools = nativeDefinitions();
       if (!tools.length) return spec;
       const out = { ...spec, tools };
+      // A drill knows the one tool the pass is waiting for. Native models are
+      // told to call exactly that, instead of being trusted to pick it out of
+      // a schema list. Text-dialect models get the same instruction as the
+      // copyable `Exact call` line in the drill block.
+      const waiting = (!forcedChoiceRejected && isTrainingActive())
+        ? String(((trainingNow(agent).task || {}).tool) || '')
+        : '';
+      // Never force a tool the scope removed (the operator can deny it).
+      const forced = waiting && enabled.includes(waiting) ? waiting : '';
       if (family === 'google') {
-        out.tool_config = { functionCallingConfig: { mode: 'AUTO' } };
+        out.tool_config = { functionCallingConfig: nativeToolChoice('google', forced) || { mode: 'AUTO' } };
       } else {
-        const choice = nativeToolChoice(family);
+        const choice = nativeToolChoice(family, forced);
         if (choice) out.tool_choice = choice;
       }
       return out;
@@ -2225,6 +2331,19 @@ _makeLiveNode(agent) {
           step--;   // the retry is not a tool step
           store.emit('toast', {
             message: `${agent.name}: prompt did not fit${windowSize ? ` this runner's ${windowSize.toLocaleString()}-token context` : ' the model context'} — retrying with a shorter one`,
+            type: 'info',
+          });
+          continue;
+        }
+        // A provider that does not accept a forced tool_choice rejects the
+        // request. Retry the same step with automatic choice before dropping
+        // native tools; the drill block still names the awaited step.
+        if (nativeMode && isTrainingActive() && !forcedChoiceRejected && err?.name !== 'AbortError'
+            && (Number(err?.status) === 400 || Number(err?.status) === 422)) {
+          forcedChoiceRejected = true;
+          step--;   // the capability retry is not a tool step
+          store.emit('toast', {
+            message: `${agent.name}: forced tool choice refused — retrying with automatic choice`,
             type: 'info',
           });
           continue;
@@ -2544,11 +2663,24 @@ _makeLiveNode(agent) {
       for (let ci = 0; ci < calls.length; ci++) {
         const call = calls[ci];
         const record = records[ci];
+        // The verdict BEFORE this call: the difference after `_publishDrillLive`
+        // tells the repeat guard whether this was a failed attempt, a passed
+        // step, or a harmless off-step/todo call.
+        const drillBefore = isTrainingActive()
+          ? { ...((store.get('trainingVerdicts') || {})[agent.id] || {}) }
+          : null;
         let result;
         // A drill pass writes ITS file. Refused before the tool runs: grading a
         // wrong-pass write as a failure catches it only after the write has
         // overwritten the evidence that pass was supposed to keep.
-        const drillRefusal = isTrainingActive() ? drillWriteRefusal(call.tool, call.arg, agent) : '';
+        // Wrong-pass file writes are refused first (their message is more
+        // specific), then any call that is not the step the app is waiting
+        // for. A redo of steps 3-6 used to run successfully and leave the
+        // verdict stuck at step 6; now it gets an error naming the real step.
+        const drillRefusal = isTrainingActive()
+          ? (drillWriteRefusal(call.tool, call.arg, agent)
+            || drillStepRefusal(call.tool, agent, (store.get('trainingVerdicts') || {})[agent.id]))
+          : '';
         if (drillRefusal) {
           result = `Error: ${drillRefusal}`;
         } else try {
@@ -2576,7 +2708,33 @@ _makeLiveNode(agent) {
         record.ms = Date.now() - record.started;
         record.result = toolResultForUi(result, record.display);
         this._paintToolCalls(liveNode, log);
-        this._publishDrillLive(agent, log);
+        const liveVerdict = this._publishDrillLive(agent, log);
+        if (drillBefore && liveVerdict) {
+          const failedNow = Number(liveVerdict.failures) > Number(drillBefore.failures || 0);
+          const advancedNow = Number(liveVerdict.step) > Number(drillBefore.step || 0);
+          if (failedNow) {
+            const pos = trainingNow(agent);
+            const guard = this._noteDrillRepeat(agent, call, asText(result));
+            let notice = '';
+            // The right tool can return "Opened ..." and still fail the drill
+            // because it named the wrong file. The model used to see that
+            // success and keep guessing; make the rejection explicit and hand
+            // back the exact call immediately. Never pause or skip: the step
+            // repeats until its arguments pass.
+            if (record.status === 'ok' && pos.task) {
+              notice = drillFailureNotice(pos.task, pos.step + 1, pos.total, agent, pos.difficulty);
+              record.status = 'error';
+            }
+            if (guard.notice) notice = notice ? `${notice}\n\n${guard.notice}` : guard.notice;
+            if (notice) {
+              result = `${asText(result)}\n\n${notice}`;
+              record.result = toolResultForUi(result, record.display);
+              this._paintToolCalls(liveNode, log);
+            }
+          } else if (advancedNow) {
+            this._clearDrillRepeat(agent);
+          }
+        }
 
         this._recordToolCall(agent.id, call.tool);
         store.emit('toast', { message: `${agent.name}: ${call.tool} → ${asText(result).slice(0, 40)}`, type: 'info' });
@@ -2589,9 +2747,12 @@ _makeLiveNode(agent) {
           completedSummary = String(
             call.arg && call.arg.summary ? call.arg.summary : (call.note || result),
           ).trim();
+          // Never-run calls are skipped, not failed. Marking them errors also
+          // blocked the dialect memo below: a turn that ended by declaring its
+          // goal could never teach a syntax its executed calls had proved.
           records.slice(ci + 1).forEach(skipped => {
-            skipped.status = 'error';
-            skipped.result = 'Skipped after the agent declared its goal complete.';
+            skipped.status = 'skipped';
+            skipped.result = 'Skipped: this step ended by declaring the goal complete.';
           });
           this._paintToolCalls(liveNode, log);
           break;
@@ -2639,14 +2800,15 @@ _makeLiveNode(agent) {
       // writing it would memoize a guess. Anything less than all-ok (an
       // error, a denial, a pending approval) is not "what worked".
       //
-      // Steps after a display tool are marked "Skipped", not failed: they never
-      // ran because the answer was already on screen. Counting those as errors
-      // meant a turn that ended in show_file (the most common kind) could never
-      // teach the app its dialect, so every such agent re-guessed forever.
+      // Steps after a display tool (or after declare_goal_complete) are marked
+      // "Skipped", not failed: they never ran because the turn had already
+      // answered. Counting those as errors meant a turn that ended in show_file
+      // (the most common kind) could never teach the app its dialect, so every
+      // such agent re-guessed forever.
       const skippedInTurn = r => String((r && r.result) || '').startsWith('Skipped: this step ended');
       if (calls.length && calls.every(c => !c.native) && !nativeMode
         && records.every(r => r && (r.status === 'ok' || skippedInTurn(r)))) {
-        rememberDialect(agent.provider, agent.model, dialect);
+        rememberDialect(agent.provider, agent.model, dialect, agent.id);
       }
 
       if (shownCall) {
@@ -4169,6 +4331,9 @@ const filesBlockFor = agent => {
  * localStorage but disappears from the model's view halfway through a task.
  */
 const todosBlockFor = (agentId) => {
+  // At the start of a drill pass the stored plan is last pass's completed one.
+  // Do not replay it as the current plan; step 2 writes this pass's own list.
+  if (!todoPlanIsCurrent(agentId, store.get('settings.trainingMode'), store.get('trainingVerdicts'))) return '';
   const byAgent = (store.get('ui.todosByAgent')) || {};
   const todos = (agentId && Array.isArray(byAgent[agentId]))
     ? byAgent[agentId]
@@ -4180,7 +4345,12 @@ const todosBlockFor = (agentId) => {
     return `${mark[status]} ${i + 1}. ${String(t?.content || '').slice(0, 300)}`;
   }).filter(Boolean);
   if (!lines.length) return '';
-  return `\n\n<current-plan>\n${lines.join('\n')}\n</current-plan>`;
+  const block = `\n\n<current-plan>\n${lines.join('\n')}\n</current-plan>`;
+  if (!isTrainingActive()) return block;
+  try {
+    const agent = (store.get('agents') || []).find(a => a.id === agentId) || null;
+    return scrubDrillFile(block, agent, trainingDifficulty(store.get('settings.trainingMode') || {}));
+  } catch { return block; }
 };
 
 /** Re-inject the plan after todo_write, so it survives the same long turn. */

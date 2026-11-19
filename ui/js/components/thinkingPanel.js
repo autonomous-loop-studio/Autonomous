@@ -7,8 +7,8 @@
 // THINKINGPANEL.JS — Thinking overlay panel
 // ============================================
 
-import { store } from '../store.js?v=482';
-import { esc } from '../utils.js?v=482';
+import { store } from '../store.js?v=495';
+import { esc, scrollFollowWanted } from '../utils.js?v=495';
 
 export class ThinkingPanel {
   constructor() {
@@ -39,12 +39,19 @@ export class ThinkingPanel {
 
   _render() {
     if (!this.content) return;
+    // Auto Scroll is the same Config → Interface switch the transcript uses.
+    // The log is newest-first, so following it means staying at the top; an
+    // operator who scrolled down to read older entries is put back where they
+    // were when the switch is off.
+    const auto = scrollFollowWanted(store.get('settings.autoScroll'), null);
+    const prior = this.panel ? this.panel.scrollTop : 0;
     this.content.innerHTML = this.log.map(e => `
       <div class="thinking-entry">
         <div class="thinking-agent" style="color:${e.color}">${esc(e.agentName)} <span class="thinking-time">${e.time}</span></div>
         <div>${esc(e.text)}</div>
       </div>
     `).join('');
+    if (this.panel) this.panel.scrollTop = auto ? 0 : prior;
   }
 }
 

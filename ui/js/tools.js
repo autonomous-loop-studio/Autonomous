@@ -31,11 +31,11 @@
 //
 // Nothing here runs arbitrary code or shells out.
 
-import { store } from './store.js?v=482';
-import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=482';
-import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=482';
-import { settingFor } from './agentConfig.js?v=482';
-import { trace } from './trace.js?v=482';
+import { store } from './store.js?v=495';
+import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=495';
+import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=495';
+import { settingFor } from './agentConfig.js?v=495';
+import { trace } from './trace.js?v=495';
 
 const NOTES_KEY = 'router_notes';
 const CUSTOM_TOOL_NAME_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -392,15 +392,70 @@ export const TOOL_REGISTRY = {
   // reasoning model somewhere to think that is not the answer.
   todo_write: {
     label: 'todo_write',
-    arg: '{"todos":[{"content":"...","status":"pending|in_progress|completed"}]}',
+    arg: '["step 1","step 2"]',
     describe: 'Write or update your task list for this session',
     run: (arg, _note, ctx) => {
       const a = (arg && typeof arg === 'object' && !Array.isArray(arg)) ? arg : {};
-      const todos = Array.isArray(a.todos) ? a.todos : (Array.isArray(arg) ? arg : []);
-      const clean = todos.map(t => ({
-        content: String((t && t.content) || '').slice(0, 300),
-        status: ['pending', 'in_progress', 'completed'].includes(t && t.status) ? t.status : 'pending',
-      })).filter(t => t.content);
+      // Models pass this list under several names, and a plain array of strings
+      // is a real todo list too. Reading only `todos[].content` turned every
+      // one of those into an EMPTY list and answered "todo list cleared" -- a
+      // success message for a call that did nothing. A live drill then repeated
+      // that call for the rest of the run while the step counter never moved.
+      // A small model often copies the example as a JSON string instead of
+      // sending an array. That is still a valid list, and rejecting it made a
+      // 4B model fail step 8 on an otherwise clean pass. Accept a JSON-encoded
+      // array (or a JSON object with the list inside) as well as the live
+      // shapes; malformed text is still refused below.
+      const asTodoList = (value) => {
+        if (Array.isArray(value)) return value;
+        if (typeof value !== 'string' || !value.trim()) return null;
+        try {
+          const parsed = JSON.parse(value);
+          if (Array.isArray(parsed)) return parsed;
+          if (parsed && typeof parsed === 'object') {
+            for (const key of ['todos', 'items', 'steps']) {
+              if (Array.isArray(parsed[key])) return parsed[key];
+            }
+          }
+        } catch { /* not JSON */ }
+        // A weak model can lose quotes and braces while copying a nested card.
+        // If the keys survived, recover the planned items instead of answering
+        // a useful list with a schema error; a live run retried this exact
+        // mangled string until the drill stalled at step 2.
+        const contents = [...value.matchAll(/\bcontent"?\s*:\s*"?([^",}\n]+)/gi)]
+          .map(m => m[1].trim()).filter(Boolean);
+        if (contents.length) {
+          const statuses = [...value.matchAll(/\bstatus"?\s*:\s*"?([a-z_]+)/gi)]
+            .map(m => m[1].toLowerCase().replace(/^_+/, 'in_').replace(/^inprogress$/, 'in_progress'));
+          return contents.map((content, i) => ({ content, status: statuses[i] || 'pending' }));
+        }
+        // A bare quoted list can also lose its commas, which is not valid
+        // JSON and has no content/status keys to recover. Splitting on the
+        // quote delimiter keeps each item intact even when the separator
+        // between two items is missing; a regex for complete quoted pairs
+        // swallowed the missing-comma boundary and returned commas as items.
+        // This is the exact shape a 4B run sent at step 2:
+        // ["1. think", "2. todo_write", "3. echo" "4. now" ...].
+        const quoted = String(value).split('"')
+          .map(part => part.replace(/^[\s,;\[\]]+|[\s,;\[\]]+$/g, '').trim())
+          .filter(Boolean)
+          .filter(text => !/^(todos|items|steps|content|status|pending|in_progress|completed)$/i.test(text));
+        if (quoted.length) return quoted.map(content => ({ content, status: 'pending' }));
+        return null;
+      };
+      const todos = asTodoList(a.todos) || asTodoList(a.items) || asTodoList(a.steps) || asTodoList(a.arg) || asTodoList(arg);
+      if (!todos) {
+        throw new Error('todo_write needs a list; send {"tool":"todo_write","arg":["step 1","step 2"]} (a plain array of strings, or a JSON-encoded array, is accepted)');
+      }
+      const clean = todos.map(t => (typeof t === 'string' ? { content: t } : t))
+        .map(t => ({
+          content: String((t && (t.content || t.description || t.desc || t.text)) || '').slice(0, 300),
+          status: ['pending', 'in_progress', 'completed'].includes(t && t.status) ? t.status : 'pending',
+        })).filter(t => t.content);
+      if (!clean.length && todos.length) {
+        throw new Error(`todo_write got ${todos.length} item(s) but none had non-empty "content"; send `
+          + '"todos":[{"content":"...","status":"pending"}]');
+      }
       // Per-agent lists: a fleet training at once must not overwrite one
       // another's plan through the old single global. The agent id scopes the
       // record; `ui.todos` keeps the last write for the existing panel.
@@ -1377,8 +1432,16 @@ export function bindSandboxTools(api) {
     const old = String(a.old_string ?? a.old_str ?? a.old_text ?? '');
     if (!path) return 'error: edit_file needs "path" as a plain string, e.g. {"path":"training/training.txt","old_string":"...","new_string":"..."} — retry the step with that shape';
     if (!old) return 'error: edit_file needs "old_string"';
+    let next = String(a.new_string ?? a.new_str ?? a.new_text ?? '');
+    // Weak models routinely send the two characters backslash-n where they
+    // mean a newline, especially after copying a JSON card. In a drill file
+    // that is never the intended content: repair it before the write so the
+    // step produces the bytes it asked for. Other files keep exact semantics.
+    if (/(^|\/)training\//.test(path.replace(/\\/g, '/')) && !next.includes('\n')) {
+      next = next.replace(/\\n/g, '\n');
+    }
     const res = await api.sandbox('str_replace', {
-      path, old, new: String(a.new_string ?? a.new_str ?? a.new_text ?? ''), replace_all: !!a.replace_all, root: scopeOf(ctx),
+      path, old, new: next, replace_all: !!a.replace_all, root: scopeOf(ctx),
     });
     return `edited ${res.path} (${res.replaced} replacement${res.replaced === 1 ? '' : 's'})`;
   };
@@ -2949,6 +3012,21 @@ function fromToolObject(source) {
   if (arg === undefined) arg = obj.parameters;
   if (arg === undefined) arg = obj.input;
   if (arg === undefined) arg = obj.text;
+  if (arg === undefined) {
+    // Many models put the tool's arguments at the top level instead of under
+    // `arg`: {"tool":"todo_write","todos":[...]}. Reading only the known
+    // envelope keys made that call arrive with no argument at all, so
+    // todo_write answered "needs todos" for a list the model had just sent --
+    // and a live drill counted every identical retry as another failure.
+    // Everything that is not part of the call envelope is the argument.
+    const payload = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === 'tool' || k === 'name' || k === 'function' || k === 'note'
+          || k === 'type' || k === 'id' || k === 'call_id') continue;
+      if (v !== undefined) payload[k] = v;
+    }
+    if (Object.keys(payload).length) arg = payload;
+  }
   // Several dialects send arguments as a JSON *string*.
   if (typeof arg === 'string' && /^\s*\{/.test(arg)) {
     try { arg = JSON.parse(arg); } catch { /* keep the raw string */ }

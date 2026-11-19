@@ -89,8 +89,8 @@ if (!version) die('cannot read APP_VERSION from ui/js/store.js');
 
 const { store } = await import(`./ui/js/store.js?v=${version}`);
 const {
-  trainingBlockFor, drillVerdict, drillVerdictText, trainingFileFor, trainingFileCheckFor,
-  trainingTasksFor,
+  trainingBlockFor, drillVerdict, drillVerdictText, trainingFileFor,
+  trainingTasksFor, drillFailureNotice,
 } = await import(`./ui/js/training.js?v=${version}`);
 const { TOOL_REGISTRY, toolInstructions, runTool, bindSandboxNow } = await import(`./ui/js/tools.js?v=${version}`);
 const { nativeToolDefs } = await import(`./ui/js/nativeTools.js?v=${version}`);
@@ -255,7 +255,10 @@ const usesFile = tasks.some(t => /\{file\}|write_file|read_file|edit_file|ide_wr
 // of two passes judged against p2 reads pass 1's p1 calls as failures, and
 // reports a clean two-pass run as "1 failed". The app passes this same
 // matcher to drillVerdict, so a rate means the same thing in both places.
-const matcher = trainingFileCheckFor(agent, mode);
+// A run can start at pass N (--pass), and its history has no earlier passes.
+// Map the history's first pass to N, not to 1; otherwise pass 2 is graded
+// against pass 1's filename and every file step fails despite the right bytes.
+const matcher = (n) => trainingFileFor(agent, mode, pass + n - 1);
 
 let file = '';
 let systemPrompt = '';
@@ -626,10 +629,22 @@ for (;;) {
     const name = String(tc.function?.name || '');
     let arg = {};
     try { arg = JSON.parse(tc.function?.arguments || '{}'); } catch { arg = {}; }
+    const before = drillVerdict(calls, matcher, mode);
     const { status, result } = await execute(name, arg);
     calls.push({ tool: name, arg, result, status });
-    messages.push({ role: 'tool', tool_call_id: tc.id, content: String(result).slice(0, 4000) });
     verdict = drillVerdict(calls, matcher, mode);
+    // The app hands back the exact call when the RIGHT tool ran but did not
+    // advance the step. Without that correction a small model repeats the
+    // wrong argument until the turn budget ends; the runner must show the same
+    // feedback a live agent gets or it is testing a different harness.
+    let content = String(result).slice(0, 4000);
+    const beforeTask = tasks[before.step];
+    if (status === 'ok' && !before.complete && verdict.step <= before.step
+      && beforeTask && String(beforeTask.tool) === name) {
+      const notice = drillFailureNotice(beforeTask, before.step + 1, tasks.length, agent, mode);
+      if (notice) content = `${content}\n\n${notice}`;
+    }
+    messages.push({ role: 'tool', tool_call_id: tc.id, content });
     const mark = status === 'ok' ? 'ok  ' : 'FAIL';
     say(`  ${String(verdict.step)}/${tasks.length}  ${mark} ${name.padEnd(11)} ${String(result).split('\n')[0].slice(0, 90)}`);
     note(`call: ${name} ${JSON.stringify(arg)}`);

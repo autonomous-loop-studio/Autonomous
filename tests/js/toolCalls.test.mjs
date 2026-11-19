@@ -14,7 +14,7 @@
 // (["sleep", 5]) were refused outright; "parameters"/"input" argument names
 // parsed to an undefined arg.
 
-import { parseToolCalls, normaliseExecArgv, repairToolName } from '../../ui/js/tools.js';
+import { parseToolCall, parseToolCalls, normaliseExecArgv, repairToolName, runTool } from '../../ui/js/tools.js';
 
 let pass = 0, fail = 0;
 const errors = [];
@@ -24,6 +24,27 @@ const eq = (a, b, name) => ok(JSON.stringify(a) === JSON.stringify(b),
 
 console.log('toolCalls tests');
 console.log('-'.repeat(60));
+
+// --- arguments at the top level ------------------------------------------------
+// Observed live: a model sent {"tool":"todo_write","todos":[...]} with a valid
+// list, the parser read only `arg`, and todo_write answered "needs todos" on
+// every retry. The drill counted 74 identical failures at step 2.
+{
+  const call = parseToolCall('{"tool":"todo_write","todos":[{"content":"think","status":"completed"},{"content":"fetch","status":"in_progress"}]}');
+  eq(call.tool, 'todo_write', 'top-level todo call names the tool');
+  ok(call.arg && Array.isArray(call.arg.todos), 'top-level todos becomes the argument');
+  eq(call.arg && call.arg.todos[1] && call.arg.todos[1].content, 'fetch', 'the list survives intact');
+  const out = await runTool('todo_write', call.arg);
+  ok(out === 'todo list cleared' || out.includes('2. fetch'), 'the parsed list is what todo_write runs');
+}
+{
+  const call = parseToolCall('{"tool":"think","thought":"one sentence","note":"not an arg"}');
+  eq(call.arg, { thought: 'one sentence' }, 'top-level thought survives; note stays out of the arg');
+}
+{
+  const call = parseToolCall('{"tool":"write_file","path":"training/x.txt","content":"hi"}');
+  eq(call.arg, { path: 'training/x.txt', content: 'hi' }, 'top-level file arguments keep their keys');
+}
 
 // --- several calls in one reply ------------------------------------------------
 {

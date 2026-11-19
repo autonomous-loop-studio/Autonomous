@@ -107,6 +107,14 @@ eq(DRILL_CHECKS_EASY.length, TRAINING_TASKS_EASY.length, 'every easy step has a 
   eq(drillVerdictText(v), '12/12 \u00b7 clean \u00b7 1 pass', 'the strip text names the easy total');
 }
 
+// A finished pass that was not clean is not progress toward the target; the
+// strip used to call it "1 pass" and read like a win while the run continued.
+{
+  eq(drillVerdictText({ step: 3, totalSteps: 8, complete: false, failures: 5, failedAt: 4, passes: 1 }),
+    '3/8 · 5 failed at step 4 · 1 pass done',
+    'an unfinished pass after a dirty one says the pass is done, not won');
+}
+
 // The old append step is the diagnostic. A model that sends the old empty
 // old_string fails at step 7; a working anchored edit can still pass it.
 {
@@ -169,14 +177,15 @@ eq(DRILL_CHECKS_EASY.length, TRAINING_TASKS_EASY.length, 'every easy step has a 
 // failures that never happened, which is exactly what a per-pass name must not
 // cause.
 {
-  const p1 = 'training/training-agent-drill-p1.txt';
-  const p2 = 'training/training-agent-drill-p2.txt';
+  const fileOf = trainingFileCheckFor({ id: 'agent_drill' });
+  const p1 = fileOf(1);
+  const p2 = fileOf(2);
   const mapped = (file) => cleanPass().map(c => ({
     ...c,
     arg: JSON.parse(JSON.stringify(c.arg).replaceAll('training/training.txt', file)),
   }));
   const history = mapped(p1).concat(mapped(p2));
-  const v = drillVerdict(history, trainingFileCheckFor({ id: 'agent_drill' }));
+  const v = drillVerdict(history, fileOf);
   eq(v.passes, 2, 'two passes are counted');
   eq(v.cleanPasses, 2, 'both passes still read clean');
   eq(v.failuresTotal, 0, 'pass 1 is not re-graded against pass 2\'s file');
@@ -270,6 +279,19 @@ eq(DRILL_CHECKS_EASY.length, TRAINING_TASKS_EASY.length, 'every easy step has a 
   eq(v.failures, 0, 'skipped is not counted as failed');
 }
 
+// Inspecting the file is a scratchpad, not an off-step attempt. This is how a
+// model can see that its pass file is `training` (no trailing newline) before
+// the old Easy append step.
+{
+  const calls = cleanEasyPass();
+  calls.splice(6, 0, call('read_file', { path: 'training/training.txt' }, 'ok', '1  training'));
+  const v = drillVerdict(calls, 'training/training.txt', 'easy');
+  eq(v.complete, true, 'an inspection call does not block the Easy pass');
+  eq(v.clean, true, 'an inspection call is not a failure');
+  eq(v.failures, 0, 'it adds no failed attempt');
+  eq(v.offStep, 0, 'it is not counted as an off-step call');
+}
+
 // A waiting approval stalls the step: the drill has not passed it.
 {
   const calls = cleanPass().slice(0, 5);
@@ -294,19 +316,66 @@ eq(DRILL_CHECKS_EASY.length, TRAINING_TASKS_EASY.length, 'every easy step has a 
   eq(drillVerdict(wrongWrite).step, 4, 'writing the wrong content does not pass the write step');
 }
 
-// A model that lost its place shows as off-step, not as a silent stall.
+// A think while a pass is in progress is the scratchpad the tool instructions
+// promise: it changes nothing, and in particular it must not reset the pass.
 {
   const calls = cleanPass().slice(0, 15);
-  calls.push(call('think', { note: 'restart' }, 'ok', 'thinking'));
+  const before = drillVerdict(calls);
+  calls.push(call('think', { note: 'scratchpad' }, 'ok', 'thinking'));
+  const v = drillVerdict(calls);
+  eq(v.step, before.step, 'a mid-pass think does not reset or advance the step');
+  eq(v.failures, before.failures, 'and leaves the live failure count alone');
+  eq(v.offStep, before.offStep, 'and is not counted as off-step');
+  eq(v.restarts, 0, 'a mid-pass think is not a restart');
+  eq(v.passes, 0, 'and does not manufacture a pass');
+  ok(drillVerdictText(v).includes('15/17'), 'the strip stays on the recorded step');
+  const next = drillVerdict(calls.concat([call('todo_write', { todos: [] }, 'ok', 'updated')]));
+  eq(next.step, 16, 'the next real step still follows the think');
+}
+
+// A tool that is not the drill's first step is still just off-step.
+{
+  const calls = cleanPass().slice(0, 15);
+  calls.push(call('echo', 'training', 'ok', 'training'));
   const v = drillVerdict(calls);
   eq(v.step, 15, 'an off-step call does not advance the pass');
   eq(v.offStep, 1, 'the off-step call is counted');
-  eq(v.offTool, 'think', 'the off-step tool is named');
+  eq(v.offTool, 'echo', 'the off-step tool is named');
   eq(v.nextTool, 'todo_write', 'the expected tool is reported');
   ok(drillVerdictText(v).includes('waiting for todo_write'), 'the stall is named in the strip text');
   const back = drillVerdict(calls.concat([call('todo_write', { todos: [] }, 'ok', 'updated')]));
   eq(back.step, 16, 'the step still passes once it is attempted');
   eq(back.offStep, 0, 'progress clears the off-step signal');
+}
+
+// An error on a tool that is not the next step is still a failed attempt. It
+// used to be only "off-step", which is how two empty-content write errors in a
+// live run stayed out of the drill strip.
+{
+  const calls = cleanPass().slice(0, 6);
+  calls.push(call('exec', { argv: ['false'] }, 'error', 'Error: command failed'));
+  const v = drillVerdict(calls);
+  eq(v.step, 6, 'the off-step error does not advance');
+  eq(v.failures, 1, 'the off-step error is counted as a failure');
+  eq(v.failedAt, 7, 'it is pinned to the step the drill was waiting for');
+  eq(v.offStep, 0, 'the failure replaces the off-step signal');
+  ok(drillVerdictText(v).includes('1 failed at step 7'), 'the strip shows the off-step failure');
+  const after = drillVerdict(calls.concat([call('read_file', { path: 'training/training.txt', range: '1-1' }, 'ok', '1  training')]));
+  eq(after.step, 7, 'the correct call still passes the step');
+  eq(after.clean, false, 'the error keeps the pass from being clean');
+}
+
+// A todo_write status update is not a drill step, but it is still an off-step
+// call: the strip keeps naming the step it is waiting for instead of going
+// silent between steps.
+{
+  const calls = cleanPass().slice(0, 6);
+  calls.push(call('todo_write', { todos: [] }, 'ok', 'updated'));
+  const v = drillVerdict(calls);
+  eq(v.step, 6, 'the status update does not advance');
+  eq(v.offStep, 1, 'it is off-step');
+  eq(v.offTool, 'todo_write', 'and the strip can name it');
+  eq(v.failures, 0, 'but it is not a failure');
 }
 
 // The right tool with the wrong arguments is a failed attempt, not silence.
@@ -349,6 +418,34 @@ eq(DRILL_CHECKS_EASY.length, TRAINING_TASKS_EASY.length, 'every easy step has a 
   eq(v.step, 0, 'no calls, no progress');
   eq(v.clean, false, 'no calls is not clean');
   eq(drillVerdict(null).step, 0, 'a missing log is handled');
+}
+
+// A pathless list_dir at the list_dir step is the orientation call the tool
+// docs teach, not a failed attempt: the model orients first, then lists the
+// training folder, and the pass can still finish clean.
+{
+  const calls = cleanPass().slice(0, 9);
+  calls.push(call('list_dir', {}, 'ok', 'allowed directories:\nC:/sandbox'));
+  const v = drillVerdict(calls);
+  eq(v.step, 9, 'an orientation list_dir does not advance the step');
+  eq(v.failures, 0, 'and is not counted as a failed attempt');
+  eq(v.clean, false, 'the pass is unfinished, so never clean yet');
+  const done = drillVerdict(calls.concat(cleanPass().slice(9)));
+  eq(done.complete, true, 'the step still passes once training/ is listed');
+  eq(done.clean, true, 'orienting first keeps the pass clean');
+}
+
+// The list_dir step is graded on the argument, not the result text: an empty
+// training folder lists nothing containing the word, and that is still a pass.
+{
+  const calls = cleanPass().slice(0, 9);
+  calls.push(call('list_dir', { path: 'training' }, 'ok', ''));
+  eq(drillVerdict(calls).step, 10, 'list_dir training passes on an empty listing');
+  const wrong = cleanPass().slice(0, 9);
+  wrong.push(call('list_dir', { path: 'other' }, 'ok', 'other/'));
+  const v = drillVerdict(wrong);
+  eq(v.step, 9, 'list_dir of another path does not pass the step');
+  eq(v.failures, 1, 'it is a failed attempt at step 10');
 }
 
 // --- the one-line form the strip and the dialog both render ------------------

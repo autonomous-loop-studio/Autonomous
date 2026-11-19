@@ -68,13 +68,13 @@ for ($i = 1; $i < $argc; $i++) {
     exit(2);
 }
 
-/** Same rule as training.js: lowercase, non-alphanumerics to '-', last 48. */
+/** Same rule as drillSlug() in ui/js/training.js: lowercase, non-alphanumerics to '-', last 6. */
 function drill_selftest_slug($raw)
 {
     $s = strtolower((string)$raw);
     $s = preg_replace('/[^a-z0-9]+/', '-', $s);
     $s = trim((string)$s, '-');
-    if (strlen($s) > 48) { $s = substr($s, -48); }
+    if (strlen($s) > 6) { $s = substr($s, -6); }
     return $s !== '' ? $s : 'agent';
 }
 

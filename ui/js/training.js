@@ -15,9 +15,10 @@
 // Nothing here teaches weights — models do not keep those between calls. What
 // "remember what worked" means is: the agent tracks each passed step with
 // todo_write, and the drill that last worked stays in the run transcript and
-// the todo list. The operator ends the drill with Stop on the same button.
+// the todo list. The operator ends the drill with Stop on the same button; a
+// 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=482';
+import { store } from './store.js?v=495';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -26,6 +27,15 @@ export const TRAINING_THROTTLE = 0.5;
  *  resolved under the agent's writable root, never outside it. */
 export const TRAINING_DIR = 'training';
 export const TRAINING_FILE = 'training/training.txt';
+/**
+ * Read-only calls that inspect the workspace. They are scratchpads, not steps:
+ * a model may need the exact bytes before an anchored edit, and refusing the
+ * read left Easy step 7 guessing `training\n` against a file containing
+ * `training`. Allowing one can never skip a step because the verdict still
+ * advances only when the call is the awaited step.
+ */
+export const DRILL_INSPECT_TOOLS = ['read_file', 'list_dir', 'glob_files', 'grep_code', 'ide_read', 'browser_read', 'window_list'];
+const isInspect = (tool) => DRILL_INSPECT_TOOLS.includes(String(tool || '').toLowerCase());
 /** Placeholder in the step labels, filled with the caller's own drill file. */
 export const TRAINING_FILE_TOKEN = '{file}';
 /** Local page the Browser drill drives; resolved against this module so it
@@ -68,10 +78,18 @@ export function normalizeCustomSteps(raw) {
 const drillStem = (difficulty) => (difficulty === 'advanced' ? 'advanced'
   : difficulty === 'ide' ? 'ide' : 'training');
 
-/** The agent part of a drill file name: short, filesystem-safe, stable. */
+/**
+ * The agent part of a drill file name: short, filesystem-safe, stable.
+ *
+ * Six characters, not the whole agent id: a smaller model has to copy this
+ * path out of its prompt, and a live run turned `agent-mwn6m27-ecyu71` into a
+ * dozen near-miss filenames before it could read its own pass file. The id's
+ * random tail is enough to keep sequential agents apart.
+ */
 const drillSlug = (agent) => {
   const raw = String((agent && (agent.id || agent.code || agent.name)) || 'agent');
-  return raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(-48) || 'agent';
+  const slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return slug.slice(-6) || 'agent';
 };
 
 /**
@@ -90,6 +108,48 @@ export function trainingPassOf(mode) {
 /** The stored pass, for callers that only have an agent and a difficulty. */
 export function trainingPassNow() {
   try { return trainingPassOf(store.get('settings.trainingMode')); } catch { return 1; }
+}
+
+/**
+ * Whether the todo plan on disk belongs to the pass in progress.
+ *
+ * todo_write is replayed into every system prompt so the plan survives context
+ * compaction. That is right during a task, but at the start of a drill pass the
+ * stored list is the PREVIOUS pass's, every item [x]. Replaying it told a fresh
+ * pass the work was already done before step 1, and the model then skipped the
+ * plan it was supposed to write at step 2. The plan becomes current only after
+ * step 2's todo_write has passed; a completed pass hides it again until the
+ * next pass writes its own.
+ */
+export function todoPlanIsCurrent(agentId, mode = undefined, verdicts = undefined) {
+  const m = mode === undefined ? store.get('settings.trainingMode') : mode;
+  if (!m || !m.active) return true;
+  const all = verdicts === undefined ? store.get('trainingVerdicts') : verdicts;
+  const v = agentId ? ((all || {})[agentId] || null) : null;
+  if (!v) return false;
+  const step = Math.max(0, Math.floor(Number(v.step) || 0));
+  return !v.complete && step >= 2;
+}
+
+/**
+ * Rewrite this run's drill-file family to the pass in progress.
+ *
+ * A todo list rebuilt from the previous pass copies that pass's file path
+ * with it (live: p3 on pass 4). Replayed verbatim it contradicts YOUR FILE
+ * FOR THIS PASS, so the model copies the old pN.txt into the write step.
+ * Shared by desktop and mobile so both clients behave the same; mirrors the
+ * history scrub in chat.js `_historyFor`.
+ */
+export function scrubDrillFile(text, agent, difficulty = 'hard') {
+  const src = String(text ?? '');
+  if (!src || !agent) return src;
+  try {
+    const current = trainingFileNow(agent, difficulty);
+    const family = String(current).replace(/-p\d+\.txt$/i, '');
+    if (!family || family === current) return src;
+    const escaped = family.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return src.replace(new RegExp(`${escaped}-p\\d+\\.txt`, 'gi'), current);
+  } catch { return src; }
 }
 
 /**
@@ -188,27 +248,52 @@ const fillPage = (text) => String(text).split(TRAINING_PAGE_TOKEN).join(TRAINING
  * ones, because each of those pauses on the operator's Approve button — that
  * pause is part of the lesson, not something to route around.
  */
+/** The exact anchored edit card for the two append steps. JSON.stringify
+ * produces one backslash before n, the JSON newline escape. A hand-written
+ * two-backslash sequence made a model send the literal characters instead. */
+const anchoredAppendCard = () => JSON.stringify({
+  tool: 'edit_file',
+  arg: { path: '{file}', old_string: 'training', new_string: 'training\ndrill 2 passed' },
+});
+
 export const TRAINING_TASKS = [
-  { tool: 'think', label: 'Think one sentence about the drill before touching anything.' },
-  { tool: 'todo_write', label: 'Write the drill steps below as your todo list, first one in_progress.' },
-  { tool: 'echo', label: 'Echo the word "training" back — echo takes a bare string: {"tool":"echo","arg":"training"}, not an object like {"arg":{"text":"training"}}.' },
-  { tool: 'now', label: 'Report the current date and time.' },
-  { tool: 'write_file', label: 'Create {file} containing exactly the word "training". (Asks approval — wait for it, do not skip.)' },
-  { tool: 'read_file', label: 'Read {file} back with read_file — not show_file — and confirm it says "training".' },
-  { tool: 'read_file', label: 'Read only line 1 of {file}: call read_file with the path and a trailing " 1-1" — not show_file. A range keeps a big file out of your context instead of pulling all of it in.' },
-  { tool: 'edit_file', label: 'In {file}, use edit_file — not write_file and not str_replace_editor — to replace the exact text "training" with "training\\ndrill 2 passed". old_string is the text you match, new_string is what replaces it; edit_file is search-and-replace, never an append. (Asks approval — wait for it.)' },
-  { tool: 'edit_file', label: 'Use edit_file again — not write_file and not str_replace_editor — to replace the exact line "drill 2 passed" with "drill 2 passed (exact match)". (Asks approval — old_string/new_string edits only touch the text you name.)' },
-  { tool: 'list_dir', label: 'List the training folder.' },
-  { tool: 'glob_files', label: 'Find files matching "training/*".' },
-  { tool: 'grep_code', label: 'Search the training folder for the word "training".' },
+  { tool: 'think', label: 'Call the think tool with one sentence about the drill before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will work the drill in order.\"}"},
+  { tool: 'todo_write', label: 'Write the drill steps below as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
+  { tool: 'echo', label: 'Echo the word "training" back — echo takes a bare string: {"tool":"echo","arg":"training"}, not an object like {"arg":{"text":"training"}}.' ,
+    example: "{\"tool\":\"echo\",\"arg\":\"training\"}"},
+  { tool: 'now', label: 'Report the current date and time.' ,
+    example: "{\"tool\":\"now\"}"},
+  { tool: 'write_file', label: 'Create {file} containing exactly the word "training". (Asks approval — wait for it, do not skip.)' ,
+    example: "{\"tool\":\"write_file\",\"arg\":{\"path\":\"{file}\",\"content\":\"training\"}}"},
+  { tool: 'read_file', label: 'Read {file} back with read_file — not show_file — and confirm it says "training".' ,
+    example: "{\"tool\":\"read_file\",\"arg\":\"{file}\"}"},
+  { tool: 'read_file', label: 'Read only line 1 of {file}: call read_file with the path and a trailing " 1-1" — not show_file. A range keeps a big file out of your context instead of pulling all of it in.' ,
+    example: "{\"tool\":\"read_file\",\"arg\":\"{file} 1-1\"}"},
+  { tool: 'edit_file', label: 'In {file}, use edit_file — not write_file and not str_replace_editor — to replace the exact text "training" with two lines: "training", then "drill 2 passed". old_string is the text you match; new_string is the two-line text, with a real newline between the lines. Use exactly this call: ' + anchoredAppendCard() + '. edit_file is search-and-replace, never an append. (Asks approval — wait for it.)',
+    example: anchoredAppendCard() },
+  { tool: 'edit_file', label: 'Use edit_file again — not write_file and not str_replace_editor — to replace the exact line "drill 2 passed" with "drill 2 passed (exact match)". (Asks approval — old_string/new_string edits only touch the text you name.)' ,
+    example: "{\"tool\":\"edit_file\",\"arg\":{\"path\":\"{file}\",\"old_string\":\"drill 2 passed\",\"new_string\":\"drill 2 passed (exact match)\"}}"},
+  { tool: 'list_dir', label: 'List the training folder.' ,
+    example: "{\"tool\":\"list_dir\",\"arg\":\"training\"}"},
+  { tool: 'glob_files', label: 'Find files matching "training/*".' ,
+    example: "{\"tool\":\"glob_files\",\"arg\":\"training/*\"}"},
+  { tool: 'grep_code', label: 'Search the training folder for the word "training".' ,
+    example: "{\"tool\":\"grep_code\",\"arg\":\"training\"}"},
   // The display family: each show_* call paints its output into the transcript
   // and ENDS the turn. Training mode resumes the drill after it, which is what
   // lets these sit mid-drill instead of only at the end.
-  { tool: 'show_find', label: 'Show me the search: use show_find for "training" — the matches on screen are your reply. This ends the turn; the drill resumes after it.' },
-  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (Asks approval — wait for it.)' },
-  { tool: 'show_command', label: 'Show me a command: use show_command for ["echo","training"] and let its output be your reply. (Asks approval — this is the display twin of exec: it ends the turn, and the drill resumes.)' },
-  { tool: 'todo_write', label: 'Mark every drill step completed, and put your two-line summary (which tools passed, retries) in the last item.' },
-  { tool: 'show_file', label: 'Show {file} to me with show_file — not read_file — the file on screen IS the drill report. This ends the turn; the mode then sends Continue for a fresh pass, so do not write the contents out again.' },
+  { tool: 'show_find', label: 'Show me the search: use show_find for "training" — the matches on screen are your reply. This ends the turn; the drill resumes after it.' ,
+    example: "{\"tool\":\"show_find\",\"arg\":\"training\"}"},
+  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (Asks approval — wait for it.)' ,
+    example: "{\"tool\":\"exec\",\"arg\":[\"echo\",\"training\"]}"},
+  { tool: 'show_command', label: 'Show me a command: use show_command for ["echo","training"] and let its output be your reply. (Asks approval — this is the display twin of exec: it ends the turn, and the drill resumes.)' ,
+    example: "{\"tool\":\"show_command\",\"arg\":[\"echo\",\"training\"]}"},
+  { tool: 'todo_write', label: 'Mark every drill step completed, and put your two-line summary (which tools passed, retries) in the last item.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
+  { tool: 'show_file', label: 'Show {file} to me with show_file — not read_file — the file on screen IS the drill report. This ends the turn; the mode then sends Continue for a fresh pass, so do not write the contents out again.' ,
+    example: "{\"tool\":\"show_file\",\"arg\":\"{file}\"}"},
 ];
 
 /**
@@ -222,24 +307,37 @@ export const TRAINING_TASKS = [
  *     ending.
  *
  * Everything else is the old wording — including "Append a second line" on
- * step 7. That instruction is the point of Easy mode: it is the step that did
- * not match what edit_file can do, and keeping it lets you see which models
- * still fail there and at which step number. Do not "fix" it here; Hard mode
- * is where the anchored edit is taught.
+ * step 7. The wording stays because it is the historical shape of the drill;
+ * its card is now the anchored edit that step always meant. A live run with
+ * this step's old no-example card sent edit_file with old_string "\n" against
+ * a file containing "training", failed, and then could not recover. Hard mode
+ * still teaches the same anchored shape in its own words.
  */
 export const TRAINING_TASKS_EASY = [
-  { tool: 'think', label: 'Think one sentence about the drill before touching anything.' },
-  { tool: 'todo_write', label: 'Write the drill steps below as your todo list, first one in_progress.' },
-  { tool: 'echo', label: 'Echo the word "training" back.' },
-  { tool: 'now', label: 'Report the current date and time.' },
-  { tool: 'write_file', label: 'Create {file} containing exactly the word "training". (Asks approval — wait for it, do not skip.)' },
-  { tool: 'read_file', label: 'Read {file} back and confirm it says "training".' },
-  { tool: 'edit_file', label: 'Append a second line "drill 2 passed" to {file}. (Asks approval — wait for it.)' },
-  { tool: 'list_dir', label: 'List the training folder.' },
-  { tool: 'glob_files', label: 'Find files matching "training/*".' },
-  { tool: 'grep_code', label: 'Search the training folder for the word "training".' },
-  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (Asks approval — wait for it.)' },
-  { tool: 'todo_write', label: 'Mark every drill step completed — this completes the 12-step pass.' },
+  { tool: 'think', label: 'Call the think tool with one sentence about the drill before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will work the drill in order.\"}"},
+  { tool: 'todo_write', label: 'Write the drill steps below as your todo list, first one in_progress. Send a plain array of step strings — no nested JSON string.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":[\"step 1\",\"step 2\"]}"},
+  { tool: 'echo', label: 'Echo the word "training" back.' ,
+    example: "{\"tool\":\"echo\",\"arg\":\"training\"}"},
+  { tool: 'now', label: 'Report the current date and time.' ,
+    example: "{\"tool\":\"now\"}"},
+  { tool: 'write_file', label: 'Create {file} containing exactly the word "training". (Asks approval — wait for it, do not skip.)' ,
+    example: "{\"tool\":\"write_file\",\"arg\":{\"path\":\"{file}\",\"content\":\"training\"}}"},
+  { tool: 'read_file', label: 'Read {file} back and confirm it says "training".' ,
+    example: "{\"tool\":\"read_file\",\"arg\":\"{file}\"}"},
+  { tool: 'edit_file', label: 'Append a second line "drill 2 passed" to {file}. Read the file first with read_file and copy its existing text exactly — the line may not end with a newline. Use exactly this call: ' + anchoredAppendCard() + '. (Asks approval — wait for it.)',
+    example: anchoredAppendCard() },
+  { tool: 'list_dir', label: 'List the training folder.' ,
+    example: "{\"tool\":\"list_dir\",\"arg\":\"training\"}"},
+  { tool: 'glob_files', label: 'Find files matching "training/*".' ,
+    example: "{\"tool\":\"glob_files\",\"arg\":\"training/*\"}"},
+  { tool: 'grep_code', label: 'Search the training folder for the word "training".' ,
+    example: "{\"tool\":\"grep_code\",\"arg\":\"training\"}"},
+  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (Asks approval — wait for it.)' ,
+    example: "{\"tool\":\"exec\",\"arg\":[\"echo\",\"training\"]}"},
+  { tool: 'todo_write', label: 'Mark every drill step completed — this completes the 12-step pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
 ];
 
 /**
@@ -250,14 +348,22 @@ export const TRAINING_TASKS_EASY = [
  * then proves both the live page and the saved copy on screen.
  */
 export const TRAINING_TASKS_ADVANCED = [
-  { tool: 'think', label: 'Think one sentence about the fetch → save → show pipeline before touching anything.' },
-  { tool: 'todo_write', label: 'Write the Advanced steps as your todo list, first one in_progress.' },
-  { tool: 'fetch_url', label: 'Fetch {page} with fetch_url and read the page text. This is the read half of “show_url URL > log.txt”: show_url only displays a page and cannot redirect into a file. {page} is served by this app itself, so it always answers.' },
-  { tool: 'write_file', label: 'Save that fetched page text to {file} with write_file — the redirect half, done as a real file. (Asks approval — wait for it.)' },
-  { tool: 'read_file', label: 'Read {file} back with read_file and confirm it holds the page text you just fetched.' },
-  { tool: 'show_url', label: 'Show the live page with show_url at {page} — the page text on screen is your reply. This ends the turn; the drill resumes after it.' },
-  { tool: 'show_file', label: 'Show the saved copy with show_file at {file} — the file on screen proves the redirect, not just the fetch. This ends the turn; the drill resumes after it.' },
-  { tool: 'todo_write', label: 'Mark every step completed and put your one-line summary (what was fetched, where it was saved) in the last item — this completes the 8-step Advanced pass.' },
+  { tool: 'think', label: 'Call the think tool with one sentence about the fetch → save → show pipeline before touching anything — a real {"tool":"think","arg":"..."} call, not a sentence in your reply.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will fetch the page, save it, then show both.\"}"},
+  { tool: 'todo_write', label: 'Write the Advanced steps as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
+  { tool: 'fetch_url', label: 'Fetch {page} with fetch_url and read the page text. This is the read half of “show_url URL > log.txt”: show_url only displays a page and cannot redirect into a file. {page} is served by this app itself, so it always answers.' ,
+    example: "{\"tool\":\"fetch_url\",\"arg\":\"{page}\"}"},
+  { tool: 'write_file', label: 'Save that fetched page text to {file} with write_file — the redirect half, done as a real file. (Asks approval — wait for it.)' ,
+    example: "{\"tool\":\"write_file\",\"arg\":{\"path\":\"{file}\",\"content\":\"<the fetched page text>\"}}"},
+  { tool: 'read_file', label: 'Read {file} back with read_file and confirm it holds the page text you just fetched.' ,
+    example: "{\"tool\":\"read_file\",\"arg\":\"{file}\"}"},
+  { tool: 'show_url', label: 'Show the live page with show_url at {page} — the page text on screen is your reply. This ends the turn; the drill resumes after it.' ,
+    example: "{\"tool\":\"show_url\",\"arg\":\"{page}\"}"},
+  { tool: 'show_file', label: 'Show the saved copy with show_file at {file} — the file on screen proves the redirect, not just the fetch. This ends the turn; the drill resumes after it.' ,
+    example: "{\"tool\":\"show_file\",\"arg\":\"{file}\"}"},
+  { tool: 'todo_write', label: 'Mark every step completed and put your one-line summary (what was fetched, where it was saved) in the last item — this completes the 8-step Advanced pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
 ];
 
 /**
@@ -269,12 +375,18 @@ export const TRAINING_TASKS_ADVANCED = [
  * result, so the final step records it and leaves the window open.
  */
 export const TRAINING_TASKS_FRONTIER = [
-  { tool: 'think', label: 'Think one sentence about the desktop demo before touching anything.' },
-  { tool: 'todo_write', label: 'Write the Frontier steps as your todo list, first one in_progress.' },
-  { tool: 'window_list', label: 'Call window_list and find the configured program named “notepad”. Do not open anything yet.' },
-  { tool: 'window_open', label: 'Open Notepad on the real desktop with window_open: {"name":"notepad"}. (Asks approval — the window is the demo, so leave it open.)' },
-  { tool: 'window_type', label: 'Type exactly “Hello!” into Notepad with window_type: {"name":"notepad","text":"Hello!"}. (Asks approval — the result must say the window was read back and contains the typed text; if it says unverified, retry.)' },
-  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: Notepad is open and “Hello!” was typed on screen. This completes the 6-step Frontier pass.' },
+  { tool: 'think', label: 'Call the think tool with one sentence about the desktop demo before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will find Notepad, open it, and type Hello!.\"}"},
+  { tool: 'todo_write', label: 'Write the Frontier steps as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
+  { tool: 'window_list', label: 'Call window_list and find the configured program named “notepad”. Do not open anything yet.' ,
+    example: "{\"tool\":\"window_list\"}"},
+  { tool: 'window_open', label: 'Open Notepad on the real desktop with window_open: {"name":"notepad"}. (Asks approval — the window is the demo, so leave it open.)' ,
+    example: "{\"tool\":\"window_open\",\"arg\":{\"name\":\"notepad\"}}"},
+  { tool: 'window_type', label: 'Type exactly “Hello!” into Notepad with window_type: {"name":"notepad","text":"Hello!"}. (Asks approval — the result must say the window was read back and contains the typed text; if it says unverified, retry.)' ,
+    example: "{\"tool\":\"window_type\",\"arg\":{\"name\":\"notepad\",\"text\":\"Hello!\"}}"},
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: Notepad is open and “Hello!” was typed on screen. This completes the 6-step Frontier pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
 ];
 
 /**
@@ -287,15 +399,24 @@ export const TRAINING_TASKS_FRONTIER = [
  * recorded or repeated without a public site changing under it.
  */
 export const TRAINING_TASKS_BROWSER = [
-  { tool: 'think', label: 'Think one sentence about the browser drill before touching anything.' },
-  { tool: 'todo_write', label: 'Write the Browser steps as your todo list, first one in_progress.' },
-  { tool: 'browser_open', label: 'Open the local Browser drill page in a visible window with browser_open: {"url":"{browser}","headless":false}. Wait for it to load.' },
-  { tool: 'browser_read', label: 'Read the page with browser_read and confirm it says “Browser drill”.' },
-  { tool: 'browser_type', label: 'Type exactly “training” into the name field with browser_type: {"selector":"#drill-name","text":"training"}. (Asks approval — wait for it.)' },
-  { tool: 'browser_click', label: 'Click the “Say hello” button with browser_click: {"selector":"#drill-submit"}.' },
-  { tool: 'browser_wait', label: 'Wait for the page to settle with browser_wait: {"ms":300}.' },
-  { tool: 'browser_read', label: 'Read the page again with browser_read and confirm it says “Hello, training”.' },
-  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the browser opened the local drill page, “training” was typed, and “Hello, training” was read back. This completes the 9-step Browser pass.' },
+  { tool: 'think', label: 'Call the think tool with one sentence about the browser drill before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will open the local page, type, click, and read it back.\"}"},
+  { tool: 'todo_write', label: 'Write the Browser steps as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
+  { tool: 'browser_open', label: 'Open the local Browser drill page in a visible window with browser_open: {"url":"{browser}","headless":false}. Wait for it to load.' ,
+    example: "{\"tool\":\"browser_open\",\"arg\":{\"url\":\"{browser}\",\"headless\":false}}"},
+  { tool: 'browser_read', label: 'Read the page with browser_read and confirm it says “Browser drill”.' ,
+    example: "{\"tool\":\"browser_read\"}"},
+  { tool: 'browser_type', label: 'Type exactly “training” into the name field with browser_type: {"selector":"#drill-name","text":"training"}. (Asks approval — wait for it.)' ,
+    example: "{\"tool\":\"browser_type\",\"arg\":{\"selector\":\"#drill-name\",\"text\":\"training\"}}"},
+  { tool: 'browser_click', label: 'Click the “Say hello” button with browser_click: {"selector":"#drill-submit"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#drill-submit\"}}"},
+  { tool: 'browser_wait', label: 'Wait for the page to settle with browser_wait: {"ms":300}.' ,
+    example: "{\"tool\":\"browser_wait\",\"arg\":{\"ms\":300}}"},
+  { tool: 'browser_read', label: 'Read the page again with browser_read and confirm it says “Hello, training”.' ,
+    example: "{\"tool\":\"browser_read\"}"},
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the browser opened the local drill page, “training” was typed, and “Hello, training” was read back. This completes the 9-step Browser pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
 ];
 
 /**
@@ -311,14 +432,22 @@ export const TRAINING_TASKS_BROWSER = [
  * never reached the editor.
  */
 export const TRAINING_TASKS_IDE = [
-  { tool: 'think', label: 'Think one sentence about the IDE drill: every file step goes through the operator\u2019s editor, not the sandbox tools.' },
-  { tool: 'todo_write', label: 'Write the IDE steps as your todo list, first one in_progress.' },
-  { tool: 'ide_write', label: 'Create the file with ide_write: {"path":"{file}","content":"ide drill"}. That is the only content the later steps edit.' },
-  { tool: 'ide_open', label: 'Open the same file in the operator\u2019s IDE with ide_open: {"path":"{file}"} — it appears in their editor.' },
-  { tool: 'ide_read', label: 'Read it back with ide_read: {"path":"{file}"} and confirm it says “ide drill”.' },
-  { tool: 'ide_edit', label: 'Change it through the IDE with ide_edit: old_string “ide drill”, new_string “ide drill (edited)”. Exact replacement, never an append.' },
-  { tool: 'ide_read', label: 'Read it again with ide_read: {"path":"{file}"} and confirm it now says “ide drill (edited)”.' },
-  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the file was created, opened, read, edited and read back through the IDE. This completes the 8-step IDE pass.' },
+  { tool: 'think', label: 'Call the think tool with one sentence about the IDE drill: every file step goes through the operator\u2019s editor, not the sandbox tools — a real {"tool":"think","arg":"..."} call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will use the IDE tools for every file step.\"}"},
+  { tool: 'todo_write', label: 'Write the IDE steps as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
+  { tool: 'ide_write', label: 'Create the file with ide_write: {"path":"{file}","content":"ide drill"}. That is the only content the later steps edit.' ,
+    example: "{\"tool\":\"ide_write\",\"arg\":{\"path\":\"{file}\",\"content\":\"ide drill\"}}"},
+  { tool: 'ide_open', label: 'Open the same file in the operator\u2019s IDE with ide_open: {"path":"{file}"} — it appears in their editor.' ,
+    example: "{\"tool\":\"ide_open\",\"arg\":{\"path\":\"{file}\"}}"},
+  { tool: 'ide_read', label: 'Read it back with ide_read: {"path":"{file}"} and confirm it says “ide drill”.' ,
+    example: "{\"tool\":\"ide_read\",\"arg\":{\"path\":\"{file}\"}}"},
+  { tool: 'ide_edit', label: 'Change it through the IDE with ide_edit: old_string “ide drill”, new_string “ide drill (edited)”. Exact replacement, never an append.' ,
+    example: "{\"tool\":\"ide_edit\",\"arg\":{\"path\":\"{file}\",\"old_string\":\"ide drill\",\"new_string\":\"ide drill (edited)\"}}"},
+  { tool: 'ide_read', label: 'Read it again with ide_read: {"path":"{file}"} and confirm it now says “ide drill (edited)”.' ,
+    example: "{\"tool\":\"ide_read\",\"arg\":{\"path\":\"{file}\"}}"},
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the file was created, opened, read, edited and read back through the IDE. This completes the 8-step IDE pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
 ];
 
 /** Terms used by the checks below, tolerant of how a model spells an argument. */
@@ -336,6 +465,23 @@ const namesTrainingFile = (call, file) => {
 /** The edit_file arguments as sent, before the case-folding argText() applies. */
 const editArg = (call) => (call && call.arg && typeof call.arg === 'object' && !Array.isArray(call.arg)) ? call.arg : {};
 const showsTraining = (call) => /training/.test(resultText(call));
+/** Does this list_dir call name the training folder the step asked to list? */
+const listDirNamesTraining = (call) => /training/i.test(argText(call));
+/**
+ * A pathless list_dir is the orientation call the tool docs teach ("call
+ * list_dir with no path to see the directory you are rooted at"), not a
+ * listing of the training folder. Graded as a failed attempt it cost every
+ * pass one failure: the model oriented first, then listed training correctly.
+ */
+const isOrientationListDir = (call) => {
+  const a = call && call.arg;
+  if (a == null) return true;
+  if (typeof a === 'string') return a.trim() === '';
+  if (typeof a === 'object' && !Array.isArray(a)) {
+    return Object.values(a).every((v) => v == null || (typeof v === 'string' && v.trim() === ''));
+  }
+  return false;
+};
 /**
  * The marker on the drill's own page (ui/drill/advanced.html).
  *
@@ -366,11 +512,11 @@ export const DRILL_CHECKS = [
   (c, file) => namesTrainingFile(c, file) && /1-1|"range"/.test(argText(c)),  // 7 ranged read
   (c, file) => namesTrainingFile(c, file)
     && String(editArg(c).old_string ?? '') === 'training'
-    && /training\r?\ndrill 2 passed/.test(String(editArg(c).new_string ?? '')), // 8 anchored append
+    && /training\r?\ndrill 2 passed/.test(String(editArg(c).new_string ?? '').replace(/\\n/g, '\n')), // 8 anchored append
   (c, file) => namesTrainingFile(c, file)
     && String(editArg(c).old_string ?? '') === 'drill 2 passed'
     && /drill 2 passed \(exact match\)/.test(String(editArg(c).new_string ?? '')), // 9 exact replace
-  (c) => showsTraining(c),                                                  // 10 list_dir
+  (c) => listDirNamesTraining(c),                                           // 10 list_dir
   (c) => showsTraining(c),                                                  // 11 glob_files
   (c) => showsTraining(c),                                                  // 12 grep_code
   (c) => showsTraining(c),                                                  // 13 show_find
@@ -391,17 +537,19 @@ export const DRILL_CHECKS = [
  */
 export const DRILL_CHECKS_EASY = [
   null,                                                                     // 1 think
-  null,                                                                     // 2 todo_write
+  (c) => !/todo list cleared/i.test(resultText(c)),                         // 2 todo_write
   (c) => showsTraining(c),                                                  // 3 echo
   null,                                                                     // 4 now
   (c, file) => namesTrainingFile(c, file) && /"content"\s*:\s*"training/.test(argText(c)), // 5 write_file
   (c, file) => namesTrainingFile(c, file) && showsTraining(c),                // 6 read back
-  (c, file) => namesTrainingFile(c, file) && /drill 2 passed/.test(argText(c)), // 7 append attempt
-  (c) => showsTraining(c),                                                  // 8 list_dir
+  (c, file) => namesTrainingFile(c, file)
+    && String(editArg(c).old_string ?? '') === 'training'
+    && /training\r?\ndrill 2 passed/.test(String(editArg(c).new_string ?? '').replace(/\\n/g, '\n')), // 7 anchored append
+  (c) => listDirNamesTraining(c),                                           // 8 list_dir
   (c) => showsTraining(c),                                                  // 9 glob_files
   (c) => showsTraining(c),                                                  // 10 grep_code
   (c) => showsTraining(c),                                                  // 11 exec
-  null,                                                                     // 12 todo_write
+  (c) => !/todo list cleared/i.test(resultText(c)),                         // 12 todo_write
 ];
 
 /** Advanced checks, aligned with TRAINING_TASKS_ADVANCED. */
@@ -520,6 +668,156 @@ export function trainingChecksFor(difficulty, customSteps = undefined) {
   return DRILL_CHECKS;
 }
 
+/**
+ * The exact call for one drill step, with this agent's file/page filled in.
+ *
+ * The step tables carry an `example` beside the wording, so the block the
+ * model reads and the gate that refuses it can quote the same shape. A small
+ * model that can copy a JSON object does not have to infer the envelope from
+ * prose; a custom step has no example because the operator writes the tool and
+ * the instruction, not a schema.
+ */
+export function trainingTaskExample(task, agent = null, difficulty = 'hard') {
+  // A weak model copies this card literally, and the nested todo object was
+  // the one card it kept losing quotes and braces from. The tool accepts a
+  // plain array of step strings, so show that shape instead.
+  if (String((task && task.tool) || '').toLowerCase() === 'todo_write') {
+    return '{"tool":"todo_write","arg":["step 1","step 2"]}';
+  }
+  const raw = String((task && task.example) || '');
+  if (!raw) return '';
+  return fillBrowser(fillPage(fillFile(raw, agent, difficulty)));
+}
+
+/**
+ * The tools the active drill can name, and nothing else.
+ *
+ * A drill has a fixed task table; advertising all 50-odd agent tools alongside
+ * it is both a prompt cost and a choice cost. The training turn narrows the
+ * advertised set to this list (the drill's own tools still win over the agent's
+ * panel, exactly as the IDE/browser drills already append theirs), so the model
+ * is choosing among seven tools instead of fifty.
+ */
+export function trainingToolScope(difficulty = undefined, customSteps = undefined) {
+  const mode = store.get('settings.trainingMode') || {};
+  const diff = difficulty || trainingDifficulty(mode);
+  const tasks = trainingTasksFor(diff, customSteps === undefined ? mode.customSteps : customSteps);
+  return Array.from(new Set(tasks.map(t => String(t.tool || '').trim()).filter(Boolean)));
+}
+
+/**
+ * The step the app is waiting for, for the callers that need a tool name rather
+ * than prose (forced native choice, repeat guard). A completed pass points at
+ * step 1 again because the drill immediately starts the next pass.
+ */
+export function trainingNow(agent = null) {
+  const mode = store.get('settings.trainingMode') || {};
+  const difficulty = trainingDifficulty(mode);
+  const tasks = trainingTasksFor(difficulty, mode.customSteps);
+  const verdict = agent ? ((store.get('trainingVerdicts') || {})[agent.id] || null) : null;
+  const total = tasks.length;
+  const complete = !!(verdict && verdict.complete);
+  const raw = complete ? 0 : (verdict && Number.isFinite(Number(verdict.step)) ? Number(verdict.step) : 0);
+  const step = total ? Math.max(0, Math.min(raw, total - 1)) : 0;
+  return { difficulty, tasks, total, step, task: tasks[step] || null, complete };
+}
+
+/** Stable JSON for a repeat signature: key order must not defeat the guard. */
+const stableArg = (value) => {
+  if (Array.isArray(value)) return value.map(stableArg);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = stableArg(value[key]);
+    return out;
+  }
+  return value;
+};
+export function callSignature(tool, arg) {
+  let body;
+  try { body = JSON.stringify(stableArg(arg)); } catch { body = String(arg); }
+  return `${String(tool || '')}|${body}`;
+}
+
+/** The first identical failure that earns an explicit correction. */
+export const DRILL_REPEAT_HINT = 3;
+/** The louder hint threshold. The drill never pauses or skips a step: the
+ *  operator's rule is to repeat the same step until it succeeds. */
+export const DRILL_REPEAT_LIMIT = 8;
+
+/**
+ * What the model is told after the same call fails repeatedly, or '' before
+ * the hint threshold. The exact expected call is quoted when the task has one:
+ * "change the argument" without saying which shape is right is what let a live
+ * model send a valid `todo_write` 74 times.
+ */
+export function drillRepeatNotice(count, task, step, total, agent = null, difficulty = 'hard') {
+  const n = Math.max(0, Math.floor(Number(count) || 0));
+  if (n < DRILL_REPEAT_HINT) return '';
+  const example = trainingTaskExample(task, agent, difficulty);
+  const where = step && total ? ` at step ${step}/${total}` : '';
+  const strong = n >= DRILL_REPEAT_LIMIT;
+  return `[Drill guard] This exact call has failed ${n} times${where}. Sending it again cannot pass.`
+    + (example ? ` Expected: ${example}.` : '')
+    + (strong
+      ? ' The drill does not skip a step — change the argument and try again.'
+      : ' Read the error above and change the argument it names.');
+}
+
+/**
+ * The correction handed back when the RIGHT tool ran but its arguments did not
+ * pass the drill check. A successful `ide_open` of the wrong pass file used to
+ * read as "Opened ..." and the model was never told the drill rejected it, so
+ * it kept guessing. This names the step and the exact call immediately.
+ */
+export function drillFailureNotice(task, step, total, agent = null, difficulty = 'hard') {
+  if (!task) return '';
+  const example = trainingTaskExample(task, agent, difficulty);
+  return `[Drill] That call did not pass step ${step}/${total}.`
+    + (example ? ` Next call must be exactly: ${example}.` : '')
+    + ' The step is still waiting; retry it before moving on.';
+}
+
+/**
+ * First-try accuracy and the worst step across the completed passes in a run.
+ *
+ * A step counts as first-try when the pass recorded no failed attempt at it.
+ * `failureCounts` is per step and already includes retries, so the percentage
+ * is steps, not attempts: a pass that failed step 2 five times is still one
+ * non-first-try step out of the pass's total, which is the number that says
+ * whether the prompt or the model improved.
+ */
+export function trainingAccuracy(passLog) {
+  const passes = Array.isArray(passLog) ? passLog : [];
+  const counts = {};
+  let steps = 0, firstTry = 0, observed = 0;
+  for (const p of passes) {
+    const total = Math.max(0, Math.floor(Number(p && p.totalSteps) || 0));
+    if (!total) continue;
+    const fc = (p.failureCounts && typeof p.failureCounts === 'object') ? p.failureCounts : {};
+    const failedSteps = Object.keys(fc).filter(k => Number(fc[k]) > 0).length;
+    steps += total;
+    firstTry += Math.max(0, total - failedSteps);
+    observed++;
+    for (const [step, n] of Object.entries(fc)) {
+      const k = Number(step);
+      const c = Number(n) || 0;
+      if (k > 0 && c > 0) counts[k] = (counts[k] || 0) + c;
+    }
+  }
+  if (!steps) return { steps: 0, firstTry: null, worstStep: 0, worstCount: 0, passes: 0 };
+  const worst = Object.entries(counts)
+    .map(([step, n]) => [Number(step), n])
+    .filter(([step, n]) => step > 0 && n > 0)
+    .sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+  return {
+    steps,
+    firstTry: Math.round((firstTry / steps) * 100),
+    worstStep: worst ? worst[0] : 0,
+    worstCount: worst ? worst[1] : 0,
+    passes: observed,
+  };
+}
+
 const DIFFICULTY_INFO = {
   easy: {
     label: 'Easy',
@@ -585,6 +883,66 @@ function trainingEnding(difficulty, total = 0) {
 }
 
 /**
+ * Why a tool call must wait, or '' when it may run.
+ *
+ * Grading alone cannot keep a drill in order: a model that re-runs steps 3-6
+ * keeps getting ok results, the verdict stays at step 6, and the operator
+ * watches "6/8 · waiting for show_file" while the transcript fills with work
+ * that cannot count. This gate refuses the call BEFORE it runs and names the
+ * step the app is actually waiting for.
+ *
+ * `think` is the model's scratchpad and is allowed at any point. At step 1 it
+ * IS the awaited step and advances the drill; mid-pass it advances nothing and
+ * resets nothing (the verdict ignores it).
+ *
+ * `todo_write` is the status update the drill asks for after every passed
+ * step, so it is allowed once the pass has actually progressed. It is NOT
+ * allowed while the drill still waits for step 1: a live run answered
+ * "Step 1 (think): ..." with prose, then sent todo_write again and again, each
+ * call answered "todo list cleared", and the drill sat at 1/8 for the rest of
+ * the run. A todo update is housekeeping only after the first step has passed.
+ *
+ * The expected step itself is always allowed even with wrong arguments: the
+ * tool's own error is more useful than a gate message, and the verdict counts
+ * the failed attempt.
+ */
+export function drillStepRefusal(tool, agent, verdict, difficulty = undefined) {
+  const mode = store.get('settings.trainingMode') || {};
+  const diff = difficulty || trainingDifficulty(mode);
+  const tasks = trainingTasksFor(diff, mode.customSteps);
+  if (!tasks.length) return '';
+  const name = String(tool || '').trim().toLowerCase();
+  // A scratchpad call is always allowed. At step 1 it is the step itself, so
+  // the verdict advances there; later it is neutral (see drillVerdict).
+  if (name === 'think') return '';
+  // Inspecting the file is not skipping the drill. This is what lets a model
+  // read its own pass file before an anchored edit instead of guessing a
+  // trailing newline it cannot see.
+  if (isInspect(name)) return '';
+  const complete = !!(verdict && verdict.complete);
+  const step = complete ? 0
+    : Math.max(0, Math.min(Number(verdict && verdict.step) || 0, tasks.length));
+  const next = complete ? tasks[0] : (tasks[step] || tasks[0]);
+  if (name === String(next.tool || '').trim().toLowerCase()) return '';
+  // Housekeeping, not a step: a todo update may ride along once the pass has
+  // actually progressed. Before step 1 has passed it is an attempt to skip the
+  // drill's first step -- and "todo list cleared" used to reward exactly that.
+  if (name === 'todo_write' && !complete && step > 0) return '';
+  const where = complete
+    ? `The pass is complete — start the next one at step 1 (${tasks[0].tool})`
+    : `You are at step ${step + 1}/${tasks.length}, and your next reply must be the ${next.tool} call and nothing else`;
+  const expected = trainingTaskExample(next, agent, diff);
+  const exact = expected ? ` Next call: ${expected}.` : '';
+  const inDrill = tasks.some(t => String(t.tool || '').trim().toLowerCase() === name);
+  const housekeeping = name === 'todo_write'
+    ? ' A todo update is allowed only after a step has passed; step 1 comes first.'
+    : '';
+  return (inDrill
+    ? `${where}.${exact} Do not redo an earlier step or jump ahead; the drill runs in order.`
+    : `${where}.${exact} ${tool} is not part of this drill — work only the listed steps.`) + housekeeping;
+}
+
+/**
  * Why a write must not run, or '' when it may.
  *
  * Grading a wrong-pass write as a failure (v468) catches it, but by then the
@@ -600,7 +958,10 @@ function trainingEnding(difficulty, total = 0) {
  * own file (or a non-file tool) is never refused.
  */
 export function drillWriteRefusal(tool, arg, agent, difficulty = undefined, pass = undefined) {
-  if (tool !== 'write_file' && tool !== 'edit_file' && tool !== 'append_file') return '';
+  // IDE writes are the same evidence as sandbox writes. Missing them here let
+  // an IDE pass write the PREVIOUS pass's file successfully, after which the
+  // drill failed the step but the model had already seen "Wrote ...".
+  if (!['write_file', 'edit_file', 'append_file', 'ide_write', 'ide_edit'].includes(tool)) return '';
   const diff = difficulty || trainingDifficulty(store.get('settings.trainingMode') || {});
   const n = pass === undefined ? trainingPassNow() : pass;
   const raw = typeof arg === 'string' ? arg : (arg && (arg.path || arg.file)) || '';
@@ -608,9 +969,19 @@ export function drillWriteRefusal(tool, arg, agent, difficulty = undefined, pass
   if (!path) return '';
   const mine = trainingFileFor(agent, diff, n);
   const family = `${TRAINING_DIR}/${drillStem(diff)}-${drillSlug(agent)}`;
-  if (!path.startsWith(family)) return '';
-  if (path === mine) return '';
-  return `drill pass ${n} writes ${mine}, not ${path} — ${path} belongs to another pass of this run, and each pass keeps its own file. Write ${mine}.`;
+  // The file server accepts a leading slash as another spelling of a
+  // sandbox-relative path, and an absolute path can carry the same family at
+  // its tail. Normalize both before the family test: without this, a write to
+  // /training/… (or C:/…/sandbox/training/…) bypassed the guard, landed on the
+  // old pass's file, and was only caught after the damage was done.
+  const relative = (() => {
+    const p = path.replace(/^\/+/, '');
+    const marker = p.lastIndexOf('/training/');
+    return marker >= 0 ? p.slice(marker + 1) : p;
+  })();
+  if (!relative.startsWith(family)) return '';
+  if (relative === mine) return '';
+  return `drill pass ${n} writes ${mine}, not ${relative} — ${relative} belongs to another pass of this run, and each pass keeps its own file. Write ${mine}.`;
 }
 
 /**
@@ -685,8 +1056,8 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
   if (!total) {
     return {
       totalSteps: 0, step: 0, complete: false, clean: false, passes: 0, cleanPasses: 0,
-      failures: 0, failuresTotal: 0, failureCounts: {}, retries: 0, pending: false,
-      failedAt: null, offStep: 0, offTool: '', nextTool: '', retryHint: '', empty: true,
+      failures: 0, failuresTotal: 0, failureCounts: {}, passFailureCounts: {}, retries: 0, pending: false,
+      failedAt: null, offStep: 0, offTool: '', nextTool: '', retryHint: '', restarts: 0, empty: true,
     };
   }
   const blank = () => ({
@@ -696,6 +1067,9 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
   let cur = blank();
   let passes = 0;
   let cleanPasses = 0;
+  // Kept in the returned shape for existing callers. A mid-pass think is a
+  // scratchpad now, so a live drill never restarts itself.
+  const restarts = 0;
   let last = null;
   let lastKey = '';
   let lastStatus = '';
@@ -726,7 +1100,10 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
     const tool = String(call.tool);
     const status = String(call.status || '');
 
-    // A finished pass: only the drill's first step opens the next one.
+    // A finished pass starts a new attempt: the next call must be step 1's
+    // tool. A `think` DURING a pass is different -- it is the scratchpad the
+    // tool instructions promise, so it advances nothing, resets nothing, and
+    // is ignored below. Only a completed pass can begin the next one.
     if (cur.step >= total) {
       if (tool !== tasks[0].tool) continue;
       mergePass(cur);
@@ -755,9 +1132,19 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
     // a model that lost its place looks like, and the strip used to sit on the
     // same number with no explanation while one restarted the drill.
     if (tool !== want.tool) {
+      // The scratchpad is allowed at any point and is not a lost place: it
+      // neither advances the step nor counts as off-step.
+      if (tool === 'think' || isInspect(tool)) continue;
       if (status !== 'skipped' && status !== 'running') {
-        cur.offStep++;
-        cur.offTool = tool;
+        if (status === 'error') {
+          // An error on a tool that is not the next step is still a failed
+          // attempt. The old rule called it only "off-step", so the red
+          // write_file errors in a live run never appeared in the strip.
+          countFailure(resultText(call));
+        } else {
+          cur.offStep++;
+          cur.offTool = tool;
+        }
       }
       continue;
     }
@@ -766,6 +1153,10 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
     // it -- a full read is not the ranged read. This used to be ignored, so a
     // model could repeat a wrong call and still be graded clean.
     if (!checkOk) {
+      // Orientation is taught by the tool docs, so a pathless list_dir while
+      // the drill waits for list_dir is a scratchpad read, not a failed
+      // attempt. A list_dir that names any other path still fails the step.
+      if (want.tool === 'list_dir' && isOrientationListDir(call)) continue;
       countFailure(resultText(call));
       if (status === 'error' && retry) cur.retries++;
       cur.offStep = 0;
@@ -836,6 +1227,9 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
     // option counts, and the same judgement `clean` makes — a finished pass
     // with zero failed attempts.
     cleanPasses,
+    // Always 0: a mid-pass think is a scratchpad, not a restart. Kept in the
+    // returned shape so older callers keep working.
+    restarts,
     // Failure counts describe the pass being watched: while another pass runs,
     // that is the one whose failures the operator needs to see live.
     failures: cur.failures,
@@ -843,6 +1237,9 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
     // one in progress, with a per-step breakdown.
     failuresTotal: completedFailures + (complete ? 0 : cur.failures),
     failureCounts,
+    // The judged pass's own per-step tally, for the pass log's accuracy line.
+    // `failureCounts` above is run-wide; the log needs one pass at a time.
+    passFailureCounts: judged ? { ...(judged.failureCounts || {}) } : {},
     retries: cur.retries,
     pending: cur.pending,
     failedAt: cur.failedAt,
@@ -863,10 +1260,11 @@ export function drillVerdict(calls, file = TRAINING_FILE, difficulty = 'hard', c
 /**
  * The verdict that reached this run's clean-pass target, or null.
  *
- * `cleanPassTarget` 0 (the default) means never stop on its own. With several
- * agents, the FIRST to reach the target ends the run for all of them: waiting
- * for every agent would let one bad model keep a fleet billing forever, which
- * is the opposite of what a stopping rule is for.
+ * The mode never stores 0 (trainingCleanTarget clamps to 1..99), but a 0 is
+ * still treated as "no target" here so an older caller can never stop a run
+ * by accident. With several agents, the FIRST to reach the target ends the run
+ * for all of them: waiting for every agent would let one bad model keep a
+ * fleet billing forever, which is the opposite of what a stopping rule is for.
  */
 export function reachedCleanTarget(mode, verdicts) {
   const target = Math.max(0, Math.floor(Number(mode && mode.cleanPassTarget) || 0));
@@ -875,6 +1273,24 @@ export function reachedCleanTarget(mode, verdicts) {
     if (v && Number(v.cleanPasses || 0) >= target) return v;
   }
   return null;
+}
+
+/**
+ * The stopping rule for this run, in clean passes.
+ *
+ * The drill exists to reach a 100% pass: every step correct, no failed attempt,
+ * no retry. So the floor is 1 and an unset value means 1 -- whole passes repeat
+ * until that clean pass, then the run stops. A saved 0 (the old "never stop"
+ * default) is read as 1 too: leaving it at 0 would silently opt an existing
+ * install out of the rule. 99 is the ceiling so a bad paste cannot pin a fleet
+ * forever; Stop is the way out of a long unattended run. Clamped here rather
+ * than in each caller, so the dialog, Start and the stop listener can never
+ * disagree about the rule.
+ */
+export function trainingCleanTarget(mode) {
+  const raw = mode ? mode.cleanPassTarget : undefined;
+  if (raw === undefined || raw === null || raw === '') return 1;
+  return Math.max(1, Math.min(99, Math.floor(Number(raw) || 1)));
 }
 
 /**
@@ -912,8 +1328,12 @@ export function drillVerdictText(verdict) {
     bits.push(`waiting for ${verdict.nextTool || 'the next step'} (last call: ${verdict.offTool})`);
   }
   if (verdict.pending) bits.push('approval');
+  if (verdict.stuck) {
+    const st = typeof verdict.stuck === 'object' ? verdict.stuck : {};
+    bits.push(`stuck${st.step ? ` at step ${st.step}` : ''}${st.count ? ` after ${st.count} tries` : ''}`);
+  }
   if (verdict.retryHint) bits.push(verdict.retryHint);
-  if (verdict.passes) bits.push(`${verdict.passes} pass${verdict.passes === 1 ? '' : 'es'}`);
+  if (verdict.passes) bits.push(`${verdict.passes} pass${verdict.passes === 1 ? '' : 'es'}${verdict.complete ? '' : ' done'}`);
   return bits.join(' \u00b7 ');
 }
 
@@ -1016,7 +1436,7 @@ export function trainingResumeFor() {
   // "pass complete (17/17)" and start at step 17. Each agent's own position
   // is in its own TRAINING MODE block, where the app wrote it; this stays
   // generic and points there.
-  return 'Continue. Your TRAINING MODE block records your own position from the calls the app saw — resume there, never restart the pass early.';
+  return 'Continue. Your TRAINING MODE block records your own position from the calls the app saw — resume there. A think call or a read-only inspection (read_file, list_dir, glob_files, grep_code, ide_read, browser_read, window_list) is a scratchpad: it does not restart the pass or reset its steps. Only a completed pass starts the next one.';
 }
 
 /**
@@ -1041,10 +1461,12 @@ export function trainingBlockFor(agent = null) {
   const step = recorded === null ? null : Math.min(recorded, total);
   const complete = !!(mine && (mine.complete || step >= total));
   const next = step !== null && step < total ? tasks[step] : null;
+  const nextExample = next ? trainingTaskExample(next, agent, difficulty) : '';
+  const firstExample = tasks[0] ? trainingTaskExample(tasks[0], agent, difficulty) : '';
   const positionRule = step === null ? ''
     : complete
-      ? `- YOUR recorded position: pass complete (${total}/${total}) — start a fresh pass at step 1.\n`
-      : `- YOUR recorded position: ${step}/${total} — next is step ${step + 1}${next ? ` (${next.tool})` : ''}. Resume there; never restart the pass early.\n`;
+      ? `- YOUR recorded position: pass complete (${total}/${total}) — start a fresh pass at step 1${firstExample ? `. Exact call: ${firstExample}` : ''}.\n`
+      : `- YOUR recorded position: ${step}/${total} — next is step ${step + 1}${next ? ` (${next.tool})` : ''}${nextExample ? `. Exact call: ${nextExample}` : ''}. Resume there. A mid-pass think is a scratchpad: it neither advances nor resets the drill, and only a completed pass starts the next one.\n`;
   // The pass file, up front. A model that rebuilt its todo list from the last
   // pass copied that pass's path with it and wrote the old file; the path was
   // buried in a rule halfway down this block, after the steps. Said first, and
@@ -1072,19 +1494,24 @@ export function trainingBlockFor(agent = null) {
   if (difficulty === 'easy') {
     return opening
       + `- One step at a time. Call the step's tool, read its result, then move on.\n`
+      + `- EVERY step is a real tool call, including step 1 (think). Writing "Step 1 (think): ..." as prose runs nothing; send {"tool":"think","arg":"..."} and read its result.\n`
       + `- If a tool call errors, is denied, or returns the wrong thing, read the error message and TRY AGAIN with fixed arguments. Keep retrying the SAME step — never skip a failed step, never move on until it returns ok.\n`
       + `- Paths are relative to the sandbox: ${file}. Never the project folder above it, and never an absolute C:\\... path. Every agent has its OWN drill file — do not read or edit another agent's.\n`
       + `- THIS RUN uses the file above. Any earlier training transcript that mentions training/training.txt is an OLD run: ignore its paths and copy nothing from it.\n`
       + positionRule
+      + `- Read-only inspection (read_file, list_dir, glob_files, grep_code) is a scratchpad: it is allowed at any step, never advances the drill, and never counts as a failure. Use read_file when you need the exact text before edit_file.\n`
+      + `- edit_file is exact search-and-replace, never an append: old_string is the text you match, new_string replaces it. For step 7, use the exact call in the step: it replaces "training" with the two-line text "training" then "drill 2 passed". Do not send the two characters backslash and n instead of a newline.` + String.fromCharCode(10)
       + `- Some steps ask the operator for approval (write_file, edit_file, exec). That pause is normal: wait for it, do not work around it, do not narrate the call as text.\n`
-      + `- The Continue message names the step the app recorded for you. Resume there; do not start another pass while steps remain — the app saw every call you made, so an early restart shows up as off-step calls.\n`
+      + `- The Continue message names the step the app recorded for you. Resume there. A mid-pass think is a scratchpad: it neither advances nor resets the drill; only a completed pass starts a new one.\n`
       + `- This mode never lets the drill stop. When a turn ends — a short reply or a completed pass — you are sent "Continue" automatically. Treat Continue as the next instruction: pick up the first step your todo list does not show completed, and when every step is complete, start a fresh pass at step 1. Never say the drill is finished, never ask whether to continue, never wait for the operator.\n`
       + `- After each passed step, update your todo_write list so what worked is written down.`;
   }
 
-  const oneStep = `- One step at a time. Call the step's tool, read its result, then move on.\n`;
+  const oneStep = `- One step at a time. Call the step's tool, read its result, then move on.\n`
+    + `- EVERY step is a real tool call, including step 1 (think). Writing "Step 1 (think): ..." as prose runs nothing; send {"tool":"think","arg":"..."} and read its result.\n`;
   const retry = `- If a tool call errors, is denied, or returns the wrong thing, read the error message and TRY AGAIN with fixed arguments. Keep retrying the SAME step — never skip a failed step, never move on until it returns ok.\n`;
-  const continueRule = `- The Continue message names the step the app recorded for you. Resume at that step; do not start another pass while steps remain — the app saw every call you made, so an early restart shows up as off-step calls.\n`;
+  const inspectRule = `- Read-only inspection (read_file, list_dir, glob_files, grep_code, ide_read, browser_read, window_list) is a scratchpad: allowed at any point, it never advances or resets the drill and is not a failure. Use it when you need the exact text before an edit.\n`;
+  const continueRule = `- The Continue message names the step the app recorded for you. Resume at that step. A mid-pass think is a scratchpad: it neither advances nor resets the drill; only a completed pass starts a new one.\n` + inspectRule;
   const stopRule = `- This mode never lets the drill stop. When a turn ends — a display step, a short reply, even the final step — you are sent "Continue" automatically. Treat Continue as the next instruction: pick up the first step your todo list does not show completed, and when every step is complete, start a fresh pass at step 1. Never say the drill is finished, never ask whether to continue, never wait for the operator.\n`;
 
   if (custom) {
@@ -1164,7 +1591,7 @@ export function trainingBlockFor(agent = null) {
     + oneStep
     + retry
     + `- An error that says "Did you mean ..." or "not a file" is telling you the ARGUMENT is wrong: change it. Sending the identical call again fails identically.\n`
-    + `- edit_file is exact search-and-replace, never an append: old_string is the text you match, new_string replaces it. To add a line, anchor on the neighbouring text (old_string "training" → new_string "training\\ndrill 2 passed"). An empty or ambiguous old_string is refused, so a bare append can never pass.\n`
+    + `- edit_file is exact search-and-replace, never an append: old_string is the text you match, new_string replaces it. To add a line, anchor on the neighbouring text and make new_string the two-line text (the exact call for this step shows the shape). Do not send the two characters backslash and n instead of a newline. An empty or ambiguous old_string is refused, so a bare append can never pass.` + String.fromCharCode(10)
     + `- Paths are relative to the sandbox: ${file}. Never the project folder above it, and never an absolute C:\\... path. Every agent has its OWN drill file — do not read or edit another agent's.\n`
     + `- THIS RUN uses the file above. Any earlier training transcript that mentions training/training.txt is an OLD run: ignore its paths and copy nothing from it.\n`
     + positionRule

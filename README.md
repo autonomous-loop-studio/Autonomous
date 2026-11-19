@@ -133,7 +133,9 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v482** — current | A read-only storage folder is refused at boot with the exact chown line, so it can never look like a hang again. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v495** — current | Both clients gate the drill todo plan the same way, through one shared path scrub, so a new pass can't reuse the last pass's file. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v494** | A todo list that lost its commas no longer stalls Easy step 2: every quoted item is recovered in order instead of returning a schema error. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v495) |
+| **v482** | A read-only storage folder is refused at boot with the exact chown line, so it can never look like a hang again. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v482) |
 | **v481** | Shell access no longer jails an agent outside the app, so a fresh copy's drill can reach its exec step. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v481) |
 | **v480** | Start can no longer hang on its own drill archive, and a stale jail named like the sandbox lands in the sandbox. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v480) |
 | **v479** | A stale per-agent file jail is cleared instead of merely tolerated, and the IDE drill's pass files are archived like every other drill's. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v479) |
@@ -1908,11 +1910,12 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v482 — A read-only storage/ is refused at boot with the chown line, not a silent hang
+### 📌 v495 — Both clients gate the drill plan the same way, through one shared scrub
 
-*A copy on a web server reported "the agent just hangs there". It was not the agent: `storage/` belonged to root, so every save was dropped — settings snapped back, sessions and state were never written — and nothing in the app ever checked. `Src\Storage` now probes the folder for real (a write, not `is_writable()`, which lies on cloud-synced folders) before any request does work, and answers **500 immediately**: JSON for the API and IDE, plain text for a page, with the exact `sudo chown -R www-data:www-data /var/www/app/storage` line for the user PHP is running as. A missing folder gets `sudo mkdir -p` first, and an unwritable `config.json` gets the same line.*
+*A new drill pass replayed the previous pass's completed todo list, and a plan rebuilt from it copied the old `training-*-pN.txt` path into the write step — the pass-4 write of pass 3's file the pre-tool refusal caught. The desktop had the gate and the scrub; mobile had neither in one place.*
 
-*CLI and `install-update.php` are exempt, because the suite and the launchers run as the owner and an installer cannot be the thing that fixes the permissions it needs. Windows gets no invented chown — it names the folder and the account to give Modify rights to. `tests/php/storageGuard.test.php` pins all of it, including two real `php -S` boots: an unusable `storage/` answers 500 with the line, a healthy one answers 200.*
+*`todoPlanIsCurrent` is now ported to mobile and both clients share one `scrubDrillFile` helper, so a stale pass path is rewritten to the pass in progress before the model ever sees it. The self-test slug drift is fixed alongside it. Full suite green.*
+
 
 ---
 
@@ -1955,3 +1958,4 @@ Contributions are accepted under the same license with a
 [DCO](CONTRIBUTING.md) sign-off (`git commit -s`).
 
 Made by M. Bryce Hudson
+Bryce Hudson

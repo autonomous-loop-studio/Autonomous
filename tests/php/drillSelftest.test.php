@@ -97,8 +97,8 @@ $first = run_tool($tool, ['--quiet'], $configPath);
 $firstOut = $first['out'] . $first['err'];
 ok($first['exit'] === 0, "the self-test exits 0 (got {$first['exit']}: " . trim($firstOut) . ')');
 ok(strpos($first['out'], 'RESULT: PASS') !== false, 'it prints RESULT: PASS');
-$p1 = $tmp . '/training/training-agent-drill-selftest-p1.txt';
-$p2 = $tmp . '/training/training-agent-drill-selftest-p2.txt';
+$p1 = $tmp . '/training/training-lftest-p1.txt';
+$p2 = $tmp . '/training/training-lftest-p2.txt';
 ok($read($p1) === $want, 'pass 1 left its file at the drill\'s two lines');
 ok($read($p2) === $want, 'pass 2 left its own file at the drill\'s two lines');
 
@@ -111,7 +111,7 @@ ok($read($p1) === $want && $read($p2) === $want, 'and both files still hold the 
 // 3. Not quiet: it says which files it wrote and that pass 1 was not rewritten.
 $loud = run_tool($tool, [], $configPath);
 ok($loud['exit'] === 0, 'the verbose run passes too');
-ok(strpos($loud['out'], 'training-agent-drill-selftest-p1.txt') !== false,
+ok(strpos($loud['out'], 'training-lftest-p1.txt') !== false,
     'the report names the pass-1 file it wrote');
 ok(stripos($loud['out'], 'not rewritten') !== false,
     'it states that pass 2 did not rewrite pass 1');
@@ -121,9 +121,9 @@ $inner = $tmp . '/narrow';
 @mkdir($inner, 0777, true);
 $narrow = run_tool($tool, ['--root', $inner, '--agent', 'agent_narrow', '--quiet'], $configPath);
 ok($narrow['exit'] === 0, '--root with --agent passes');
-ok($read($inner . '/training/training-agent-narrow-p1.txt') === $want,
+ok($read($inner . '/training/training-narrow-p1.txt') === $want,
     'the narrowed run wrote inside --root, named after --agent');
-ok(!is_file($tmp . '/training/training-agent-narrow-p1.txt'),
+ok(!is_file($tmp . '/training/training-narrow-p1.txt'),
     'and not in the wider root');
 
 // 5. A folder outside the sandbox roots is refused rather than written.

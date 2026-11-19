@@ -38,8 +38,10 @@ sandbox/*
 .gh-workflow-token
 
 # A second copy of the app kept for reference or comparison (a clean copy, an
-# archive of an older version). Each carries its own storage/ with the same
-# token and keys, and it is not part of the app -- never commit one.
+# archive of an older version, the mobile client tree). Each carries its own
+# storage/ with the same token and keys, and it is not part of the app --
+# never commit one.
+/mobile/
 cleancopy/
 the-copy-before-the-huge-ui-change/
 

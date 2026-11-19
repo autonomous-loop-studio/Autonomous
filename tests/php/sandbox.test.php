@@ -215,6 +215,17 @@ throws(function () use ($readOnly) {
 // is <project>/sandbox/test_read.txt, otherwise stops and reports that it cannot
 // see a file it wrote itself.
 file_put_contents($readOnly . '/hintme.txt', 'inside');
+// The hint must name the nested relative path, not just the basename: a
+// /project/training/<file> refusal used to look for <root>/<file> and find
+// nothing. Exercise the hint directly, because a leading-slash read is now
+// recovered by the jail before it can reach the error path.
+@mkdir($readOnly . '/training', 0777, true);
+file_put_contents($readOnly . '/training/nested-hint.txt', 'inside');
+$hintMethod = new \ReflectionMethod('Src\\Sandbox', 'outsideHint');
+$hintMethod->setAccessible(true);
+$hint = $hintMethod->invoke(null, '/project/training/nested-hint.txt', [$readOnly]);
+ok(stripos($hint, 'Did you mean "training/nested-hint.txt"') !== false,
+    'the refusal hint names the nested path inside the sandbox');
 $read = Sandbox::readFile('../hintme.txt', null, $readOnly);
 ok(strpos($read['content'], 'inside') !== false,
     'an outside READ with a matching name reaches the copy inside the sandbox');
@@ -289,6 +300,18 @@ ok($wr['bytes_written'] > 0, 'write file');
 // replacing an anchor (edit_file never appends), step 9 renames that line, and
 // a miss is refused without touching the file.
 @mkdir($writeDir . '/training', 0777, true);
+// A model that means "inside the sandbox" often writes /training/file. That
+// is a real filesystem-root path and used to be refused; the jail now retries
+// the rooted spelling under each allowed root, so the model can read the file
+// whose sandbox-relative path it already knows.
+$leadingName = 'leading-' . $pid . '.txt';
+file_put_contents($writeDir . '/training/' . $leadingName, 'leading ok');
+$leading = Sandbox::readFile('/training/' . $leadingName, null, $writeDir);
+ok(strpos($leading['content'], 'leading ok') !== false,
+    'a sandbox-relative path with a leading slash reads');
+throws(function () use ($writeDir, $pid) {
+    Sandbox::readFile('/outside-' . $pid . '/secret.txt', null, $writeDir);
+}, 'a leading slash still cannot escape the roots');
 $drillFile = $writeDir . '/training/training.txt';
 Sandbox::writeFile($drillFile, 'training');
 Sandbox::strReplace($drillFile, 'training', "training\ndrill 2 passed");

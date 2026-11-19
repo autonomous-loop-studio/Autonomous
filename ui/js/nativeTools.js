@@ -236,8 +236,18 @@ export function nativeToolDefs(defs, family) {
   }));
 }
 
-/** Provider-specific "choose automatically" value, or null when set separately. */
-export function nativeToolChoice(family) {
+/**
+ * Provider-specific tool choice. With `forced`, name the one function the
+ * model may call (used for the awaited drill step); without it, keep automatic
+ * choice. Google's value is a functionCallingConfig, not a tool_choice.
+ */
+export function nativeToolChoice(family, forced = '') {
+  const name = String(forced || '').trim();
+  if (name) {
+    if (family === 'anthropic') return { type: 'tool', name };
+    if (family === 'google') return { mode: 'ANY', allowedFunctionNames: [name] };
+    return { type: 'function', function: { name } };
+  }
   if (family === 'anthropic') return { type: 'auto' };
   if (family === 'google') return null;
   return 'auto';

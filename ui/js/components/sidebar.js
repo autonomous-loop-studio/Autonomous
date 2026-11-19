@@ -7,22 +7,22 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=482';
-import { K } from '../storage.js?v=482';
-import { persistence } from '../persistence.js?v=482';
-import { api } from '../api.js?v=482';
-import { isNoTokenError } from '../apiError.js?v=482';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=482';
-import { errText } from '../api.js?v=482';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=482';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=482';
-import { snapshot } from '../rateGovernor.js?v=482';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine } from '../training.js?v=482';
-import { resetBrowserEnabled } from '../toolManifest.js?v=482';
-import { perf } from '../perf.js?v=482';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=482';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=482';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=482';
+import { store } from '../store.js?v=495';
+import { K } from '../storage.js?v=495';
+import { persistence } from '../persistence.js?v=495';
+import { api } from '../api.js?v=495';
+import { isNoTokenError } from '../apiError.js?v=495';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=495';
+import { errText } from '../api.js?v=495';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=495';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=495';
+import { snapshot } from '../rateGovernor.js?v=495';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=495';
+import { resetBrowserEnabled } from '../toolManifest.js?v=495';
+import { perf } from '../perf.js?v=495';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=495';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=495';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=495';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -811,7 +811,10 @@ export class Sidebar {
     const customHint = difficulty === 'custom' && !customSteps.length
       ? ' No custom steps saved yet — open the builder below.'
       : '';
-    const cleanTarget = Math.max(0, Math.floor(Number(tm.cleanPassTarget) || 0));
+    // Default 1: the drill's point is a 100% pass, so the run repeats whole
+    // passes until one has no failed attempt and no retry, then stops. A saved
+    // 0 (the old default) is read as 1 by the helper, never as "never stop".
+    const cleanTarget = trainingCleanTarget(tm);
     // The same verdicts the live strip shows, so the dialog is a snapshot of
     // the run rather than a second, differently-computed opinion.
     const verdictRows = Object.values(store.get('trainingVerdicts') || {});
@@ -838,8 +841,8 @@ export class Sidebar {
                      ${statusBlock}
           <div class="form-hint" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
             <label for="trainingCleanTarget">Stop after</label>
-            <input type="number" class="form-input" id="trainingCleanTarget" min="0" max="99" step="1" value="${cleanTarget}" style="width:72px">
-            <span>clean pass${cleanTarget === 1 ? '' : 'es'} — 0 never stops on its own; with several agents, the first to get there ends the run.</span>
+            <input type="number" class="form-input" id="trainingCleanTarget" min="1" max="99" step="1" value="${cleanTarget}" style="width:72px">
+            <span>clean pass${cleanTarget === 1 ? '' : 'es'} — a pass counts only when every step is correct with 0 failed attempts and 0 retries, and the whole drill repeats until then. With several agents, the first to get there ends the run.</span>
           </div>
           <label class="training-show-passes">
             <input type="checkbox" id="trainingShowEveryPass" ${showEveryPass ? 'checked' : ''}>
@@ -849,11 +852,11 @@ export class Sidebar {
           <ul class="training-points">
             <li>All active agents are throttled to ~50% of their normal request rate.</li>
             <li>They work ONLY the drill below, in order — inside the <code>training/</code> sandbox for the file drills, on the real desktop for Frontier, in the built-in browser for Browser, or wherever a custom step directs — nothing else while the mode is on.</li>
-            <li><strong>It only stops when you say so.</strong> Every finished turn — a display step, a short reply, even the last step of the drill — is followed automatically by <code>Continue</code>, so agents cannot end the loop early; the clean-pass limit below is the one exception, and 0 leaves it off.</li>
+            <li><strong>It repeats the whole drill until a pass is 100% clean.</strong> Every finished turn — a display step, a short reply, even the last step of the drill — is followed automatically by <code>Continue</code>, so agents cannot end the loop early. The clean-pass target below is the one exception: it defaults to 1, so the run repeats whole passes and ends at the first one with every step correct, 0 failed attempts and 0 retries.</li>
             <li>A failed step must be retried until it passes, never skipped; each pass is logged to the todo list.</li>
           </ul>
           <ol class="training-steps" id="trainingSteps">${steps}</ol>
-          <div class="form-hint">Model weights never change — “remember” means the todo record plus the run transcript, so the next turn reuses what worked. Start sends the drill into chat straight away, so every attempt, the map and the metrics show exactly as usual. The loop keeps going — and starts another pass once the drill is complete — until you press Stop, switch training off, or the clean-pass limit is reached.</div>
+          <div class="form-hint">Model weights never change — “remember” means the todo record plus the run transcript, so the next turn reuses what worked. Start sends the drill into chat straight away, so every attempt, the map and the metrics show exactly as usual. The loop keeps going — and starts another pass once the drill is complete — until you press Stop, switch training off, or the clean-pass target is reached.</div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" id="trainingCancel">Cancel</button>
@@ -911,7 +914,7 @@ export class Sidebar {
     // Saved as it is edited, so the limit can be changed mid-run without
     // restarting the drill (Start resets the count, not the setting).
     overlay.querySelector('#trainingCleanTarget').addEventListener('change', (e) => {
-      const n = Math.max(0, Math.min(99, Math.floor(Number(e.target.value) || 0)));
+      const n = Math.max(1, Math.min(99, Math.floor(Number(e.target.value) || 1)));
       e.target.value = String(n);
       const cur = store.get('settings.trainingMode') || {};
       store.set('settings.trainingMode', { ...cur, cleanPassTarget: n });
@@ -1231,8 +1234,8 @@ export class Sidebar {
     // target is a setting, not a counter, so it survives the restart.
     const targetEl = document.getElementById('trainingCleanTarget');
     const cleanPassTarget = targetEl
-      ? Math.max(0, Math.min(99, Math.floor(Number(targetEl.value) || 0)))
-      : Math.max(0, Math.floor(Number(tm.cleanPassTarget) || 0));
+      ? Math.max(1, Math.min(99, Math.floor(Number(targetEl.value) || 1)))
+      : trainingCleanTarget(tm);
     // pass: 1 is the run's first drill file (...-p1.txt). It is bumped once per
     // completed pass, so every pass in this run writes a file nothing has used.
     store.set('settings.trainingMode', { ...tm, difficulty, active: true, startedAt: Date.now(), pass: 1, drillResumes: 0, drillFails: 0, cleanPassTarget });
@@ -1240,6 +1243,7 @@ export class Sidebar {
     // different calls and would sit in the strip as if they were current.
     store.set('trainingVerdicts', {});
     store.set('trainingPassLog', {});
+    store.set('trainingStuck', {});
     persistence.set('settings', store.get('settings'));
     const modeLabel = `${trainingDifficultyLabel(difficulty)} · ${tasks.length} steps`;
     store.emit('toast', {
@@ -1282,7 +1286,7 @@ export class Sidebar {
     if (!tm.active) return;
     const hit = reachedCleanTarget(tm, store.get('trainingVerdicts') || {});
     if (!hit) return;
-    const target = Math.max(0, Math.floor(Number(tm.cleanPassTarget) || 0));
+    const target = trainingCleanTarget(tm);
     this._stopTraining(null, `${hit.name || 'Agent'}: ${target} clean pass${target === 1 ? '' : 'es'} reached — training stopped`);
   }
 
@@ -1290,6 +1294,7 @@ export class Sidebar {
   _stopTraining(close, note = '', { summary = true } = {}) {
     const tm = store.get('settings.trainingMode') || {};
     store.set('settings.trainingMode', { ...tm, active: false, drillResumes: 0, drillFails: 0 });
+    store.set('trainingStuck', {});
     persistence.set('settings', store.get('settings'));
     store.emit('toast', { message: note || 'Training mode off — full rate restored', type: note ? 'success' : 'info' });
     store.emit('training:changed', { active: false });
@@ -1338,13 +1343,17 @@ export class Sidebar {
       const logged = Array.isArray((store.get('trainingPassLog') || {})[v.id])
         ? (store.get('trainingPassLog') || {})[v.id].slice(-12)
         : [];
+      const accuracy = trainingAccuracy((store.get('trainingPassLog') || {})[v.id] || []);
+      const acc = accuracy.steps
+        ? `${accuracy.firstTry}% first try${accuracy.worstStep ? ` · worst step ${accuracy.worstStep} (${accuracy.worstCount}×)` : ''}`
+        : '';
       const passLines = logged.length
         ? logged.map(p => `<div class="training-pass-line">${esc(formatPassLine(p))}</div>`).join('')
         : '<div class="training-pass-line">no completed pass yet</div>';
       return `<div class="training-summary-row">
         <div class="training-summary-name">${esc(v.name || 'Agent')}</div>
         <div class="training-summary-title">${livePass ? 'Training Pass Complete' : 'Training Complete'} (${esc(label)})</div>
-        <div class="training-summary-line">${passes} pass${passes === 1 ? '' : 'es'} · ${fails} failed attempt${fails === 1 ? '' : 's'}${clean ? ` · ${clean} clean` : ''}</div>
+        <div class="training-summary-line">${passes} pass${passes === 1 ? '' : 'es'} · ${fails} failed attempt${fails === 1 ? '' : 's'}${clean ? ` · ${clean} clean` : ''}${acc ? ` · ${esc(acc)}` : ''}</div>
         <div class="training-summary-breakdown">${esc(breakdown)}</div>
         ${passLines}
       </div>`;
@@ -2430,7 +2439,7 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
           <span class="toggle-label">Remember the working dialect</span>
           <div class="toggle ${settings.toolDialectMemo !== false ? 'active' : ''}" id="sbDialectMemo"><div class="toggle-knob"></div></div>
         </div>
-        <div class="form-hint">Once a model's tool call parses, remember which dialect worked for that provider + model and start there next time. Off re-derives it every turn.</div>
+        <div class="form-hint">Once an agent's tool calls parse AND execute, remember which dialect worked for that agent (and the provider + model it ran on) and start there next time. Another agent on the same model is unaffected, and a model switch makes it learn again. Off re-derives it every turn.</div>
         <div class="toggle-row">
           <span class="toggle-label">API pool <span class="form-hint-inline">rotate extra provider keys</span></span>
           <div class="toggle ${settings.apiPool ? 'active' : ''}" id="sbApiPool"><div class="toggle-knob"></div></div>

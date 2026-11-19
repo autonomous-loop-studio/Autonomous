@@ -7,16 +7,17 @@
 // AGENTEDITOR.JS — Agent CRUD modal
 // ============================================
 
-import { store } from '../store.js?v=482';
-import { persistence } from '../persistence.js?v=482';
-import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=482';
-import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=482';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=482';
-import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=482';
-import { sandboxRootFor } from '../agentConfig.js?v=482';
-import { audio } from '../audio.js?v=482';
-import { api } from '../api.js?v=482';
-import * as memory from '../memory.js?v=482';
+import { store } from '../store.js?v=495';
+import { persistence } from '../persistence.js?v=495';
+import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=495';
+import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=495';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=495';
+import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=495';
+import { sandboxRootFor } from '../agentConfig.js?v=495';
+import { learnedDialect, forgetDialect, protocolLabel } from '../harness.js?v=495';
+import { audio } from '../audio.js?v=495';
+import { api } from '../api.js?v=495';
+import * as memory from '../memory.js?v=495';
 
 /** Toast wording per recognized snippet language. */
 const KIND_LABEL = { curl: 'Curl', python: 'Python', node: 'Node', sdk: 'SDK', json: 'JSON API' };
@@ -269,6 +270,11 @@ export class AgentEditor {
             </div>
           </div>
           <div class="form-group">
+            <label class="form-label">Learned tool syntax <span class="form-hint-inline">this agent's dialect memo</span></label>
+            <div class="form-hint" id="agentDialectHint">What this agent has learned for its saved provider and model.</div>
+            ${agent ? '<div style="margin-top:8px"><button type="button" class="btn btn-ghost btn-sm" id="agentForgetDialect">Forget learned dialect</button></div>' : ''}
+          </div>
+          <div class="form-group">
             <label class="form-label">Color</label>
             <div class="color-picker" id="agentColorPicker">
               ${COLORS.map(c => `<div class="color-swatch ${agent && agent.color === c ? 'selected' : ''}" data-color="${c}" style="background:${c}"></div>`).join('')}
@@ -390,6 +396,7 @@ export class AgentEditor {
     document.body.appendChild(overlay);
     this.modal = overlay;
     this._describeToolPermissions(agent);
+    this._paintDialectHint(agent);
 
     // Close handlers
     document.getElementById('agentModalClose').addEventListener('click', () => this.close());
@@ -411,6 +418,10 @@ export class AgentEditor {
 
     // Fetch this provider's live catalog without leaving the agent card.
     document.getElementById('agentFetchModels').addEventListener('click', () => this._fetchModels());
+
+    // Drop this agent's learned tool syntax. Immediate, not a form field: the
+    // memo lives in settings, not in the agent record the Save button writes.
+    document.getElementById('agentForgetDialect')?.addEventListener('click', () => this._forgetDialect(agent));
 
     // Memory panel: show/hide, and re-render on every change.
     const memToggle = document.getElementById('agentMemory');
@@ -864,6 +875,60 @@ export class AgentEditor {
     paint();
     store.on('audio:voices', () => {
       if (document.getElementById('agentVoice') === sel) paint();
+    });
+  }
+
+  /**
+   * What this agent has learned for its saved provider + model.
+   *
+   * The memo is keyed by agent id, provider and model, so a model change in
+   * this form does not move it: this line describes the SAVED pairing, which
+   * is the one the next turn will use until the agent is saved.
+   */
+  _paintDialectHint(agent) {
+    const el = document.getElementById('agentDialectHint');
+    if (!el) return;
+    if (!agent) {
+      el.textContent = 'Save this agent first — the memo is keyed by its saved id, provider and model.';
+      return;
+    }
+    const memo = learnedDialect(agent.provider, agent.model, agent.id);
+    if ((store.get('settings') || {}).toolDialectMemo === false) {
+      el.textContent = 'The dialect memo is switched off in Config → Labs, so this agent is not using a stored memo right now. '
+        + 'Any entry it learned earlier is still stored and can be forgotten here.';
+      return;
+    }
+    el.textContent = memo
+      ? `This agent remembers "${protocolLabel(memo)}" for ${agent.model}. Forgetting it makes the next turn start from the provider heuristic, so the agent has to earn a memo again. You will be asked to confirm first.`
+      : 'Nothing learned for this agent and model yet. It starts from the provider heuristic and remembers a dialect only after a turn whose calls all ran.';
+  }
+
+  /** Ask first, then drop the memo this agent earned; Cancel leaves it untouched. */
+  _forgetDialect(agent) {
+    if (!agent) return;
+    const memo = learnedDialect(agent.provider, agent.model, agent.id);
+    const label = memo ? `"${protocolLabel(memo)}" for ${agent.model}` : `any dialect for ${agent.model}`;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true" aria-label="Forget learned dialect">
+      <div class="modal-header"><span class="modal-title">Forget learned dialect?</span></div>
+      <div class="modal-body"><div class="form-hint">Are you sure you want ${agent.name} to forget ${label}? The next turn starts from the provider heuristic. This cannot be undone.</div></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="forgetDialectCancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="forgetDialectYes">Yes, forget it</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#forgetDialectCancel').addEventListener('click', close);
+    overlay.querySelector('#forgetDialectYes').addEventListener('click', () => {
+      const removed = forgetDialect(agent.provider, agent.model, agent.id);
+      close();
+      this._paintDialectHint(agent);
+      store.emit('toast', removed
+        ? { message: `${agent.name}: forgot "${protocolLabel(removed)}" — the next turn starts from the provider heuristic`, type: 'success' }
+        : { message: `${agent.name} has no learned dialect for its saved model`, type: 'info' });
     });
   }
 
