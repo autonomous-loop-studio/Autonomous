@@ -27,9 +27,9 @@ import {
   TOOL_PATTERNS,
   CONTEXT_LIMITS,
   DEFAULT_RPM,
-} from './harness.data.js?v=498';
-import { store } from './store.js?v=498';
-import { persistence } from './persistence.js?v=498';
+} from './harness.data.js?v=499';
+import { store } from './store.js?v=499';
+import { persistence } from './persistence.js?v=499';
 
 export { API_FAMILIES };
 
@@ -282,12 +282,12 @@ function providerMemoKey(provider, model) {
 /**
  * The memo key: the AGENT first, then the provider+model it was learned on.
  *
- * Per-agent remains the precise answer, but it cannot be the only one: a new
- * agent on a model that already executed a syntax has no entry, falls back to
- * the heuristic, and repeats the same failed envelope. The provider+model
- * slot is the harness-wide memory; the agent slot wins when it exists. A
- * lookup without an agent uses the provider slot, so the remembered syntax is
- * still available to a caller that only knows the model.
+ * Strictly per agent: one agent's syntax never answers for another, because
+ * the tool set and prompt that made a syntax work are theirs. A lookup
+ * without an agent uses the provider slot, so the remembered syntax is
+ * still available to a caller that only knows the model. Legacy shared
+ * entries already stored stay listed until forgotten, but are never
+ * consulted for an agent turn and never rewritten by one.
  */
 function dialectMemoKey(provider, model, agentId) {
   const p = providerMemoKey(provider, model);
@@ -296,20 +296,15 @@ function dialectMemoKey(provider, model, agentId) {
   return a ? `${a}::${p}` : p;
 }
 
-/** The dialect this agent (or, failing that, this provider+model) executed. */
+/** The dialect this agent executed (no cross-agent fallback). */
 export function learnedDialect(provider, model, agentId) {
   if (!dialectMemoEnabled()) return '';
   const map = (store.get('settings') || {}).toolDialectMap || {};
-  const keys = [dialectMemoKey(provider, model, agentId)];
-  if (agentId) {
-    const shared = providerMemoKey(provider, model);
-    if (shared && !keys.includes(shared)) keys.push(shared);
-  }
-  for (const key of keys) {
-    const memo = key ? map[key] : '';
-    if (memo && BY_ID.has(memo)) return memo;
-  }
-  return '';
+  const key = agentId
+    ? dialectMemoKey(provider, model, agentId)
+    : providerMemoKey(provider, model);
+  const memo = key ? map[key] : '';
+  return memo && BY_ID.has(memo) ? memo : '';
 }
 
 /**
@@ -318,29 +313,33 @@ export function learnedDialect(provider, model, agentId) {
  * args, bad path, denied) must not be remembered, or one fluke parse poisons
  * every future turn.
  *
- * The agent slot keeps the precise answer; the provider+model slot is written
- * too so a new agent on the same model inherits the harness's working memory.
+ * Strictly per agent: an agentId writes only its own slot, never the shared
+ * provider+model slot, so one agent's success cannot rewrite another's
+ * starting dialect. A write without an agentId keeps the shared slot for
+ * callers that only know the model.
  */
 export function rememberDialect(provider, model, dialect, agentId) {
   if (!dialectMemoEnabled()) return;
   const d = String(dialect || '').trim().toLowerCase();
   if (!BY_ID.has(d)) return;
-  const key = dialectMemoKey(provider, model, agentId);
+  const key = agentId
+    ? dialectMemoKey(provider, model, agentId)
+    : providerMemoKey(provider, model);
   if (!key) return;
   const settings = store.get('settings') || {};
   const map = { ...(settings.toolDialectMap || {}) };
-  let changed = false;
-  if (map[key] !== d) { map[key] = d; changed = true; }
-  const shared = providerMemoKey(provider, model);
-  if (agentId && shared && map[shared] !== d) { map[shared] = d; changed = true; }
-  if (!changed) return;
+  if (map[key] === d) return;
+  map[key] = d;
   store.set('settings.toolDialectMap', map);
   try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
 }
 
 /**
- * Drop the remembered dialect for this agent and its provider+model slot, and
- * return the dialect that was removed ('' when there was none).
+ * Drop the remembered dialect for this agent (or the shared slot when no
+ * agent is given), and return the dialect that was removed ('' when none).
+ *
+ * Strictly per agent: forgetting one agent never clears another agent's
+ * entry, nor the shared slot other callers may still read.
  *
  * Deliberately NOT gated by the Labs switch: turning the memo off must not
  * strand entries the operator can no longer clear. Forgetting is always
@@ -348,17 +347,16 @@ export function rememberDialect(provider, model, dialect, agentId) {
  * actually dropped.
  */
 export function forgetDialect(provider, model, agentId) {
-  const keys = [dialectMemoKey(provider, model, agentId), providerMemoKey(provider, model)]
-    .filter(Boolean);
+  const key = agentId
+    ? dialectMemoKey(provider, model, agentId)
+    : providerMemoKey(provider, model);
+  if (!key) return '';
   const settings = store.get('settings') || {};
   const map = { ...(settings.toolDialectMap || {}) };
-  let removed = '';
-  for (const key of keys) {
-    if (!(key in map)) continue;
-    if (!removed) removed = map[key] || '';
-    delete map[key];
-  }
+  if (!(key in map)) return '';
+  const removed = map[key] || '';
   if (!removed) return '';
+  delete map[key];
   store.set('settings.toolDialectMap', map);
   try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
   return removed;
@@ -366,18 +364,18 @@ export function forgetDialect(provider, model, agentId) {
 
 /**
  * Where the resolved memo came from: 'agent' when this agent earned its own
- * entry, 'shared' when it inherits the provider+model slot, '' when nothing
- * is remembered (or the memo is switched off). The agent editor shows this
- * so an operator can tell their own learning apart from hand-me-down syntax.
+ * entry, 'shared' for a model-level lookup without an agent, '' when nothing
+ * is remembered (or the memo is switched off).
  */
 export function memoProvenance(provider, model, agentId) {
   if (!dialectMemoEnabled()) return '';
   const map = (store.get('settings') || {}).toolDialectMap || {};
-  const own = dialectMemoKey(provider, model, agentId);
-  if (agentId && own && map[own] && BY_ID.has(map[own])) return 'agent';
+  if (agentId) {
+    const own = dialectMemoKey(provider, model, agentId);
+    return own && map[own] && BY_ID.has(map[own]) ? 'agent' : '';
+  }
   const shared = providerMemoKey(provider, model);
-  if (shared && map[shared] && BY_ID.has(map[shared])) return 'shared';
-  return '';
+  return shared && map[shared] && BY_ID.has(map[shared]) ? 'shared' : '';
 }
 
 /**

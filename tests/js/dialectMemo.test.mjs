@@ -3,16 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Tool-dialect memory: the agent's own syntax, with a provider+model fallback.
+// Tool-dialect memory: strictly per-agent syntax, no cross-agent fallback.
 //
 // Usage: node tests/js/dialectMemo.test.mjs
 //
 // The exact answer is per agent, so a copied agent's different tool set cannot
-// overwrite it. But a per-agent key alone made a new agent on a model that had
-// already executed a syntax start from the heuristic and repeat the same failed
-// envelope. The provider+model slot is the harness-wide memory; the agent slot
-// wins when it exists. These assertions pin that, plus the two operators over
-// it: the Labs switch and an explicitly pinned dialect.
+// overwrite it and one agent's success never rewrites another's starting
+// dialect. The provider+model slot survives only for lookups without an
+// agent. These assertions pin that, plus the two operators over it: the Labs
+// switch and an explicitly pinned dialect.
 //
 // The `?v=` is read from store.js rather than written here, so a cache-buster
 // bump cannot split the test from the modules under test.
@@ -27,8 +26,10 @@ if (!version) {
   process.exit(1);
 }
 const { store } = await import(`../../ui/js/store.js?v=${version}`);
-const { learnedDialect, rememberDialect, forgetDialect, toolProtocolFor } =
+const { learnedDialect, rememberDialect, forgetDialect, toolProtocolFor, memoProvenance } =
   await import(`../../ui/js/harness.js?v=${version}`);
+const { realSuccessOnlyEnabled } =
+  await import(`../../ui/js/training.js?v=${version}`);
 const { mergeLearnedSettings } = await import(`../../ui/js/utils.js?v=${version}`);
 
 let pass = 0, fail = 0;
@@ -37,7 +38,7 @@ const ok = (cond, name) => { if (cond) pass++; else { fail++; errors.push('FAIL:
 const eq = (a, b, name) => ok(JSON.stringify(a) === JSON.stringify(b),
   `${name} (got ${JSON.stringify(a)}, want ${JSON.stringify(b)})`);
 
-console.log('dialectMemo tests (agent + provider fallback)');
+console.log('dialectMemo tests (strictly per agent)');
 console.log('-'.repeat(60));
 
 store.set('settings.toolDialectMap', {});
@@ -52,19 +53,18 @@ rememberDialect(a.provider, a.model, 'plain', a.id);
 eq(learnedDialect(a.provider, a.model, a.id), 'plain', 'A remembers the dialect its calls executed with');
 eq(store.get('settings').toolDialectMap['agent-a::openai::model-x'], 'plain',
   'the memo is filed under the agent, provider and model');
-eq(store.get('settings').toolDialectMap['openai::model-x'], 'plain',
-  'and the provider+model slot carries the harness-wide memory');
-eq(learnedDialect(b.provider, b.model, b.id), 'plain', 'B inherits a working syntax from the provider slot');
+ok(!('openai::model-x' in (store.get('settings').toolDialectMap || {})),
+  'an agent write never creates the shared slot');
+eq(learnedDialect(b.provider, b.model, b.id), '', 'B starts clean — no hand-me-down from A');
 eq(toolProtocolFor(a), 'plain', 'A starts from its own memo');
-eq(toolProtocolFor({ ...b }), 'plain', 'B starts from the provider fallback, not the heuristic');
+eq(toolProtocolFor({ ...b }), 'json', 'B starts from the heuristic, not A');
 rememberDialect(b.provider, b.model, 'native', b.id);
 eq(toolProtocolFor(a), 'plain', 'A keeps its own dialect after B learns another');
 eq(toolProtocolFor({ ...b }), 'native', 'B now starts from what B proved');
-
-// A lookup without an agent uses the harness-wide provider slot.
-eq(learnedDialect('openai', 'model-x'), 'native', 'a lookup without an agent sees the provider memo');
+eq(learnedDialect('openai', 'model-x'), '', 'a lookup without an agent sees nothing yet');
 rememberDialect('openai', 'model-x', 'plain');
 eq(learnedDialect('openai', 'model-x'), 'plain', 'a write without an agent updates that slot');
+eq(learnedDialect(a.provider, a.model, a.id), 'plain', 'the shared write leaves A alone');
 
 // --- the model is part of the key, so a switch invalidates -------------------
 const aOnY = { id: 'agent-a', provider: 'openai', model: 'model-y' };
@@ -119,6 +119,12 @@ eq(merged.toolDialectMap['agent-d::other::m'], 'json', 'while adopting what the 
   eq(forgetDialect(c.provider, c.model, c.id), 'native', 'forget removes that memo');
   eq(toolProtocolFor(c), 'json', 'and the next turn falls back to the provider heuristic');
 }
+
+// Real-success only: off by default, so nothing gets stricter unasked.
+eq(realSuccessOnlyEnabled({}), false, 'real-success only defaults to off');
+eq(realSuccessOnlyEnabled({ realSuccessOnly: true }), true, 'the Training popup can switch it on');
+eq(realSuccessOnlyEnabled({ realSuccessOnly: false }), false, 'and back off again');
+eq(memoProvenance(a.provider, a.model, a.id), '', 'A has no memo here (it was forgotten above)');
 
 for (const line of errors) console.log(line);
 console.log(`dialectMemo: ${pass} passed, ${fail} failed`);

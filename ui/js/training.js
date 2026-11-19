@@ -18,7 +18,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=498';
+import { store } from './store.js?v=499';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -770,6 +770,12 @@ export const SAME_ERROR_HINT = 3;
 export function sameErrorHintEnabled(mode = undefined) {
   const m = mode === undefined ? (store.get('settings.trainingMode') || {}) : (mode || {});
   return m.sameErrorHint !== false;
+}
+
+/** Whether dialect memory requires a real tool success. Default off; the dialog can switch it on. */
+export function realSuccessOnlyEnabled(mode = undefined) {
+  const m = mode === undefined ? (store.get('settings.trainingMode') || {}) : (mode || {});
+  return !!(m && m.realSuccessOnly);
 }
 
 /** Normalise an error for same-error counting: volatile spacing collapsed, capped. */

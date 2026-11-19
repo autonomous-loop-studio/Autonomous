@@ -15,6 +15,14 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🧩 One agent's syntax stays its own, and training can demand a real success *(`VERSION` 498 → 499, cache-buster v498 → v499)*
+
+*The dialect memo is now strictly per agent. `learnedDialect` answers only the calling agent's own slot, `rememberDialect` with an agent id writes only that slot and never the shared provider+model one, and `forgetDialect` drops only the named slot — one agent's success can no longer rewrite another's starting dialect, and forgetting one agent never clears another's entry or the shared slot. Lookups without an agent still use the provider slot, and legacy shared entries stay listed until forgotten but are never consulted or rewritten by an agent turn.*
+
+*Training adds an opt-in **Real-success only** checkbox in the Training popup (`settings.trainingMode.realSuccessOnly`, off by default). Off keeps today's behaviour: a dialect is remembered when every call parsed and ran ok. On, housekeeping alone (`think` / `todo_write`) never teaches a dialect — at least one non-housekeeping tool must have run ok, while errors, denials and pending states still block as before. Nothing old is deleted by flipping it.*
+
+*Full suite green: JS 46 files / 1,694 assertions, PHP 39 files (5 skipped), docs 14/14. `VERSION` 498 → 499, `APP_VERSION` 498 → 499, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+
 ## 🧭 Edit opens the agent card again, and the memo says who earned it *(`VERSION` 497 → 498, cache-buster v497 → v498)*
 
 *Clicking a card's Edit did nothing, and two module-graph faults were behind it. The provenance work left `?v=496` in the imports of `ui/js/components/agentEditor.js` and `ui/js/harness.js` while v497 had moved every other module to `?v=497`. The cache-buster is part of a module's URL, so `store.js?v=496` is a **different instance** of the store from the `store.js?v=497` the sidebar emits `agent:edit` on: `AgentEditor.init()` registered its listeners on a store nobody was talking to. The second fault was starker — v497's `sidebar.js` imports `listDialectMemos()` from `harness.js`, and the export never landed, so a freshly fetched sidebar failed to link at all. Both files are back on the release's own suffix and the export exists.*

@@ -7,23 +7,23 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=498';
-import { K } from '../storage.js?v=498';
-import { persistence } from '../persistence.js?v=498';
-import { api } from '../api.js?v=498';
-import { isNoTokenError } from '../apiError.js?v=498';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=498';
-import { errText } from '../api.js?v=498';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=498';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=498';
-import { snapshot } from '../rateGovernor.js?v=498';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=498';
-import { resetBrowserEnabled } from '../toolManifest.js?v=498';
-import { listDialectMemos, forgetDialect, protocolLabel } from '../harness.js?v=498';
-import { perf } from '../perf.js?v=498';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=498';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=498';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=498';
+import { store } from '../store.js?v=499';
+import { K } from '../storage.js?v=499';
+import { persistence } from '../persistence.js?v=499';
+import { api } from '../api.js?v=499';
+import { isNoTokenError } from '../apiError.js?v=499';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=499';
+import { errText } from '../api.js?v=499';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=499';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=499';
+import { snapshot } from '../rateGovernor.js?v=499';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=499';
+import { resetBrowserEnabled } from '../toolManifest.js?v=499';
+import { listDialectMemos, forgetDialect, protocolLabel } from '../harness.js?v=499';
+import { perf } from '../perf.js?v=499';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=499';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=499';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=499';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -811,6 +811,9 @@ export class Sidebar {
     const showEveryPass = !!tm.showEveryPass;
     // Default on: unset reads as enabled, so existing installs keep the hint.
     const sameErrorHint = tm.sameErrorHint !== false;
+    // Default off: unset keeps today's loose memory, so nothing gets stricter
+    // until the operator opts in.
+    const realSuccessOnly = !!tm.realSuccessOnly;
     const customHint = difficulty === 'custom' && !customSteps.length
       ? ' No custom steps saved yet — open the builder below.'
       : '';
@@ -857,6 +860,11 @@ export class Sidebar {
             <span>Same-error shape hint</span>
           </label>
           <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">On names the flat call shape when the same error answers one step 3 times. Off leaves only the identical-call guard.</div>
+          <label class="training-show-passes">
+            <input type="checkbox" id="trainingRealSuccessOnly" ${realSuccessOnly ? 'checked' : ''}>
+            <span>Real-success only</span>
+          </label>
+          <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">Off (today's behaviour): a dialect is remembered when every call parsed and ran. On: a todo_write or think alone never teaches it — at least one real tool must succeed. Nothing old is deleted.</div>
           <ul class="training-points">
             <li>All active agents are throttled to ~50% of their normal request rate.</li>
             <li>They work ONLY the drill below, in order — inside the <code>training/</code> sandbox for the file drills, on the real desktop for Frontier, in the built-in browser for Browser, or wherever a custom step directs — nothing else while the mode is on.</li>
@@ -912,6 +920,11 @@ export class Sidebar {
     overlay.querySelector('#trainingSameErrorHint').addEventListener('change', (e) => {
       const cur = store.get('settings.trainingMode') || {};
       store.set('settings.trainingMode', { ...cur, sameErrorHint: !!e.target.checked });
+      try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+    });
+    overlay.querySelector('#trainingRealSuccessOnly').addEventListener('change', (e) => {
+      const cur = store.get('settings.trainingMode') || {};
+      store.set('settings.trainingMode', { ...cur, realSuccessOnly: !!e.target.checked });
       try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
     });
     overlay.querySelector('#trainingShowEveryPass').addEventListener('change', (e) => {

@@ -408,11 +408,11 @@ The same checks ship as a script, so CI or an operator never has to paste them: 
 | ⬇️ | **Scroll to latest** | With Auto Scroll off, scrolling up reveals a `∨` button parked above the composer; clicking it jumps to the newest message and follows new output until you scroll up again, and scrolling up with Auto Scroll on pauses the follow instead of yanking the transcript |
 | 💬 | **Prompt rail** | One short tick per prompt down the right edge of the chat box, newest at the bottom — hovering names it, clicking jumps straight there and flashes the landing |
 | 💾 | **Export / import** | Take a session out, or back up the whole state under a name you choose with one checkbox per section — agents, providers & keys, models, settings, memory, pipelines, conversations, metrics, sessions, shell config, approvals — and restore any of it onto any copy. A section the file lacks is left alone rather than blanked, and a restore keeps this copy's own token |
-| 🧠 | **Dynamic tools** | Teaches each model the environment it's really in — and learns the tool dialect that works |
+| 🧠 | **Dynamic tools** | Teaches each model the environment it's really in — and learns the tool dialect that works, strictly per agent |
 | 🔑 | **API pool** | Rotate a provider's extra keys after N requests; rest them on a 429 |
 | 🌐 | **Built-in browser** | A real Chrome/Edge you and the agents drive — watch, click, type, log in |
 | ♾️ | **Always-On loop** | Standing goals, auto re-prompted on a cadence — caps, hold/release, one master kill switch |
-| 🏋️ | **Training mode** | A paced tool drill for every active agent — ~50% request rate, **Easy 12, Hard 17, Advanced 8, Frontier 6, Browser 9, IDE 8**, or **Custom** in the popup, each Start in a fresh session, sandbox drills in each agent's own `training/` file, retry-until-pass with todo logging — armed from a dumbbell in the Agents header — Start posts the drill into chat so the whole run stays visible, and **`node drill-run.mjs --mode <drill>`** runs any of them headlessly against a real model, graded by the same code; both clients gate the drill todo plan through one shared path scrub, every object tool unfolds a pasted envelope before it runs, and a same-error shape hint (toggleable in the popup) names the flat call after three identical refusals |
+| 🏋️ | **Training mode** | A paced tool drill for every active agent — ~50% request rate, **Easy 12, Hard 17, Advanced 8, Frontier 6, Browser 9, IDE 8**, or **Custom** in the popup, each Start in a fresh session, sandbox drills in each agent's own `training/` file, retry-until-pass with todo logging — armed from a dumbbell in the Agents header — Start posts the drill into chat so the whole run stays visible, and **`node drill-run.mjs --mode <drill>`** runs any of them headlessly against a real model, graded by the same code; both clients gate the drill todo plan through one shared path scrub, every object tool unfolds a pasted envelope before it runs, a same-error shape hint (toggleable in the popup) names the flat call after three identical refusals, and an opt-in Real-success only switch stops a think/todo-only run from teaching a dialect |
 | 📖 | **Harness & training guide** | Auto-fit, manual pins and the six- to seventeen-step drills in one place — [Auto Forming Harnesses, Dialects & Training Mode](#-auto-forming-harnesses-dialects--training-mode) |
 | ❝ | **Global pre-prompt** | One instruction for every agent — **prepend** (default) or **replace**, toggled live |
 | 🧠 | **Context assembler** | History & tool output budgeted to each model's *real* window, with live compaction |
@@ -1913,13 +1913,11 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🧭 v498 — Edit opens the agent card again, and the memo says who earned it
+### 🧩 v499 — One agent's syntax stays its own, and training can demand a real success
 
-*A card's **Edit** did nothing, and the cause was two modules that no longer agreed on the release they belonged to: leftover `?v=496` imports gave the editor its own copy of the store, so its `agent:edit` listener sat on a store nothing emitted on, and v497's sidebar imported a `listDialectMemos()` that `harness.js` never exported, so a freshly fetched sidebar failed to link. Both are fixed.*
+*The dialect memo is now strictly per agent: one agent's syntax never answers for another, forgetting one never clears another's entry, and the shared provider slot serves only lookups without an agent. Training adds an opt-in **Real-success only** checkbox in the popup (off by default) — on, a `think` / `todo_write`-only run never teaches a dialect; at least one real tool must succeed.*
 
-*The export exists now and Config → Labs lists every remembered dialect by the agent that earned it, with shared provider slots in their own group, a per-row **Forget** and **Forget all**. The editor's learned-syntax line also says whether this agent earned the memo or inherited it from the provider slot, so an operator knows what the button will take away.*
-
-*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files.*
+*Full suite green: JS 46 files / 1,694 assertions, PHP 39 files.*
 
 
 ---
