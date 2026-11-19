@@ -19,7 +19,7 @@
 // browser supports it, which keeps history intact; only large structural
 // changes fall back to a plain value swap.
 
-import { escHtml, highlight } from './highlight.js?v=497';
+import { escHtml, highlight } from './highlight.js?v=498';
 
 export class Editor {
   constructor({ onChange, onCursor }) {

@@ -7,17 +7,17 @@
 // AGENTEDITOR.JS — Agent CRUD modal
 // ============================================
 
-import { store } from '../store.js?v=497';
-import { persistence } from '../persistence.js?v=497';
-import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=497';
-import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=497';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=497';
-import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=497';
-import { sandboxRootFor } from '../agentConfig.js?v=497';
-import { learnedDialect, forgetDialect, protocolLabel } from '../harness.js?v=497';
-import { audio } from '../audio.js?v=497';
-import { api } from '../api.js?v=497';
-import * as memory from '../memory.js?v=497';
+import { store } from '../store.js?v=498';
+import { persistence } from '../persistence.js?v=498';
+import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=498';
+import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=498';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=498';
+import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=498';
+import { sandboxRootFor } from '../agentConfig.js?v=498';
+import { learnedDialect, forgetDialect, memoProvenance, protocolLabel } from '../harness.js?v=498';
+import { audio } from '../audio.js?v=498';
+import { api } from '../api.js?v=498';
+import * as memory from '../memory.js?v=498';
 
 /** Toast wording per recognized snippet language. */
 const KIND_LABEL = { curl: 'Curl', python: 'Python', node: 'Node', sdk: 'SDK', json: 'JSON API' };
@@ -898,8 +898,13 @@ export class AgentEditor {
         + 'Any entry it learned earlier is still stored and can be forgotten here.';
       return;
     }
+    const provenance = memo ? memoProvenance(agent.provider, agent.model, agent.id) : '';
     el.textContent = memo
-      ? `This agent remembers "${protocolLabel(memo)}" for ${agent.model}. Forgetting it makes the next turn start from the provider heuristic, so the agent has to earn a memo again. You will be asked to confirm first.`
+      ? `This agent remembers "${protocolLabel(memo)}" for ${agent.model}. `
+        + (provenance === 'agent'
+          ? 'This agent earned it itself — the memo is filed under its id, so provider/model renames do not move it.'
+          : 'Inherited from the shared provider slot — this agent has no memo of its own yet; another agent on this model earned it.')
+        + ' Forgetting it makes the next turn start from the provider heuristic, so the agent has to earn a memo again. You will be asked to confirm first.'
       : 'Nothing learned for this agent and model yet. It starts from the provider heuristic and remembers a dialect only after a turn whose calls all ran.';
   }
 

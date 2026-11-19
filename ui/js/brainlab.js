@@ -3,20 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { store } from './store.js?v=497';
-import { persistence } from './persistence.js?v=497';
-import { esc, escAttr, agentCode } from './utils.js?v=497';
-import { api } from './api.js?v=497';
-import * as memory from './memory.js?v=497';
+import { store } from './store.js?v=498';
+import { persistence } from './persistence.js?v=498';
+import { esc, escAttr, agentCode } from './utils.js?v=498';
+import { api } from './api.js?v=498';
+import * as memory from './memory.js?v=498';
 import {
   profiles, newProfileId, alwaysAppendFor,
   settingFor, isLocked, lockSetting, unlockSetting, setSetting, sandboxRootFor,
-} from './agentConfig.js?v=497';
+} from './agentConfig.js?v=498';
 import {
   customToolDefs, defaultTools, loadCustomTools, validateCustomTool,
-} from './tools.js?v=497';
-import { SandboxFiles } from './sandboxFiles.js?v=497';
-import { TOOL_PROTOCOLS, HARNESS_CHOICES, toolProtocolFor, protocolLabel, protocolHint, harnessFor, harnessOverride } from './toolProtocol.js?v=497';
+} from './tools.js?v=498';
+import { SandboxFiles } from './sandboxFiles.js?v=498';
+import { TOOL_PROTOCOLS, HARNESS_CHOICES, toolProtocolFor, protocolLabel, protocolHint, harnessFor, harnessOverride } from './toolProtocol.js?v=498';
 
 const ZOOM_KEY = 'als.brainLab.zoom.v1';
 const ZOOM_STEPS = [130, 160, 190, 225, 270, 320];

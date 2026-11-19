@@ -15,6 +15,16 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🧭 Edit opens the agent card again, and the memo says who earned it *(`VERSION` 497 → 498, cache-buster v497 → v498)*
+
+*Clicking a card's Edit did nothing, and two module-graph faults were behind it. The provenance work left `?v=496` in the imports of `ui/js/components/agentEditor.js` and `ui/js/harness.js` while v497 had moved every other module to `?v=497`. The cache-buster is part of a module's URL, so `store.js?v=496` is a **different instance** of the store from the `store.js?v=497` the sidebar emits `agent:edit` on: `AgentEditor.init()` registered its listeners on a store nobody was talking to. The second fault was starker — v497's `sidebar.js` imports `listDialectMemos()` from `harness.js`, and the export never landed, so a freshly fetched sidebar failed to link at all. Both files are back on the release's own suffix and the export exists.*
+
+*That export is `listDialectMemos()`: every stored memo as `{key, agentId, provider, model, dialect, kind}`, `kind: 'agent'` when an agent earned its own entry and `'shared'` for a provider+model slot any agent on that model inherits. It deliberately ignores the Labs switch — a switched-off memo is still stored and still forgettable — and Config → Labs builds its grouped list, per-row **Forget** and **Forget all** from it, with keys for deleted agents still visible rather than silently vanishing.*
+
+*The editor's learned-syntax line now says which of the two it is showing. `memoProvenance()` answers `'agent'`, `'shared'` or `''`, and the hint prints "earned it itself — filed under its id, so provider/model renames do not move it" or "inherited from the shared provider slot — another agent on this model earned it", so an operator can tell their own agent's learning apart from hand-me-down syntax before pressing Forget.*
+
+*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files (5 skipped), docs 14/14. `VERSION` 497 → 498, `APP_VERSION` 497 → 498, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+
 ## 🖥️ The IDE door unfolds pasted envelopes too, ending the ide_write retry loop *(`VERSION` 496 → 497, cache-buster v496 → v497)*
 
 *The same pasted-envelope class that stalled `edit_file` before v496 reached the IDE door: the slots the model understood landed top-level (`path`) while the rest hid under `"arg"`, so `ide_write` saw the path but no `content` and refused every identical retry at IDE drill step 3. `aliasToolArgs` now normalises all four IDE tools — `ide_open`/`ide_read` through a shared `normaliseIdeArg`, `ide_edit` through the same `normaliseEditArg` as `edit_file` — folding the envelope flat, foreign path/content spellings and stringified arguments before anything touches the path. The sandbox door's `ideArg` parses stringified arguments and unfolds as a second line of defense, `drill-run.mjs` normalises with the app's own aliasing (native frames arrive raw, past the parser), and the `ide_write`/`ide_edit` refusals name the received keys plus the flat shape instead of repeating one line.*

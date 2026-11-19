@@ -1314,6 +1314,7 @@ And when a reply still misses: 🔍
 - 🛟 **One rescue retry** — a reply that *looks* like a call but parses to nothing is re-taught **once** in a different dialect instead of becoming the answer. 🔄
 - 🩹 **Near misses are read, not dropped** — `list_agent` for `list_agents`, a guessed wrapper like `<|begin|>…<|end|>` — repaired to what was meant. Invented names and prose fences are still refused. 🙅
 - 🧠 **The winner is remembered** — once a dialect parses, it is stored per `provider + model` and tried first next time. Config → Labs → *Remember the working dialect* turns the memo off; detection then re-derives every turn. 🏆
+- 🗂️ **Every memo is listed, and says who earned it** — Config → Labs names each remembered dialect by the agent that proved it, keeps the shared provider slots in their own group, and forgets one or all on the spot. Each agent's editor says whether its memo is its own or inherited, so “Forget learned dialect” is never a guess.
 - 🛑 **Off in one click** — Config → Labs → *Dynamic tools* restores the classic fixed instructions exactly, if you ever want them. 🔙
 
 ### 🎛️ Choosing by hand — harness & dialect pins
@@ -1912,11 +1913,13 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v497 — The IDE door unfolds pasted envelopes, ending the ide_write loop
+### 🧭 v498 — Edit opens the agent card again, and the memo says who earned it
 
-*The same pasted-envelope class that stalled `edit_file` reached the IDE tools: the path landed top-level while `content` hid under `"arg"`, so `ide_write` refused every identical retry at IDE drill step 3. All four IDE tools now normalise through the same aliasing — envelope unfolded, foreign spellings folded, stringified args parsed — and their refusals name the received keys plus the flat shape.*
+*A card's **Edit** did nothing, and the cause was two modules that no longer agreed on the release they belonged to: leftover `?v=496` imports gave the editor its own copy of the store, so its `agent:edit` listener sat on a store nothing emitted on, and v497's sidebar imported a `listDialectMemos()` that `harness.js` never exported, so a freshly fetched sidebar failed to link. Both are fixed.*
 
-*IDE drill step 3 teaches the flat shape, and `drill-run.mjs` normalises IDE args with the app's own aliasing. Full suite green.*
+*The export exists now and Config → Labs lists every remembered dialect by the agent that earned it, with shared provider slots in their own group, a per-row **Forget** and **Forget all**. The editor's learned-syntax line also says whether this agent earned the memo or inherited it from the provider slot, so an operator knows what the button will take away.*
+
+*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files.*
 
 
 ---

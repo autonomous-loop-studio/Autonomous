@@ -27,9 +27,9 @@ import {
   TOOL_PATTERNS,
   CONTEXT_LIMITS,
   DEFAULT_RPM,
-} from './harness.data.js?v=497';
-import { store } from './store.js?v=497';
-import { persistence } from './persistence.js?v=497';
+} from './harness.data.js?v=498';
+import { store } from './store.js?v=498';
+import { persistence } from './persistence.js?v=498';
 
 export { API_FAMILIES };
 
@@ -362,6 +362,57 @@ export function forgetDialect(provider, model, agentId) {
   store.set('settings.toolDialectMap', map);
   try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
   return removed;
+}
+
+/**
+ * Where the resolved memo came from: 'agent' when this agent earned its own
+ * entry, 'shared' when it inherits the provider+model slot, '' when nothing
+ * is remembered (or the memo is switched off). The agent editor shows this
+ * so an operator can tell their own learning apart from hand-me-down syntax.
+ */
+export function memoProvenance(provider, model, agentId) {
+  if (!dialectMemoEnabled()) return '';
+  const map = (store.get('settings') || {}).toolDialectMap || {};
+  const own = dialectMemoKey(provider, model, agentId);
+  if (agentId && own && map[own] && BY_ID.has(map[own])) return 'agent';
+  const shared = providerMemoKey(provider, model);
+  if (shared && map[shared] && BY_ID.has(map[shared])) return 'shared';
+  return '';
+}
+
+/**
+ * Every stored memo as `{ key, agentId, provider, model, dialect, kind }`.
+ *
+ * `kind` is 'agent' for a per-agent entry and 'shared' for a provider+model
+ * slot. Callers group by `agentId`: the agent id is the stable handle —
+ * provider and model strings can be retyped, relayed or aliased, but an
+ * agent id never changes out from under its memo. Shapes this module never
+ * writes are skipped, never deleted.
+ *
+ * Deliberately NOT gated by the Labs switch: a switched-off memo is still
+ * stored, still listed, and still forgettable.
+ */
+export function listDialectMemos() {
+  const map = (store.get('settings') || {}).toolDialectMap || {};
+  const out = [];
+  for (const [key, dialect] of Object.entries(map)) {
+    const d = String(dialect || '').toLowerCase();
+    if (!BY_ID.has(d)) continue;
+    const parts = String(key).split('::');
+    if (parts.length >= 3) {
+      out.push({
+        key,
+        agentId: parts[0],
+        provider: parts[1],
+        model: parts.slice(2).join('::'),
+        dialect: d,
+        kind: 'agent',
+      });
+    } else if (parts.length === 2) {
+      out.push({ key, agentId: '', provider: parts[0], model: parts[1], dialect: d, kind: 'shared' });
+    }
+  }
+  return out;
 }
 
 const LEARNED_CONTEXT_KEY = 'settings.contextLimits';
