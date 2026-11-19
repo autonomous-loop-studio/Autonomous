@@ -127,6 +127,29 @@ eq(aliasToolArgs('read_file', '{"path":"a.txt","range":"1-1"}'),
 eq(aliasToolArgs('edit_file', '{"file_path":"a.txt","old_string":"a","new_string":"b"}'),
   { path: 'a.txt', old_string: 'a', new_string: 'b' },
   'a stringified edit argument is parsed before normalization');
+// A live Hard run kept sending the JSON-dialect envelope inside the native
+// input: an explicit top-level path plus the real arguments under "arg".
+// The tool saw the path but no old_string and refused every identical retry.
+eq(aliasToolArgs('edit_file', { path: 'training/training-c8e8o3-p2.txt', arg: { path: 'training/training-c8e8o3-p2.txt', old_string: 'drill 2 passed', new_string: 'drill 2 passed (exact match)' } }),
+  { path: 'training/training-c8e8o3-p2.txt', old_string: 'drill 2 passed', new_string: 'drill 2 passed (exact match)' },
+  'a pasted arg envelope unfolds instead of failing on old_string');
+eq(aliasToolArgs('edit_file', { path: 'real.txt', arg: { path: 'other.txt', old_string: 'a', new_string: 'b' } }).path,
+  'real.txt', 'the explicit top-level slot beats the nested envelope on conflict');
+// The same envelope on the other object tools: top-level wins, nothing drops.
+eq(aliasToolArgs('write_file', { path: 'real.txt', arg: { path: 'other.txt', content: 'hi' } }),
+  { path: 'real.txt', content: 'hi' },
+  'a pasted arg envelope unfolds for write_file too');
+eq(aliasToolArgs('write_file', { arg: { file_path: 'a.txt', text: 'hi' } }),
+  { path: 'a.txt', content: 'hi' },
+  'write_file unfolds the envelope before folding its foreign spellings');
+eq(aliasToolArgs('read_file', { path: 'a.txt', arg: { path: 'a.txt', range: '1-1' } }),
+  { path: 'a.txt', range: '1-1' },
+  'a pasted arg envelope unfolds for read_file and keeps the range');
+// The envelope can also arrive with the slots split across levels: the
+// top-level path lives beside `arg` instead of inside it.
+eq(call('{"tool":"edit_file","path":"split.txt","arg":{"old_string":"a","new_string":"b"}}'),
+  { tool: 'edit_file', arg: { path: 'split.txt', old_string: 'a', new_string: 'b' } },
+  'a top-level path beside the envelope is merged back into the arguments');
 
 // --- the transcript still gets cleaned ---------------------------------------
 // Aliasing must not break span matching: the same call is parsed for run AND for

@@ -31,11 +31,11 @@
 //
 // Nothing here runs arbitrary code or shells out.
 
-import { store } from './store.js?v=495';
-import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=495';
-import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=495';
-import { settingFor } from './agentConfig.js?v=495';
-import { trace } from './trace.js?v=495';
+import { store } from './store.js?v=496';
+import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=496';
+import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=496';
+import { settingFor } from './agentConfig.js?v=496';
+import { trace } from './trace.js?v=496';
 
 const NOTES_KEY = 'router_notes';
 const CUSTOM_TOOL_NAME_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -1431,7 +1431,7 @@ export function bindSandboxTools(api) {
     const path = pathText(a);
     const old = String(a.old_string ?? a.old_str ?? a.old_text ?? '');
     if (!path) return 'error: edit_file needs "path" as a plain string, e.g. {"path":"training/training.txt","old_string":"...","new_string":"..."} — retry the step with that shape';
-    if (!old) return 'error: edit_file needs "old_string"';
+    if (!old) return `error: edit_file needs "old_string" (got keys: ${Object.keys(a).join(', ') || 'none'}) — send the arguments flat, not nested under "arg": {"path":"...","old_string":"...","new_string":"..."}`;
     let next = String(a.new_string ?? a.new_str ?? a.new_text ?? '');
     // Weak models routinely send the two characters backslash-n where they
     // mean a newline, especially after copying a JSON card. In a drill file
@@ -2797,6 +2797,24 @@ function parseArgObject(arg) {
   } catch { return arg; }
 }
 
+/**
+ * Fold a pasted `{tool, arg}` envelope back into flat arguments.
+ *
+ * A model taught the {"tool","arg"} dialect sometimes pastes the whole
+ * envelope into the argument itself: the slots it understood land top-level
+ * (path) while the rest hides under "arg". Merge so explicit top-level
+ * slots win on conflict and nothing silently drops. Idempotent: a flat
+ * object without an object-valued `arg` comes back unchanged.
+ */
+export function unfoldNestedArg(arg) {
+  if (!arg || typeof arg !== 'object' || Array.isArray(arg)) return arg;
+  if (arg.arg && typeof arg.arg === 'object' && !Array.isArray(arg.arg)) {
+    const { arg: nested, ...top } = arg;
+    return { ...nested, ...top };
+  }
+  return arg;
+}
+
 /** One object with the foreign path spellings folded onto our `path`. */
 function fileArgWithPath(arg) {
   if (!arg || typeof arg !== 'object' || Array.isArray(arg)) return null;
@@ -2812,7 +2830,7 @@ function fileArgWithPath(arg) {
 
 /** read_file/show_file: keep range, offset and limit; collapse a lone path. */
 function normaliseReadArg(arg) {
-  const out = fileArgWithPath(parseArgObject(arg));
+  const out = fileArgWithPath(unfoldNestedArg(parseArgObject(arg)));
   if (!out) return arg;
   if (Array.isArray(out.range) && out.range.length === 2) {
     out.range = `${out.range[0]}-${out.range[1]}`;
@@ -2832,6 +2850,10 @@ function normaliseReadArg(arg) {
 function normaliseEditArg(arg) {
   arg = parseArgObject(arg);
   if (!arg || typeof arg !== 'object' || Array.isArray(arg)) return arg;
+  // Same pasted-envelope shape via a markup dialect: an explicit top-level
+  // slot (path) plus the JSON-dialect object hiding under "arg". Fold it up;
+  // explicit top-level keys win on conflict.
+  arg = unfoldNestedArg(arg);
   const out = {};
   const path = pathText(arg);
   if (path != null) out.path = path;
@@ -2903,6 +2925,10 @@ export function resolveToolName(name) {
  */
 export function aliasToolArgs(tool, arg) {
   if (arg == null) return arg;
+  // Any object tool can arrive wearing the pasted envelope (top-level slots
+  // plus the real arguments under "arg"). Unfold once here so every branch
+  // below sees the flat shape; branch normalisers repeat it idempotently.
+  if (arg && typeof arg === 'object' && !Array.isArray(arg)) arg = unfoldNestedArg(arg);
   if (tool === 'exec' || tool === 'exec_start' || tool === 'show_command') {
     if (typeof arg === 'string') {
       const argv = splitCommandLine(arg);
@@ -2926,10 +2952,10 @@ export function aliasToolArgs(tool, arg) {
     return arg;
   }
   if (tool === 'write_file' && arg && typeof arg === 'object' && !Array.isArray(arg)) {
-    const out = { ...arg };
+    const out = { ...unfoldNestedArg(parseArgObject(arg)) };
     if (out.path === undefined) out.path = out.file_path ?? out.filepath ?? out.filename ?? out.file;
     if (out.content === undefined) out.content = out.file_text ?? out.text ?? out.contents ?? out.body;
-    for (const k of ['file_path', 'filepath', 'filename', 'file_text', 'contents', 'body']) delete out[k];
+    for (const k of ['file_path', 'filepath', 'filename', 'file', 'file_text', 'text', 'contents', 'body', 'arg']) delete out[k];
     return out;
   }
   if (tool === 'read_file' || tool === 'show_file') return normaliseReadArg(arg);
@@ -3012,6 +3038,22 @@ function fromToolObject(source) {
   if (arg === undefined) arg = obj.parameters;
   if (arg === undefined) arg = obj.input;
   if (arg === undefined) arg = obj.text;
+  // A pasted envelope can carry BOTH: {"tool":"edit_file","path":"...","arg":{...}}.
+  // Taking only `arg` would silently drop the top-level slots, so when the
+  // argument is an object the remaining top-level keys are merged back in
+  // with the explicit top-level slots winning on conflict.
+  if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
+    const extras = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === 'tool' || k === 'name' || k === 'function' || k === 'note'
+          || k === 'type' || k === 'id' || k === 'call_id'
+          || k === 'arg' || k === 'args' || k === 'arguments' || k === 'parameters'
+          || k === 'input' || k === 'text') continue;
+      if (fn && typeof fn === 'object' && !Array.isArray(fn) && k in fn) continue;
+      if (v !== undefined) extras[k] = v;
+    }
+    if (Object.keys(extras).length) arg = { ...arg, ...extras };
+  }
   if (arg === undefined) {
     // Many models put the tool's arguments at the top level instead of under
     // `arg`: {"tool":"todo_write","todos":[...]}. Reading only the known

@@ -18,7 +18,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=495';
+import { store } from './store.js?v=496';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -271,7 +271,7 @@ export const TRAINING_TASKS = [
     example: "{\"tool\":\"read_file\",\"arg\":\"{file}\"}"},
   { tool: 'read_file', label: 'Read only line 1 of {file}: call read_file with the path and a trailing " 1-1" — not show_file. A range keeps a big file out of your context instead of pulling all of it in.' ,
     example: "{\"tool\":\"read_file\",\"arg\":\"{file} 1-1\"}"},
-  { tool: 'edit_file', label: 'In {file}, use edit_file — not write_file and not str_replace_editor — to replace the exact text "training" with two lines: "training", then "drill 2 passed". old_string is the text you match; new_string is the two-line text, with a real newline between the lines. Use exactly this call: ' + anchoredAppendCard() + '. edit_file is search-and-replace, never an append. (Asks approval — wait for it.)',
+  { tool: 'edit_file', label: 'In {file}, use edit_file — not write_file and not str_replace_editor — to replace the exact text "training" with two lines: "training", then "drill 2 passed". old_string is the text you match; new_string is the two-line text, with a real newline between the lines. Use exactly this call: ' + anchoredAppendCard() + '. Send the arguments flat — {"path":...,"old_string":...,"new_string":...} — not nested under a second "arg". edit_file is search-and-replace, never an append. (Asks approval — wait for it.)',
     example: anchoredAppendCard() },
   { tool: 'edit_file', label: 'Use edit_file again — not write_file and not str_replace_editor — to replace the exact line "drill 2 passed" with "drill 2 passed (exact match)". (Asks approval — old_string/new_string edits only touch the text you name.)' ,
     example: "{\"tool\":\"edit_file\",\"arg\":{\"path\":\"{file}\",\"old_string\":\"drill 2 passed\",\"new_string\":\"drill 2 passed (exact match)\"}}"},
@@ -761,6 +761,38 @@ export function drillRepeatNotice(count, task, step, total, agent = null, diffic
     + (strong
       ? ' The drill does not skip a step — change the argument and try again.'
       : ' Read the error above and change the argument it names.');
+}
+
+/** How many times the SAME error text at one step earns the shape hint. */
+export const SAME_ERROR_HINT = 3;
+
+/** Whether the same-error shape hint is on. Default on; the dialog can switch it off. */
+export function sameErrorHintEnabled(mode = undefined) {
+  const m = mode === undefined ? (store.get('settings.trainingMode') || {}) : (mode || {});
+  return m.sameErrorHint !== false;
+}
+
+/** Normalise an error for same-error counting: volatile spacing collapsed, capped. */
+export function normaliseErrorText(text) {
+  return String(text ?? '').trim().replace(/\s+/g, ' ').slice(0, 200);
+}
+
+/**
+ * What the model is told when the SAME error answers the same step repeatedly.
+ *
+ * `drillRepeatNotice` counts identical CALLS; this counts identical ERRORS,
+ * which is the signal when the call keeps changing but the refusal does not —
+ * usually a shape problem (a nested envelope, a wrong key) rather than wrong
+ * content. It names the flat shape and quotes the step's exact call when the
+ * task has one.
+ */
+export function drillSameErrorNotice(errCount, task, step, total, agent = null, difficulty = 'hard') {
+  const n = Math.max(0, Math.floor(Number(errCount) || 0));
+  if (n < SAME_ERROR_HINT) return '';
+  const example = trainingTaskExample(task, agent, difficulty);
+  const where = step && total ? ` at step ${step}/${total}` : '';
+  return `[Drill guard] The same error has answered ${n} times${where}. The call shape is probably wrong, not the content: send the arguments flat ({"path":...,"old_string":...,"new_string":...}), not nested under a second "arg".`
+    + (example ? ` Expected: ${example}.` : '');
 }
 
 /**

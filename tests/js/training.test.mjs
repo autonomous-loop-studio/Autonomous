@@ -35,7 +35,8 @@ const {
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
   drillPassFile, drillWriteRefusal, drillStepRefusal,
   trainingTaskExample, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice,
-  trainingAccuracy, todoPlanIsCurrent, DRILL_REPEAT_HINT, DRILL_REPEAT_LIMIT,
+  drillSameErrorNotice, sameErrorHintEnabled, normaliseErrorText,
+  trainingAccuracy, todoPlanIsCurrent, DRILL_REPEAT_HINT, DRILL_REPEAT_LIMIT, SAME_ERROR_HINT,
 } = await import(`../../ui/js/training.js?v=${version}`);
 const trainingModule = await import(`../../ui/js/training.js?v=${version}`);
 const { store } = await import(`../../ui/js/store.js?v=${version}`);
@@ -861,6 +862,18 @@ ok(repeatStrong.includes('does not skip a step') && !repeatStrong.includes('Paus
 const failureNotice = drillFailureNotice(TRAINING_TASKS[1], 2, 17, { id: 'a' }, 'hard');
 ok(failureNotice.includes('did not pass step 2/17') && failureNotice.includes('Next call must be exactly:'),
   'a failed drill check names the step and the exact call');
+// The same ERROR repeating names the shape, not just the call.
+eq(drillSameErrorNotice(SAME_ERROR_HINT - 1, TRAINING_TASKS[8], 9, 17, { id: 'a' }, 'hard'), '',
+  'below the same-error threshold there is no shape hint');
+const sameErr = drillSameErrorNotice(SAME_ERROR_HINT, TRAINING_TASKS[8], 9, 17, { id: 'a' }, 'hard');
+ok(sameErr.includes('same error') && sameErr.includes('flat') && sameErr.includes('Expected: {"tool":"edit_file"'),
+  'the same-error hint names the flat shape and the exact call');
+eq(normaliseErrorText('  a\n b '), 'a b', 'error text is collapsed for counting');
+eq(sameErrorHintEnabled({}), true, 'the shape hint defaults to on');
+eq(sameErrorHintEnabled({ sameErrorHint: false }), false, 'the dialog can switch the shape hint off');
+// The first edit step teaches the flat shape once, the way echo teaches its bare string.
+ok(TRAINING_TASKS[7].label.includes('not nested under a second "arg"'),
+  'the first Hard edit step teaches the flat shape');
 
 // First-try rate is per step, not per attempt: any failure on a step makes it
 // not first-try, and the worst step is the one with the most failures.

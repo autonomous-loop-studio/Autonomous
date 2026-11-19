@@ -7,22 +7,23 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=495';
-import { K } from '../storage.js?v=495';
-import { persistence } from '../persistence.js?v=495';
-import { api } from '../api.js?v=495';
-import { isNoTokenError } from '../apiError.js?v=495';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=495';
-import { errText } from '../api.js?v=495';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=495';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=495';
-import { snapshot } from '../rateGovernor.js?v=495';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=495';
-import { resetBrowserEnabled } from '../toolManifest.js?v=495';
-import { perf } from '../perf.js?v=495';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=495';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=495';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=495';
+import { store } from '../store.js?v=496';
+import { K } from '../storage.js?v=496';
+import { persistence } from '../persistence.js?v=496';
+import { api } from '../api.js?v=496';
+import { isNoTokenError } from '../apiError.js?v=496';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=496';
+import { errText } from '../api.js?v=496';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=496';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=496';
+import { snapshot } from '../rateGovernor.js?v=496';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=496';
+import { resetBrowserEnabled } from '../toolManifest.js?v=496';
+import { listDialectMemos, forgetDialect, protocolLabel } from '../harness.js?v=496';
+import { perf } from '../perf.js?v=496';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=496';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=496';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=496';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -808,6 +809,8 @@ export class Sidebar {
     }).join('');
     const difficultyNote = armed ? ' Stop training to switch.' : '';
     const showEveryPass = !!tm.showEveryPass;
+    // Default on: unset reads as enabled, so existing installs keep the hint.
+    const sameErrorHint = tm.sameErrorHint !== false;
     const customHint = difficulty === 'custom' && !customSteps.length
       ? ' No custom steps saved yet — open the builder below.'
       : '';
@@ -849,6 +852,11 @@ export class Sidebar {
             <span>Show every pass</span>
           </label>
           <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">Off shows only the final results; on adds a report after every completed pass.</div>
+          <label class="training-show-passes">
+            <input type="checkbox" id="trainingSameErrorHint" ${sameErrorHint ? 'checked' : ''}>
+            <span>Same-error shape hint</span>
+          </label>
+          <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">On names the flat call shape when the same error answers one step 3 times. Off leaves only the identical-call guard.</div>
           <ul class="training-points">
             <li>All active agents are throttled to ~50% of their normal request rate.</li>
             <li>They work ONLY the drill below, in order — inside the <code>training/</code> sandbox for the file drills, on the real desktop for Frontier, in the built-in browser for Browser, or wherever a custom step directs — nothing else while the mode is on.</li>
@@ -901,6 +909,11 @@ export class Sidebar {
         this._openCustomDrillBuilder(() => this._openTrainingDialog());
       });
     }
+    overlay.querySelector('#trainingSameErrorHint').addEventListener('change', (e) => {
+      const cur = store.get('settings.trainingMode') || {};
+      store.set('settings.trainingMode', { ...cur, sameErrorHint: !!e.target.checked });
+      try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+    });
     overlay.querySelector('#trainingShowEveryPass').addEventListener('change', (e) => {
       const cur = store.get('settings.trainingMode') || {};
       store.set('settings.trainingMode', { ...cur, showEveryPass: !!e.target.checked });
@@ -2440,6 +2453,8 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
           <div class="toggle ${settings.toolDialectMemo !== false ? 'active' : ''}" id="sbDialectMemo"><div class="toggle-knob"></div></div>
         </div>
         <div class="form-hint">Once an agent's tool calls parse AND execute, remember which dialect worked for that agent (and the provider + model it ran on) and start there next time. Another agent on the same model is unaffected, and a model switch makes it learn again. Off re-derives it every turn.</div>
+        <div class="form-hint" style="margin-top:8px">Learned dialects, filed per agent id — the id never changes, while provider and model names can be retyped or relayed, so those are shown for context only. Forgetting here is immediate.</div>
+        <div id="sbDialectList" style="margin-top:8px"></div>
         <div class="toggle-row">
           <span class="toggle-label">API pool <span class="form-hint-inline">rotate extra provider keys</span></span>
           <div class="toggle ${settings.apiPool ? 'active' : ''}" id="sbApiPool"><div class="toggle-knob"></div></div>
@@ -2828,6 +2843,7 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
     this._initToggle('sbLiveBg', (val) => store.set('settings.browserLiveBackground', val));
     this._initBrowserToggle();
     this._loadLabsStatus();
+    this._renderDialectMemos();
     this._initUpdates();
 
     // Resource Manager: every switch defaults off; turning one on lets the
@@ -5717,6 +5733,83 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
     } catch {
       el.textContent = '';
     }
+  }
+
+  /**
+   * Config → Labs: every remembered dialect, grouped by agent id.
+   *
+   * The agent id is the stable handle; provider and model strings are shown
+   * for context only. Known ids resolve to roster names; keys for deleted
+   * agents stay visible (and forgettable) instead of silently vanishing. The
+   * shared provider+model slots sit in their own group at the end: any agent
+   * on that model inherits them. Like the rest of Labs, forgetting here is
+   * immediate — no SAVE — with a toast naming what was dropped.
+   */
+  _renderDialectMemos() {
+    const box = document.getElementById('sbDialectList');
+    if (!box) return;
+    const agents = store.get('agents') || [];
+    const roster = new Map(agents.map(a => [a.id, a]));
+    const memos = listDialectMemos();
+    if (!memos.length) {
+      box.innerHTML = `<div class="form-hint">No learned dialects stored.</div>`;
+      box.onclick = null;
+      return;
+    }
+    const agentIds = [...new Set(memos.filter(m => m.kind === 'agent').map(m => m.agentId))]
+      .sort((x, y) => {
+        const ix = agents.findIndex(a => a.id === x);
+        const iy = agents.findIndex(a => a.id === y);
+        return (ix === -1 ? 1e9 : ix) - (iy === -1 ? 1e9 : iy);
+      });
+    const shared = memos.filter(m => m.kind === 'shared');
+    const row = (m, agentId) => {
+      const ctx = [m.provider, m.model].filter(Boolean).join(' / ') || '(unknown model)';
+      return `<div class="mem-row" style="display:flex;align-items:center;gap:8px;margin-top:4px">`
+        + `<span class="tool-name">${esc(protocolLabel(m.dialect))}</span>`
+        + `<span class="form-hint-inline">${esc(ctx)}</span>`
+        + `<button type="button" class="btn btn-ghost btn-sm" style="margin-left:auto"`
+        + ` data-dialect-forget="${escAttr(m.provider || '')}" data-model-forget="${escAttr(m.model || '')}" data-agent-forget="${escAttr(agentId)}">Forget</button>`
+        + `</div>`;
+    };
+    let html = '';
+    for (const id of agentIds) {
+      const a = roster.get(id);
+      const title = a ? `${a.name} (${agentCode(a)})` : `Deleted agent ${id}`;
+      html += `<div class="form-hint" style="margin-top:8px">${esc(title)}</div>`;
+      html += memos.filter(m => m.kind === 'agent' && m.agentId === id).map(m => row(m, id)).join('');
+    }
+    if (shared.length) {
+      html += `<div class="form-hint" style="margin-top:8px">Shared provider slots — inherited by any agent on that model</div>`;
+      html += shared.map(m => row(m, '')).join('');
+    }
+    html += `<button type="button" class="btn btn-ghost btn-sm" id="sbDialectForgetAll" style="margin-top:8px">Forget all</button>`;
+    box.innerHTML = html;
+    box.onclick = (e) => {
+      if (e.target.id === 'sbDialectForgetAll') {
+        const map = { ...(store.get('settings') || {}).toolDialectMap };
+        let n = 0;
+        for (const m of listDialectMemos()) {
+          if (m.key in map) { delete map[m.key]; n++; }
+        }
+        if (!n) return;
+        store.set('settings.toolDialectMap', map);
+        try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+        store.emit('toast', { message: `Forgot ${n} learned dialect${n === 1 ? '' : 's'}`, type: 'success' });
+        this._renderDialectMemos();
+        this._loadLabsStatus();
+        return;
+      }
+      const btn = e.target.closest('[data-dialect-forget]');
+      if (!btn) return;
+      const removed = forgetDialect(
+        btn.dataset.dialectForget || '', btn.dataset.modelForget || '', btn.dataset.agentForget || '');
+      store.emit('toast', removed
+        ? { message: `Forgot "${protocolLabel(removed)}" — the next turn starts from the provider heuristic`, type: 'success' }
+        : { message: 'Nothing stored for that entry', type: 'info' });
+      this._renderDialectMemos();
+      this._loadLabsStatus();
+    };
   }
 
   /**

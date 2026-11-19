@@ -278,12 +278,33 @@ const SCALAR_ARGS = {
  * Sandbox/editor tools already take objects; the small tools historically took
  * a bare string, so unwrap those here instead of changing every implementation.
  */
+/**
+ * Fold a pasted `{tool, arg}` envelope back into flat arguments.
+ *
+ * Shared with the markup path's `unfoldNestedArg` in tools.js (kept separate
+ * because this module has no dependencies): explicit top-level slots win on
+ * conflict and nothing silently drops. Idempotent.
+ */
+export function unfoldNestedArg(arg) {
+  if (!arg || typeof arg !== 'object' || Array.isArray(arg)) return arg;
+  if (arg.arg && typeof arg.arg === 'object' && !Array.isArray(arg.arg)) {
+    const { arg: nested, ...top } = arg;
+    return { ...nested, ...top };
+  }
+  return arg;
+}
+
 export function nativeToolArgs(name, args) {
   let a = args;
   if (typeof a === 'string') {
     try { a = JSON.parse(a); } catch { a = { arg: a }; }
   }
   a = (a && typeof a === 'object' && !Array.isArray(a)) ? a : {};
+  // A model taught the {"tool","arg"} JSON dialect sometimes pastes the whole
+  // envelope into the native input: the schema slots it understood land
+  // top-level (path) while the rest hides under "arg". Merge them so the
+  // explicit top-level slots win on conflict and nothing silently drops.
+  a = unfoldNestedArg(a);
   if (name === 'declare_goal_complete') {
     return { arg: undefined, note: String(a.summary ?? '') };
   }

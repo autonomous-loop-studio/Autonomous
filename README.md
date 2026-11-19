@@ -133,8 +133,9 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v495** — current | Both clients gate the drill todo plan the same way, through one shared path scrub, so a new pass can't reuse the last pass's file. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
-| **v494** | A todo list that lost its commas no longer stalls Easy step 2: every quoted item is recovered in order instead of returning a schema error. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v495) |
+| **v496** — current | Pasted tool envelopes unfold instead of failing, the Hard drill teaches the flat call shape, and a same-error hint (toggleable) names it after three identical refusals. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v495** | Both clients gate the drill todo plan the same way, through one shared path scrub, so a new pass can't reuse the last pass's file. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v495) |
+| **v494** | A todo list that lost its commas no longer stalls Easy step 2: every quoted item is recovered in order instead of returning a schema error. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v494) |
 | **v482** | A read-only storage folder is refused at boot with the exact chown line, so it can never look like a hang again. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v482) |
 | **v481** | Shell access no longer jails an agent outside the app, so a fresh copy's drill can reach its exec step. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v481) |
 | **v480** | Start can no longer hang on its own drill archive, and a stale jail named like the sandbox lands in the sandbox. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v480) |
@@ -410,7 +411,7 @@ The same checks ship as a script, so CI or an operator never has to paste them: 
 | 🔑 | **API pool** | Rotate a provider's extra keys after N requests; rest them on a 429 |
 | 🌐 | **Built-in browser** | A real Chrome/Edge you and the agents drive — watch, click, type, log in |
 | ♾️ | **Always-On loop** | Standing goals, auto re-prompted on a cadence — caps, hold/release, one master kill switch |
-| 🏋️ | **Training mode** | A paced tool drill for every active agent — ~50% request rate, **Easy 12, Hard 17, Advanced 8, Frontier 6, Browser 9, IDE 8**, or **Custom** in the popup, each Start in a fresh session, sandbox drills in each agent's own `training/` file, retry-until-pass with todo logging — armed from a dumbbell in the Agents header — Start posts the drill into chat so the whole run stays visible, and **`node drill-run.mjs --mode <drill>`** runs any of them headlessly against a real model, graded by the same code |
+| 🏋️ | **Training mode** | A paced tool drill for every active agent — ~50% request rate, **Easy 12, Hard 17, Advanced 8, Frontier 6, Browser 9, IDE 8**, or **Custom** in the popup, each Start in a fresh session, sandbox drills in each agent's own `training/` file, retry-until-pass with todo logging — armed from a dumbbell in the Agents header — Start posts the drill into chat so the whole run stays visible, and **`node drill-run.mjs --mode <drill>`** runs any of them headlessly against a real model, graded by the same code; both clients gate the drill todo plan through one shared path scrub, every object tool unfolds a pasted envelope before it runs, and a same-error shape hint (toggleable in the popup) names the flat call after three identical refusals |
 | 📖 | **Harness & training guide** | Auto-fit, manual pins and the six- to seventeen-step drills in one place — [Auto Forming Harnesses, Dialects & Training Mode](#-auto-forming-harnesses-dialects--training-mode) |
 | ❝ | **Global pre-prompt** | One instruction for every agent — **prepend** (default) or **replace**, toggled live |
 | 🧠 | **Context assembler** | History & tool output budgeted to each model's *real* window, with live compaction |
@@ -1910,11 +1911,11 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 📌 v495 — Both clients gate the drill plan the same way, through one shared scrub
+### 📌 v496 — Pasted tool envelopes unfold, and the drill names the flat shape
 
-*A new drill pass replayed the previous pass's completed todo list, and a plan rebuilt from it copied the old `training-*-pN.txt` path into the write step — the pass-4 write of pass 3's file the pre-tool refusal caught. The desktop had the gate and the scrub; mobile had neither in one place.*
+*A model that pastes the whole `{"tool","arg"}` envelope into a tool's arguments got an `old_string` refusal on every identical retry. Every object tool now unfolds the envelope first — top-level slots win — the parser merges split-level slots, and the Hard drill teaches the flat shape once.*
 
-*`todoPlanIsCurrent` is now ported to mobile and both clients share one `scrubDrillFile` helper, so a stale pass path is rewritten to the pass in progress before the model ever sees it. The self-test slug drift is fixed alongside it. Full suite green.*
+*When the same error answers one step three times, the drill now names the flat shape with the step's exact call. The hint defaults on and switches off in the Training dialog (`Same-error shape hint`). Full suite green.*
 
 
 ---

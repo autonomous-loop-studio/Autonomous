@@ -12,6 +12,7 @@ import {
   nativeToolDefs,
   nativeToolChoice,
   nativeToolArgs,
+  unfoldNestedArg,
   createNativeCallState,
   ingestNativeDelta,
   nativeCalls,
@@ -68,6 +69,16 @@ eq(nativeToolArgs('read_file', '{"path":"a.js","range":"1-1"}').arg,
   { path: 'a.js', range: '1-1' },
   'read_file parses a stringified native argument');
 eq(nativeToolArgs('write_file', { path: 'a.js', content: 'x' }).arg.path, 'a.js', 'write_file keeps object');
+eq(nativeToolArgs('edit_file', { path: 'p.txt', arg: { path: 'p.txt', old_string: 'a', new_string: 'b' } }),
+  { arg: { path: 'p.txt', old_string: 'a', new_string: 'b' } },
+  'a pasted arg envelope unfolds on the native path too');
+eq(unfoldNestedArg({ path: 'top.txt', arg: { path: 'nested.txt', old_string: 'a' } }),
+  { path: 'top.txt', old_string: 'a' },
+  'the shared unfold keeps the explicit top-level slot on conflict');
+eq(unfoldNestedArg({ path: 'flat.txt', old_string: 'a' }),
+  { path: 'flat.txt', old_string: 'a' },
+  'a flat argument passes through the unfold unchanged');
+eq(unfoldNestedArg('training'), 'training', 'a scalar passes through the unfold unchanged');
 eq(nativeToolArgs('declare_goal_complete', { summary: 'done' }),
   { arg: undefined, note: 'done' }, 'goal summary becomes the note');
 eq(nativeToolArgs('write_note', { text: 'x', name: 'n' }).note, 'n', 'write_note keeps its note name');

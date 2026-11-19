@@ -15,6 +15,14 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🔧 Pasted tool envelopes unfold instead of failing, and the drill names the flat shape *(`VERSION` 495 → 496, cache-buster v495 → v496)*
+
+*A model taught the `{"tool","arg"}` dialect sometimes pastes the whole envelope into the argument itself: the slots it understood land top-level (`path`) while the rest hides under `"arg"`. `edit_file` then saw the path but no `old_string` and refused every identical retry. A shared `unfoldNestedArg` helper now folds the envelope flat on both the markup and native paths — explicit top-level slots win on conflict and nothing silently drops — `fromToolObject` merges split-level slots (`"path"` beside `"arg"` instead of inside it), `read_file` unfolds before keeping its range, and `write_file` unfolds before folding its foreign spellings (and now drops the consumed aliases instead of passing them through).*
+
+*The Hard drill teaches the shape once: step 8 now says to send the arguments flat — `{"path":...,"old_string":...,"new_string":...}` — not nested under a second `"arg"`. And when the SAME error answers one step three times, which usually means a shape problem even when the call keeps changing, the drill names the flat shape with the step's exact call. That hint defaults on and switches off in the Training dialog (`Same-error shape hint`); the identical-call guard underneath is untouched, so switching it off loses nothing that existed before. Mobile carries the unfold and the drill text (local-only, uncommitted); its repeat-guard machinery predates the desktop's, so the same-error hint is desktop-only until that is backported.*
+
+*Full suite green: JS 46 files / 1,680 assertions, mobile JS 44 files / 1,481 assertions. `VERSION` 495 → 496, `APP_VERSION` 495 → 496, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+
 ## 🔁 Both clients gate the drill plan the same way, through one shared scrub *(`VERSION` 494 → 495, cache-buster v494 → v495)*
 
 *The desktop hid the previous pass's completed todo list until step 2 wrote the current one (`todoPlanIsCurrent`), and rewrote an old `training-*-pN.txt` path copied into the new plan to the pass in progress. Mobile had the same stale-path trap — the pass-4 write of pass 3's file that the pre-tool refusal caught — but neither the gate nor the shared helper, with the same scrub duplicated in each chat client.*

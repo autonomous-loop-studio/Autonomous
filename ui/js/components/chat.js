@@ -7,8 +7,8 @@
 // CHAT.JS — Chat panel controller
 // ============================================
 
-import { store } from '../store.js?v=495';
-import { K as STORAGE_K } from '../storage.js?v=495';
+import { store } from '../store.js?v=496';
+import { K as STORAGE_K } from '../storage.js?v=496';
 
 const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
 
@@ -17,29 +17,29 @@ const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
  * purpose: steering is a human override, not a licence to run unbounded.
  */
 const MAX_STEER_STEPS = 8;
-import { api, errText } from '../api.js?v=495';
-import { persistence } from '../persistence.js?v=495';
-import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=495';
-import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=495';
-import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=495';
-import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=495';
-import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=495';
-import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=495';
-import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=495';
-import { usageFor } from '../rateGovernor.js?v=495';
-import { trace } from '../trace.js?v=495';
-import { offerRebind } from './rebindOffer.js?v=495';
-import { latency } from '../latency.js?v=495';
-import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=495';
-import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=495';
-import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal, drillStepRefusal, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice, todoPlanIsCurrent, scrubDrillFile } from '../training.js?v=495';
-import { SlashCommands } from '../slashCommands.js?v=495';
-import { parseRoute, routingHelp } from '../routing.js?v=495';
-import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=495';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=495';
-import { MessageRenderer, renderToolCalls } from './message.js?v=495';
-import { createAvatar } from './avatar.js?v=495';
-import * as comms from '../commsLog.js?v=495';
+import { api, errText } from '../api.js?v=496';
+import { persistence } from '../persistence.js?v=496';
+import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=496';
+import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=496';
+import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=496';
+import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=496';
+import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=496';
+import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=496';
+import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=496';
+import { usageFor } from '../rateGovernor.js?v=496';
+import { trace } from '../trace.js?v=496';
+import { offerRebind } from './rebindOffer.js?v=496';
+import { latency } from '../latency.js?v=496';
+import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=496';
+import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=496';
+import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal, drillStepRefusal, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice, drillSameErrorNotice, sameErrorHintEnabled, normaliseErrorText, todoPlanIsCurrent, scrubDrillFile } from '../training.js?v=496';
+import { SlashCommands } from '../slashCommands.js?v=496';
+import { parseRoute, routingHelp } from '../routing.js?v=496';
+import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=496';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=496';
+import { MessageRenderer, renderToolCalls } from './message.js?v=496';
+import { createAvatar } from './avatar.js?v=496';
+import * as comms from '../commsLog.js?v=496';
 
 /**
  * How long an agent may keep working on a single task.
@@ -1368,15 +1368,29 @@ _commitAgentReply(agent, result, live) {
    */
   _noteDrillRepeat(agent, call, resultTextValue) {
     if (!isTrainingActive()) return { notice: '', count: 0 };
-    const run = Number((store.get('settings.trainingMode') || {}).startedAt) || 0;
-    if (this._drillRun !== run) { this._drillRun = run; this._drillRepeats = {}; }
+    const tm = store.get('settings.trainingMode') || {};
+    const run = Number(tm.startedAt) || 0;
+    if (this._drillRun !== run) { this._drillRun = run; this._drillRepeats = {}; this._drillErrors = {}; }
     this._drillRepeats = this._drillRepeats || {};
+    this._drillErrors = this._drillErrors || {};
     const pos = trainingNow(agent);
     if (!pos.task) return { notice: '', count: 0 };
     const key = `${agent.id}|${pos.step}|${callSignature(call.tool, call.arg)}`;
     const count = Number(this._drillRepeats[key] || 0) + 1;
     this._drillRepeats[key] = count;
-    const notice = drillRepeatNotice(count, pos.task, pos.step + 1, pos.total, agent, pos.difficulty);
+    let notice = drillRepeatNotice(count, pos.task, pos.step + 1, pos.total, agent, pos.difficulty);
+    // Same ERROR, not just same call: the shape is probably wrong even when
+    // the call keeps changing. Count the normalised error per agent+step and,
+    // from the third identical answer, name the flat shape. The dialog can
+    // switch this off; error text can carry volatile details, so a mismatch
+    // here simply means no hint — the repeat guard above still applies.
+    if (sameErrorHintEnabled(tm)) {
+      const errKey = `${agent.id}|${pos.step}|${normaliseErrorText(resultTextValue)}`;
+      const errCount = Number(this._drillErrors[errKey] || 0) + 1;
+      this._drillErrors[errKey] = errCount;
+      const sameErr = drillSameErrorNotice(errCount, pos.task, pos.step + 1, pos.total, agent, pos.difficulty);
+      if (sameErr && !notice.includes(sameErr)) notice = notice ? `${notice}\n\n${sameErr}` : sameErr;
+    }
     return { notice, count, step: pos.step + 1, total: pos.total };
   }
 
@@ -1385,6 +1399,11 @@ _commitAgentReply(agent, result, live) {
     if (this._drillRepeats) {
       for (const key of Object.keys(this._drillRepeats)) {
         if (key.startsWith(`${agent.id}|`)) delete this._drillRepeats[key];
+      }
+    }
+    if (this._drillErrors) {
+      for (const key of Object.keys(this._drillErrors)) {
+        if (key.startsWith(`${agent.id}|`)) delete this._drillErrors[key];
       }
     }
     const all = { ...(store.get('trainingStuck') || {}) };
