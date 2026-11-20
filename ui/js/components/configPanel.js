@@ -59,6 +59,8 @@ export class ConfigPanel {
         hint.textContent = n
           ? `Replies will be read by this computer's built-in voices. No API key, no cost, works offline. ${n} voice(s) available.`
           : 'This browser reports no built-in voices. On Linux that is common — install a speech-dispatcher voice package, or switch the engine back to Auto and add an API key.';
+      } else if (String(document.getElementById('cfgAudioEndpoint')?.value || store.get('settings.audioEndpoint') || '').trim()) {
+        hint.textContent = 'Uses your custom endpoint above (e.g. a local TTS server) — no provider key needed. Requests go through this server. Blank restores the provider default.';
       } else {
         hint.textContent = 'Uses the API key saved for the provider above. Requests go through this server.';
       }
@@ -88,6 +90,8 @@ export class ConfigPanel {
     // --- Speech ---
     const audioProvider = document.getElementById('cfgAudioProvider');
     if (audioProvider) audioProvider.value = settings.audioProvider || 'openai';
+    const audioEndpoint = document.getElementById('cfgAudioEndpoint');
+    if (audioEndpoint) audioEndpoint.value = settings.audioEndpoint || '';
     const pitch = document.getElementById('cfgAudioPitch');
     const pitchVal = document.getElementById('cfgAudioPitchVal');
     if (pitch) {
@@ -128,6 +132,8 @@ export class ConfigPanel {
     if (providerEl) {
       providerEl.onchange = () => { this._fillVoices(); this._audioStatus(); };
     }
+    const endpointEl = document.getElementById('cfgAudioEndpoint');
+    if (endpointEl) endpointEl.oninput = () => this._audioStatus();
     // Chrome hands over its voice list late; redraw the picker when it lands.
     store.on('audio:voices', () => {
       if (document.getElementById('configModal')?.classList.contains('open')) {
@@ -214,6 +220,8 @@ export class ConfigPanel {
     if (aEngine) store.set('settings.audioEngine', aEngine.value);
     const aProvider = document.getElementById('cfgAudioProvider');
     if (aProvider) store.set('settings.audioProvider', aProvider.value);
+    const aEndpoint = document.getElementById('cfgAudioEndpoint');
+    if (aEndpoint) store.set('settings.audioEndpoint', aEndpoint.value.trim());
     const aVoice = document.getElementById('cfgAudioVoice');
     if (aVoice && aVoice.value) {
       // Kept apart: the two engines name voices completely differently, and a

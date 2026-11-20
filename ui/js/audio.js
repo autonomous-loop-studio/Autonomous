@@ -224,8 +224,17 @@ export class AudioController {
     return !!(p && p.apiKey);
   }
 
-  /** Base URL for the audio call, derived from the chat endpoint. */
+  /**
+   * Base URL for the audio call.
+   *
+   * A custom endpoint (Settings → Speech) wins: that is the local-model door —
+   * point it at an OpenAI-compatible TTS server such as
+   * `http://localhost:8000/v1` and requests go there instead of the cloud.
+   * Otherwise the provider's own chat endpoint is reused, minus the chat path.
+   */
   endpointFor(provider) {
+    const custom = String(this.settings.audioEndpoint || '').trim();
+    if (custom) return custom;
     if (!provider || !provider.endpoint) return '';
     return String(provider.endpoint)
       .replace(/\/(chat\/completions|messages)$/, '');
@@ -288,18 +297,18 @@ export class AudioController {
   /**
    * Which engine to speak with.
    *
-   * 'auto' still falls back to the OS voices when the chosen provider has no
-   * key, which is what makes this work with no API at all. 'browser' forces
-   * them even when a key exists.
+   * 'auto' uses the cloud provider when it can (a key saved, or a custom —
+   * usually local — endpoint that needs none) and falls back to the OS voices
+   * otherwise, which is what makes this work with no API at all. 'browser'
+   * forces the OS voices even when a key exists; 'cloud' forces the provider
+   * and fails loudly instead of silently falling back.
    */
   engine() {
-    // 'browser' forces built-in voices. 'auto' and anything else also uses
-    // built-in voices (no API) unless the user explicitly chose a cloud provider
-    // AND that provider has a valid API key.
     if (this.settings.audioEngine === 'browser') return 'browser';
-    if (this.settings.audioEngine === 'auto') return 'browser';
-    // Only explicit cloud providers (openai, groq, etc.) can use cloud
-    return this.isCloudReady() ? 'cloud' : 'browser';
+    if (this.settings.audioEngine === 'cloud') return 'cloud';
+    // 'auto' (and anything unknown): cloud when usable, OS voices otherwise.
+    const customEndpoint = String(this.settings.audioEndpoint || '').trim();
+    return (this.isCloudReady() || customEndpoint) ? 'cloud' : 'browser';
   }
 
   voiceList() {

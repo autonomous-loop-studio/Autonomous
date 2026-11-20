@@ -220,7 +220,8 @@
         <div class="form-group">
           <label class="form-label">Speech <span class="form-hint-inline">read replies aloud</span></label>
           <select class="form-select" id="cfgAudioEngine">
-            <option value="auto">Auto — use the provider above, fall back to built-in voices</option>
+            <option value="auto">Auto — provider when usable, built-in voices otherwise</option>
+            <option value="cloud">Provider above (API key or custom endpoint)</option>
             <option value="browser" selected>Built-in voices only (no API, works offline)</option>
           </select>
           <select class="form-select" id="cfgAudioProvider">
@@ -228,7 +229,9 @@
             <option value="groq">Groq</option>
           </select>
           <div class="form-hint" id="cfgAudioEngineHint"></div>
-          <select class="form-select" id="cfgAudioVoice"></select>
+          <input type="text" class="form-input" id="cfgAudioEndpoint" placeholder="Custom TTS endpoint, e.g. http://localhost:8000/v1 (blank = provider default)" autocomplete="off" spellcheck="false">
+          <div class="form-hint">Optional: point speech at your own OpenAI-compatible TTS server. Local hosts may use http; anything else must be https.</div>
+          <select class="form-select" id="cfgAudioVoice" style="margin-top:6px"></select>
           <input type="range" class="form-input" id="cfgAudioSpeed" min="0.5" max="2" step="0.05" value="1">
           <div class="form-hint">Speed <span id="cfgAudioSpeedVal">1.00</span>&times;</div>
           <input type="range" class="form-input" id="cfgAudioPitch" min="0.5" max="1.6" step="0.05" value="1" style="margin-top:6px">

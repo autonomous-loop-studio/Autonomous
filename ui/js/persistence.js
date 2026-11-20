@@ -255,6 +255,7 @@ class Persistence {
       // 'browser' forces built-in OS voices (no API, no credits, works offline).
       // 'auto' would try cloud providers first, which requires API credits.
       audioEngine: 'browser',
+      audioEndpoint: '',
       audioBrowserVoice: '',
       audioPitch: 1,
       // Sent as X-Router-Token on every API call.
