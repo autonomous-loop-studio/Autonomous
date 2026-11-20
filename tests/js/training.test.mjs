@@ -173,8 +173,8 @@ for (const name of ['window_list', 'window_open', 'window_type']) {
 }
 ok(TRAINING_TASKS_FRONTIER.some(t => t.tool === 'window_open' && /notepad/i.test(t.label)),
   'frontier opens Notepad');
-ok(TRAINING_TASKS_FRONTIER.some(t => t.tool === 'window_type' && /Hello!/.test(t.label)),
-  'frontier types Hello!');
+ok(TRAINING_TASKS_FRONTIER.some(t => t.tool === 'window_type' && /Autonomous Loop Studio - By MBHudson/.test(t.label)),
+  'frontier types Autonomous Loop Studio - By MBHudson');
 eq(trainingTasksFor('frontier'), TRAINING_TASKS_FRONTIER, 'frontier selects its own table');
 eq(trainingChecksFor('frontier'), DRILL_CHECKS_FRONTIER, 'frontier selects its own checks');
 eq(trainingStepList(null, 'frontier').length, 6, 'the dialog can list the frontier steps');
@@ -490,7 +490,7 @@ const frontierCalls = [
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },
   { tool: 'window_list', arg: {}, status: 'ok', result: 'Desktop programs: notepad - C:/Windows/System32/notepad.exe | running' },
   { tool: 'window_open', arg: { name: 'notepad' }, status: 'ok' },
-  { tool: 'window_type', arg: { name: 'notepad', text: 'Hello!' }, status: 'ok', result: 'typed 6 character(s) into "notepad" (pid 9040) — Typed 6 character(s) into the newest window. Read back from the window: the typed text is there.' },
+  { tool: 'window_type', arg: { name: 'notepad', text: 'Autonomous Loop Studio - By MBHudson' }, status: 'ok', result: 'typed 36 character(s) into "notepad" (pid 9040) — Typed 36 character(s) into the newest window. Read back from the window: the typed text is there.' },
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },
 ];
 const frontierVerdict = drillVerdict(frontierCalls, TRAINING_FILE, 'frontier');
@@ -501,7 +501,7 @@ eq(frontierVerdict.totalSteps, 6, 'frontier verdict uses the 6-step table');
 // Arguments alone are not enough: the typing result must say the window was
 // read back and contained the text.
 const unverifiedFrontierCalls = frontierCalls.map(call => call.tool === 'window_type'
-  ? { ...call, result: 'typed 6 character(s) into "notepad" — The window text could not be read back, so this typing is unverified.' }
+  ? { ...call, result: 'typed 36 character(s) into "notepad" — The window text could not be read back, so this typing is unverified.' }
   : call);
 const unverifiedFrontierVerdict = drillVerdict(unverifiedFrontierCalls, TRAINING_FILE, 'frontier');
 ok(!unverifiedFrontierVerdict.complete && !unverifiedFrontierVerdict.clean,
@@ -550,8 +550,8 @@ const failedFrontierPass = [
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },
   { tool: 'window_list', arg: {}, status: 'ok', result: 'notepad | running' },
   { tool: 'window_open', arg: { name: 'notepad' }, status: 'ok' },
-  { tool: 'window_type', arg: { name: 'notepad', text: 'Hello!' }, status: 'error', result: 'nothing to type into' },
-  { tool: 'window_type', arg: { name: 'notepad', text: 'Hello!' }, status: 'ok', result: 'typed 6 character(s) into "notepad" (pid 9040) — Typed 6 character(s) into the newest window. Read back from the window: the typed text is there.' },
+  { tool: 'window_type', arg: { name: 'notepad', text: 'Autonomous Loop Studio - By MBHudson' }, status: 'error', result: 'nothing to type into' },
+  { tool: 'window_type', arg: { name: 'notepad', text: 'Autonomous Loop Studio - By MBHudson' }, status: 'ok', result: 'typed 36 character(s) into "notepad" (pid 9040) — Typed 36 character(s) into the newest window. Read back from the window: the typed text is there.' },
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },
 ];
 const runVerdict = drillVerdict(failedFrontierPass.concat(frontierCalls), TRAINING_FILE, 'frontier');
@@ -619,7 +619,7 @@ ok(frontierBlock.includes('window_list first'), 'frontier block starts with wind
 ok(frontierBlock.includes('window_open'), 'frontier block names window_open');
 ok(frontierBlock.includes('window_type'), 'frontier block names window_type');
 ok(frontierBlock.includes('Notepad'), 'frontier block names Notepad');
-ok(frontierBlock.includes('Hello!'), 'frontier block carries the exact typed text');
+ok(frontierBlock.includes('Autonomous Loop Studio - By MBHudson'), 'frontier block carries the exact typed text');
 ok(!frontierBlock.includes('relative to the sandbox'), 'frontier block stays off the sandbox path');
 const frontierKickoff = trainingKickoffFor();
 ok(frontierKickoff.includes('real desktop'), 'frontier kickoff names the real desktop');

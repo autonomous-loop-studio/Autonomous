@@ -53,6 +53,46 @@ function ok($cond, $name)
     return false;
 }
 
+echo "audio endpoint allowlist tests\n";
+echo str_repeat('-', 60) . "\n";
+
+/** baseFor() without a request: returns the base URL, or the error message. */
+function base_resolved($provider, $endpoint)
+{
+    try {
+        return array(true, Audio::baseFor($provider, $endpoint));
+    } catch (\RuntimeException $e) {
+        return array(false, $e->getMessage());
+    }
+}
+
+// The LAN case: a GPU box on 10.x serving OpenAI-compatible TTS over http.
+// The pasted chat-completions URL resolves too — baseFor strips the chat
+// suffix so the audio path hangs off the same base.
+list($ok, $base) = base_resolved('openai', 'http://10.0.0.57:9931/v1/chat/completions');
+ok($ok && $base === 'http://10.0.0.57:9931/v1', 'endpoint: a LAN http TTS box resolves, chat suffix stripped');
+
+list($ok, $base) = base_resolved('openai', 'http://192.168.1.20:8000/v1');
+ok($ok && $base === 'http://192.168.1.20:8000/v1', 'endpoint: a 192.168.x http endpoint resolves');
+
+list($ok, $base) = base_resolved('openai', 'https://10.0.0.57:9931/v1');
+ok($ok && $base === 'https://10.0.0.57:9931/v1', 'endpoint: a LAN https endpoint resolves');
+
+list($ok, $base) = base_resolved('openai', 'http://localhost:8000/v1');
+ok($ok && $base === 'http://localhost:8000/v1', 'endpoint: loopback http still resolves');
+
+// Public hosts stay refused: neither the host widening nor plain http
+// applies off the LAN.
+list($ok, $msg) = base_resolved('openai', 'https://evil.example.com/v1');
+ok(!$ok && stripos($msg, 'not allowed') !== false, 'endpoint: a public host is still refused');
+
+list($ok, $msg) = base_resolved('openai', 'http://evil.example.com/v1');
+ok(!$ok, 'endpoint: a public http host is still refused');
+
+// No override: the provider catalogue base is untouched by the LAN rule.
+list($ok, $base) = base_resolved('openai', '');
+ok($ok && $base === 'https://api.openai.com/v1', 'endpoint: no override still yields the catalogue base');
+
 echo "custom TTS endpoint payload tests\n";
 echo str_repeat('-', 60) . "\n";
 

@@ -7,23 +7,24 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=500';
-import { K } from '../storage.js?v=500';
-import { persistence } from '../persistence.js?v=500';
-import { api } from '../api.js?v=500';
-import { isNoTokenError } from '../apiError.js?v=500';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=500';
-import { errText } from '../api.js?v=500';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=500';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=500';
-import { snapshot } from '../rateGovernor.js?v=500';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy, hyperBruteEnabled } from '../training.js?v=500';
-import { resetBrowserEnabled } from '../toolManifest.js?v=500';
-import { listDialectMemos, forgetDialect, protocolLabel, dialectDurableSettings } from '../harness.js?v=500';
-import { perf } from '../perf.js?v=500';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=500';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=500';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=500';
+import { store } from '../store.js?v=501';
+import { K } from '../storage.js?v=501';
+import { persistence } from '../persistence.js?v=501';
+import { api } from '../api.js?v=501';
+import { isNoTokenError } from '../apiError.js?v=501';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=501';
+import { errText } from '../api.js?v=501';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=501';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=501';
+import { snapshot } from '../rateGovernor.js?v=501';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy, hyperBruteEnabled } from '../training.js?v=501';
+import { resetBrowserEnabled } from '../toolManifest.js?v=501';
+import { listDialectMemos, forgetDialect, protocolLabel, dialectDurableSettings } from '../harness.js?v=501';
+import { perf } from '../perf.js?v=501';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=501';
+import { audio } from '../audio.js?v=501';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=501';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=501';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -73,6 +74,15 @@ export class Sidebar {
     // Governor status line in Config, repainted live while the tab is open.
     store.on('governor:changed', () => {
       if (this.activeTab === 'config') this._renderGovStatus();
+    });
+    // Browser voices arrive late in Chrome: refill the Config → Speech voice
+    // picker when they land. Subscribed once here, not per render, because
+    // renderConfig() rebuilds the tab on every visit.
+    store.on('audio:voices', () => {
+      if (this.activeTab === 'config' && document.getElementById('sbAudioVoice')) {
+        this._fillSbVoices();
+        this._sbAudioStatus();
+      }
     });
     // A run can be told to end itself after N clean passes. The verdict fires
     // on every settled call, so this is the same number the strip shows.
@@ -800,6 +810,9 @@ export class Sidebar {
       ['advanced', 'Advanced'],
       ['frontier', 'Frontier'],
       ['browser', 'Browser'],
+      ['captcha1', 'Captcha Lev.1'],
+      ['captcha2', 'Captcha Lev.2'],
+      ['captcha3', 'Captcha Lev.3'],
       ['ide', 'IDE'],
       ['custom', 'Custom'],
     ];
@@ -1254,7 +1267,7 @@ export class Sidebar {
     // Browser is an opt-in server capability. Check it before opening a fresh
     // session, otherwise the drill retries browser_open forever on a machine
     // where Browser Labs is off or Chrome/Edge is missing.
-    if (difficulty === 'browser') {
+    if (difficulty === 'browser' || difficulty === 'captcha' || difficulty === 'captcha1' || difficulty === 'captcha2' || difficulty === 'captcha3') {
       try {
         const browser = await api.browserStatus();
         if (!browser || !browser.enabled) {
@@ -2154,6 +2167,14 @@ export class Sidebar {
     put('rateLimitMaxWaitMs', waitSec === null ? null : waitSec * 1000);
     put('tokenBudget', num('sbTokenBudget', 0, 1000000000, 0));
 
+    // The speech endpoint saves on change (blur/Enter), so text typed but
+    // never blurred is rescued here — otherwise switching tabs mid-type
+    // silently dropped it. SAVE writes it through with everything else.
+    const sbEndpoint = document.getElementById('sbAudioEndpoint');
+    if (sbEndpoint && sbEndpoint.value.trim() !== (store.get('settings.audioEndpoint') || '')) {
+      store.set('settings.audioEndpoint', sbEndpoint.value.trim());
+    }
+
     // The project directory lives on the server and is fetched back on every
     // render, so it cannot be rescued the same way: the typed text is held
     // here and _loadProjectDir puts it back into the rebuilt field.
@@ -2189,6 +2210,9 @@ export class Sidebar {
 const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings.chartGhost || {}) };
     const mem = settings.historyTurns ?? DEFAULT_HISTORY_TURNS;
     const rpm = Number(settings.rateLimitRpm) || 0;
+    const sbAudioEngineName = settings.audioEngine || 'browser';
+    const sbAudioEngineLabel = sbAudioEngineName === 'cloud' ? 'Provider'
+      : (sbAudioEngineName === 'auto' ? 'Auto' : 'Built-in');
 
     this.bodyEl.innerHTML = `
       ${this._cfgSection('iface', 'Interface', {
@@ -2255,14 +2279,6 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
             <div class="toggle-knob"></div>
           </div>
         </div>
-        <div class="toggle-row">
-          <span class="toggle-label">Read replies aloud <span class="form-hint-inline">auto voice</span></span>
-          <div class="toggle ${settings.autoSpeak ? 'active' : ''}" id="sbAutoSpeak">
-            <div class="toggle-knob"></div>
-          </div>
-        </div>
-        <div class="form-hint" id="sbAutoSpeakHint" style="margin:-6px 0 8px"></div>
-
         <div class="cfg-sublabel">Chart ghost transcript</div>
         <div class="toggle-row">
           <span class="toggle-label">Show chat behind the chart <span class="form-hint-inline">faint, not clickable</span></span>
@@ -2335,6 +2351,52 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
           <input type="number" class="form-input" id="sbTokenBudget" min="0" max="1000000000" step="1000" value="${settings.tokenBudget ?? 0}">
           <div class="form-hint">What this key's plan allows (e.g. 8000000). Agent cards then show spent / budget, with a percentage. 0 leaves them at raw totals. A per-agent value can override it in Brain Lab.</div>
         </div>
+      `)}
+
+      ${this._cfgSection('speech', 'Speech', { text: `${sbAudioEngineLabel}${settings.autoSpeak ? ' · ON' : ''}` }, `
+        <div class="form-group">
+          <label class="form-label">Engine</label>
+          <select class="form-select" id="sbAudioEngine">
+            <option value="auto">Auto — provider when usable, built-in voices otherwise</option>
+            <option value="cloud">Provider below (API key or custom endpoint)</option>
+            <option value="browser">Built-in voices only (no API, works offline)</option>
+          </select>
+          <div class="form-hint" id="sbAudioEngineHint"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Provider</label>
+          <select class="form-select" id="sbAudioProvider">
+            <option value="openai">OpenAI</option>
+            <option value="groq">Groq</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Custom endpoint <span class="form-hint-inline">optional</span></label>
+          <input type="text" class="form-input" id="sbAudioEndpoint" placeholder="Custom TTS endpoint, e.g. http://localhost:8000/v1 (blank = provider default)" autocomplete="off" spellcheck="false">
+          <div class="form-hint">Optional: point speech at your own OpenAI-compatible TTS server. Local hosts may use http; anything else must be https.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Voice</label>
+          <select class="form-select" id="sbAudioVoice"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Speed</label>
+          <input type="range" class="form-input" id="sbAudioSpeed" min="0.5" max="2" step="0.05" value="1">
+          <div class="form-hint">Speed <span id="sbAudioSpeedVal">1.00</span>&times;</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Default pitch</label>
+          <input type="range" class="form-input" id="sbAudioPitch" min="0.5" max="1.6" step="0.05" value="1">
+          <div class="form-hint">Pitch <span id="sbAudioPitchVal">1.00</span> &mdash; higher reads as female, lower as male. Each agent can override this.</div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Read replies aloud <span class="form-hint-inline">auto voice</span></span>
+          <div class="toggle ${settings.autoSpeak ? 'active' : ''}" id="sbAutoSpeak">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+        <div class="form-hint" id="sbAutoSpeakHint" style="margin:-6px 0 8px"></div>
+        <div class="form-hint" id="sbAudioStatus"></div>
       `)}
 
       ${this._cfgSection('tls', 'TLS / Certificates', { text: settings.tlsOff ? 'OFF' : '' }, `
@@ -2862,6 +2924,93 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
     // gate is enforced — a browser-side flag would be a lie the server ignores.
     this._loadExecSettings();
 
+    // Speech: engine, provider, endpoint, voice, speed, pitch. The same keys
+    // the Config modal writes — one store, whichever panel is used. Selects
+    // and sliders persist the moment they change, like every other switch in
+    // this tab; the endpoint (a typed field) also lands on SAVE and survives
+    // a tab switch through the rescue in _commitPendingCfgFields.
+    const sbAudioEngineEl = document.getElementById('sbAudioEngine');
+    if (sbAudioEngineEl) sbAudioEngineEl.value = settings.audioEngine || 'browser';
+    const sbAudioProviderEl = document.getElementById('sbAudioProvider');
+    if (sbAudioProviderEl) sbAudioProviderEl.value = settings.audioProvider || 'openai';
+    const sbAudioEndpointEl = document.getElementById('sbAudioEndpoint');
+    if (sbAudioEndpointEl) sbAudioEndpointEl.value = settings.audioEndpoint || '';
+    const sbAudioSpeedEl = document.getElementById('sbAudioSpeed');
+    if (sbAudioSpeedEl) {
+      sbAudioSpeedEl.value = settings.audioSpeed ?? 1;
+      const v = document.getElementById('sbAudioSpeedVal');
+      if (v) v.textContent = Number(settings.audioSpeed ?? 1).toFixed(2);
+      sbAudioSpeedEl.oninput = () => {
+        const vv = document.getElementById('sbAudioSpeedVal');
+        if (vv) vv.textContent = Number(sbAudioSpeedEl.value).toFixed(2);
+        const n = parseFloat(sbAudioSpeedEl.value);
+        store.set('settings.audioSpeed', Number.isFinite(n) ? n : 1);
+        persistence.set('settings', store.get('settings'));
+      };
+    }
+    const sbAudioPitchEl = document.getElementById('sbAudioPitch');
+    if (sbAudioPitchEl) {
+      sbAudioPitchEl.value = String(store.get('settings.audioPitch') ?? 1);
+      const pv = document.getElementById('sbAudioPitchVal');
+      if (pv) pv.textContent = Number(store.get('settings.audioPitch') ?? 1).toFixed(2);
+      sbAudioPitchEl.oninput = () => {
+        const pp = document.getElementById('sbAudioPitchVal');
+        if (pp) pp.textContent = Number(sbAudioPitchEl.value).toFixed(2);
+        const n = parseFloat(sbAudioPitchEl.value);
+        store.set('settings.audioPitch', Number.isFinite(n) ? n : 1);
+        persistence.set('settings', store.get('settings'));
+      };
+    }
+    if (sbAudioEngineEl) {
+      sbAudioEngineEl.onchange = () => {
+        store.set('settings.audioEngine', sbAudioEngineEl.value);
+        persistence.set('settings', store.get('settings'));
+        this._fillSbVoices();
+        this._sbAudioStatus();
+      };
+    }
+    if (sbAudioProviderEl) {
+      sbAudioProviderEl.onchange = () => {
+        store.set('settings.audioProvider', sbAudioProviderEl.value);
+        persistence.set('settings', store.get('settings'));
+        this._fillSbVoices();
+        this._sbAudioStatus();
+      };
+    }
+    if (sbAudioEndpointEl) {
+      sbAudioEndpointEl.onchange = () => {
+        store.set('settings.audioEndpoint', sbAudioEndpointEl.value.trim());
+        persistence.set('settings', store.get('settings'));
+        this._fillSbVoices();
+        this._sbAudioStatus();
+      };
+    }
+    const sbAudioVoiceEl = document.getElementById('sbAudioVoice');
+    if (sbAudioVoiceEl) {
+      // Assigned, not addEventListener: renderConfig rebuilds this tab on
+      // every visit, and stacking a listener per visit would save N times.
+      sbAudioVoiceEl.onchange = () => {
+        if (!sbAudioVoiceEl.value) return;
+        // Kept apart: the two engines name voices completely differently, and
+        // a stale value from the other one would select nothing.
+        if (document.getElementById('sbAudioEngine')?.value === 'browser') {
+          store.set('settings.audioBrowserVoice', sbAudioVoiceEl.value);
+        } else {
+          store.set('settings.audioVoice', sbAudioVoiceEl.value);
+        }
+        persistence.set('settings', store.get('settings'));
+      };
+    }
+    this._fillSbVoices();
+    this._sbAudioStatus();
+    // The voice list comes from the server, so refresh the picker when it
+    // lands; the rest of the tab is usable regardless.
+    audio.loadCapabilities().then(() => {
+      if (!document.getElementById('sbAudioVoice')) return;
+      this._fillSbVoices();
+      this._sbAudioStatus();
+    });
+
     // Toggles
     this._initToggle('sbAutoSpeak', (val) => {
       store.set('settings.autoSpeak', val);
@@ -3337,6 +3486,15 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
       store.set('settings.alwaysOnGraceSec', clamp('sbAlwaysOnGrace', 0, 3600, 20));
       store.set('settings.alwaysOnMaxIterations', clamp('sbAlwaysOnMaxIter', 0, 10000, 0));
       store.set('settings.alwaysOnMaxMinutes', clamp('sbAlwaysOnMaxMin', 0, 100000, 0));
+      // Speech sliders save live on input, but the endpoint only reaches the
+      // store on blur — write all three through so SAVE keeps its promise
+      // even for a value typed and never blurred (see the rescue above).
+      const sbEndpointSave = document.getElementById('sbAudioEndpoint');
+      if (sbEndpointSave) store.set('settings.audioEndpoint', sbEndpointSave.value.trim());
+      const sbSpeedSave = parseFloat(document.getElementById('sbAudioSpeed')?.value);
+      if (Number.isFinite(sbSpeedSave)) store.set('settings.audioSpeed', sbSpeedSave);
+      const sbPitchSave = parseFloat(document.getElementById('sbAudioPitch')?.value);
+      if (Number.isFinite(sbPitchSave)) store.set('settings.audioPitch', sbPitchSave);
       // Rate governor numbers land on SAVE; the toggles above are already live.
       store.set('settings.rateLimitRpm', clamp('sbGovRpm', 0, 600, 0));
       store.set('settings.rateLimitMaxWaitMs', clamp('sbGovMaxWait', 5, 600, 65) * 1000);
@@ -5998,6 +6156,81 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
     }
     const v = document.getElementById(valId);
     if (v) v.textContent = text;
+  }
+
+  /**
+   * Voice picker for Config → Speech. Mirrors the Config modal: the browser
+   * engine offers the OS list, anything else the provider's voices.
+   */
+  _fillSbVoices() {
+    const sel = document.getElementById('sbAudioVoice');
+    if (!sel) return;
+    const browser = document.getElementById('sbAudioEngine')?.value === 'browser';
+    const current = browser
+      ? (store.get('settings.audioBrowserVoice') || '')
+      : (store.get('settings.audioVoice') || '');
+    sel.innerHTML = '';
+    let voices = [];
+    try { voices = audio.voiceList() || []; } catch { voices = []; }
+    for (const v of voices) {
+      const opt = document.createElement('option');
+      opt.value = v.value;
+      opt.textContent = v.label || v.value;
+      if (v.value === current) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    // A custom endpoint brings its own voice names, which no list here can
+    // contain. Keep the saved one selectable: otherwise the picker drops to
+    // the first catalogue voice and the next change overwrites the setting.
+    if (current && !voices.some(v => v.value === current)) {
+      const opt = document.createElement('option');
+      opt.value = current;
+      opt.textContent = current;
+      opt.selected = true;
+      sel.appendChild(opt);
+    }
+    if (sel.selectedIndex < 0 && sel.options.length) sel.selectedIndex = 0;
+  }
+
+  /**
+   * One-line state for Config → Speech: Groq cannot synthesize, a keyless
+   * provider falls back to OS voices, a custom endpoint needs no key.
+   * Same wording as the Config modal so the two panels never disagree.
+   */
+  _sbAudioStatus() {
+    const el = document.getElementById('sbAudioStatus');
+    const hint = document.getElementById('sbAudioEngineHint');
+    const engine = document.getElementById('sbAudioEngine')?.value || 'auto';
+    const customEp = String(document.getElementById('sbAudioEndpoint')?.value || store.get('settings.audioEndpoint') || '').trim();
+    // A custom endpoint (usually LAN TTS) needs no provider key, so it counts
+    // as cloud-ready on its own — otherwise a keyless setup with a LAN box
+    // was reported as "will use built-in voices" and never tried the server.
+    const usingBrowser = engine === 'browser' || (!audio.isCloudReady() && !customEp);
+    if (hint) {
+      if (usingBrowser) {
+        let n = 0;
+        try { n = audio.browserVoices().length; } catch { n = 0; }
+        hint.textContent = n
+          ? `Replies will be read by this computer's built-in voices. No API key, no cost, works offline. ${n} voice(s) available.`
+          : 'This browser reports no built-in voices. On Linux that is common — install a speech-dispatcher voice package, or switch the engine to Auto and add an API key.';
+      } else if (String(document.getElementById('sbAudioEndpoint')?.value || store.get('settings.audioEndpoint') || '').trim()) {
+        hint.textContent = 'Uses your custom endpoint above (e.g. a local TTS server) — no provider key needed. Requests go through this server. Blank restores the provider default.';
+      } else {
+        hint.textContent = 'Uses the API key saved for the provider above. Requests go through this server.';
+      }
+    }
+    if (!el) return;
+    const caps = (audio.capabilities || {})[audio.providerId()];
+    const p = audio.provider();
+    if (!usingBrowser && caps && caps.speech === false) {
+      el.textContent = caps.speech_error || `${p ? p.name : 'That provider'} cannot synthesize speech.`;
+      return;
+    }
+    if (!usingBrowser && p && !p.apiKey && !customEp) {
+      el.textContent = `${p.name} has no API key saved, so replies fall back to this computer's voices.`;
+      return;
+    }
+    el.textContent = '';
   }
 
   _initToggle(id, callback) {    const el = document.getElementById(id);

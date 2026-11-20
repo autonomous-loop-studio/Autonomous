@@ -14,8 +14,8 @@
 // Transcripts come from MediaRecorder + the proxy. The older Web Speech path in
 // microphone.js still exists as a fallback for browsers without a key.
 
-import { store } from './store.js?v=500';
-import { api, errText } from './api.js?v=500';
+import { store } from './store.js?v=501';
+import { api, errText } from './api.js?v=501';
 
 /** OpenAI's per-request character ceiling. Matches MAX_CHARS in src/Audio.php. */
 const MAX_CHARS = 4000;
@@ -247,7 +247,11 @@ export class AudioController {
     const body = {
       provider: this.providerId(),
       endpoint: this.endpointFor(p),
-      api_key: (p && p.apiKey) || '',
+      // A custom endpoint is a different server (usually LAN TTS) — the cloud
+      // provider's key does not belong to it and strict local servers reject
+      // it with 401, so never forward it. Custom servers needing auth have
+      // no key field yet; they get a blank key.
+      api_key: custom ? '' : ((p && p.apiKey) || ''),
       model: this.settings.audioModel || '',
       voice: this.settings.audioVoice || '',
       speed: this.settings.audioSpeed ?? 1,

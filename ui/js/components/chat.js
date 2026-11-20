@@ -7,8 +7,8 @@
 // CHAT.JS — Chat panel controller
 // ============================================
 
-import { store } from '../store.js?v=500';
-import { K as STORAGE_K } from '../storage.js?v=500';
+import { store } from '../store.js?v=501';
+import { K as STORAGE_K } from '../storage.js?v=501';
 
 const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
 
@@ -17,29 +17,29 @@ const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
  * purpose: steering is a human override, not a licence to run unbounded.
  */
 const MAX_STEER_STEPS = 8;
-import { api, errText } from '../api.js?v=500';
-import { persistence } from '../persistence.js?v=500';
-import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=500';
-import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=500';
-import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect, dialectDrillGateEnabled } from '../toolProtocol.js?v=500';
-import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=500';
-import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=500';
-import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=500';
-import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=500';
-import { usageFor } from '../rateGovernor.js?v=500';
-import { trace } from '../trace.js?v=500';
-import { offerRebind } from './rebindOffer.js?v=500';
-import { latency } from '../latency.js?v=500';
-import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=500';
-import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=500';
-import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal, drillStepRefusal, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice, drillSameErrorNotice, sameErrorHintEnabled, realSuccessOnlyEnabled, normaliseErrorText, todoPlanIsCurrent, scrubDrillFile, hyperBruteEnabled, bruteNew, bruteNextShape, bruteFail, bruteWin, brutePinFor, BRUTE_SHAPES } from '../training.js?v=500';
-import { SlashCommands } from '../slashCommands.js?v=500';
-import { parseRoute, routingHelp } from '../routing.js?v=500';
-import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=500';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=500';
-import { MessageRenderer, renderToolCalls } from './message.js?v=500';
-import { createAvatar } from './avatar.js?v=500';
-import * as comms from '../commsLog.js?v=500';
+import { api, errText } from '../api.js?v=501';
+import { persistence } from '../persistence.js?v=501';
+import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=501';
+import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=501';
+import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect, dialectDrillGateEnabled } from '../toolProtocol.js?v=501';
+import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=501';
+import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=501';
+import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=501';
+import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=501';
+import { usageFor } from '../rateGovernor.js?v=501';
+import { trace } from '../trace.js?v=501';
+import { offerRebind } from './rebindOffer.js?v=501';
+import { latency } from '../latency.js?v=501';
+import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=501';
+import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=501';
+import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal, drillStepRefusal, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice, drillSameErrorNotice, sameErrorHintEnabled, realSuccessOnlyEnabled, normaliseErrorText, todoPlanIsCurrent, scrubDrillFile, hyperBruteEnabled, bruteNew, bruteNextShape, bruteFail, bruteWin, brutePinFor, BRUTE_SHAPES } from '../training.js?v=501';
+import { SlashCommands } from '../slashCommands.js?v=501';
+import { parseRoute, routingHelp } from '../routing.js?v=501';
+import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=501';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=501';
+import { MessageRenderer, renderToolCalls } from './message.js?v=501';
+import { createAvatar } from './avatar.js?v=501';
+import * as comms from '../commsLog.js?v=501';
 
 /**
  * How long an agent may keep working on a single task.
@@ -2262,6 +2262,25 @@ _makeLiveNode(agent) {
     // same step is retried with automatic choice before native tools are
     // dropped entirely.
     let forcedChoiceRejected = false;
+    let lastForcedChoice = '';
+    // Runners that have already refused (or ignored) a forced tool_choice
+    // are remembered so we never probe them again on a later turn.
+    const forcedChoiceKey = `${agent.provider}::${agent.model}`;
+    const forcedChoiceUnsupported = () => {
+      const map = (store.get('settings') || {}).forcedChoiceUnsupported || {};
+      return map[forcedChoiceKey] === true;
+    };
+    const markForcedChoiceUnsupported = () => {
+      try {
+        const settings = { ...(store.get('settings') || {}) };
+        const map = { ...(settings.forcedChoiceUnsupported || {}) };
+        map[forcedChoiceKey] = true;
+        settings.forcedChoiceUnsupported = map;
+        store.set('settings', settings);
+        try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+      } catch { /* best effort */ }
+      forcedChoiceRejected = true;
+    };
     const describeTool = name => TOOL_REGISTRY[name]?.describe || name;
     const nativeDefinitions = () => nativeToolDefs(
       enabled.map(name => ({ name, description: describeTool(name) })),
@@ -2285,11 +2304,12 @@ _makeLiveNode(agent) {
       // told to call exactly that, instead of being trusted to pick it out of
       // a schema list. Text-dialect models get the same instruction as the
       // copyable `Exact call` line in the drill block.
-      const waiting = (!forcedChoiceRejected && isTrainingActive())
+      const waiting = (!forcedChoiceRejected && !forcedChoiceUnsupported() && isTrainingActive())
         ? String(((trainingNow(agent).task || {}).tool) || '')
         : '';
       // Never force a tool the scope removed (the operator can deny it).
       const forced = waiting && enabled.includes(waiting) ? waiting : '';
+      lastForcedChoice = forced;
       if (family === 'google') {
         out.tool_config = { functionCallingConfig: nativeToolChoice('google', forced) || { mode: 'AUTO' } };
       } else {
@@ -2463,7 +2483,7 @@ _makeLiveNode(agent) {
         // native tools; the drill block still names the awaited step.
         if (nativeMode && isTrainingActive() && !forcedChoiceRejected && err?.name !== 'AbortError'
             && (Number(err?.status) === 400 || Number(err?.status) === 422)) {
-          forcedChoiceRejected = true;
+          markForcedChoiceUnsupported();
           step--;   // the capability retry is not a tool step
           store.emit('toast', {
             message: `${agent.name}: forced tool choice refused — retrying with automatic choice`,
@@ -2562,6 +2582,20 @@ _makeLiveNode(agent) {
         }
       }
       if (!calls.length) {
+        // A forced tool_choice that the runner accepted but did not honour
+        // (it came back with prose and no tool call) is just as unsupported
+        // as a 400. Stop forcing and retry with automatic choice instead of
+        // letting the turn end with no tool call.
+        if (nativeMode && lastForcedChoice && !forcedChoiceRejected && !forcedChoiceUnsupported()
+            && isTrainingActive() && !(signal && signal.aborted)) {
+          markForcedChoiceUnsupported();
+          step--;   // the capability retry is not a tool step
+          store.emit('toast', {
+            message: `${agent.name}: forced tool choice ignored — retrying with automatic choice`,
+            type: 'info',
+          });
+          continue;
+        }
         // Parse-failure escalation. The model TRIED to call a tool — the reply
         // carries JSON/XML/tag shapes — but nothing parsed, usually because the
         // dialect taught was the wrong one for this model. Re-teach with each
@@ -2940,8 +2974,17 @@ _makeLiveNode(agent) {
       // (the most common kind) could never teach the app its dialect, so every
       // such agent re-guessed forever.
       const skippedInTurn = r => String((r && r.result) || '').startsWith('Skipped: this step ended');
-      const allOk = calls.length && calls.every(c => !c.native) && !nativeMode
-        && records.every(r => r && (r.status === 'ok' || skippedInTurn(r)));
+      // A turn that ended up using the prompt dialect (text calls) teaches
+      // it even if native mode was on at the start — e.g. when the native
+      // path fell back to text mid-turn. Requiring !nativeMode here dropped
+      // those successes, so a model that only "worked" via the text fallback
+      // never memoized it and re-probed native on every subsequent turn.
+      const allOk = calls.length && calls.every(c => !c.native)
+        // Require at least one real success, not a perfect pass: a struggling
+        // model's first turn rarely lands every step, and if it never writes a
+        // memo it can never improve on pass 2. A turn with zero ok calls (pure
+        // failure) still teaches nothing.
+        && records.some(r => r && r.status === 'ok');
       // Real-success only (Harness / Dialect, off by default): housekeeping
       // alone (think / todo_write) never teaches a dialect — at least one
       // real tool must have run ok. Off keeps today's behaviour.

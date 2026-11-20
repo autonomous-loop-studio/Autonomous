@@ -4,7 +4,7 @@
   SPDX-License-Identifier: Apache-2.0
 -->
 
-<html lang="en" data-build="500">
+<html lang="en" data-build="501">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
@@ -12,7 +12,7 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" type="image/png" href="ui/img/main.png?v=500">
+  <link rel="icon" type="image/png" href="ui/img/main.png?v=501">
   <title>Autonomous Loop Studio // Multi-Agent Interface</title>
   <!-- Import map for the vendored three.js (3D topology). Must come before
        any module script or modulepreload, or browsers ignore it. -->
@@ -24,26 +24,26 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="ui/css/base.css?v=500">
-  <link rel="stylesheet" href="ui/css/layout.css?v=500">
-  <link rel="stylesheet" href="ui/css/chat.css?v=500">
-  <link rel="stylesheet" href="ui/css/topology.css?v=500">
-  <link rel="stylesheet" href="ui/css/modals.css?v=500">
-  <link rel="stylesheet" href="ui/css/components.css?v=500">
-  <link rel="stylesheet" href="ui/css/browser.css?v=500">
-  <link rel="stylesheet" href="ui/css/routingchart.css?v=500">
-  <link rel="stylesheet" href="ui/css/apilab.css?v=500">
-  <link rel="stylesheet" href="ui/css/brainlab.css?v=500">
-  <link rel="stylesheet" href="ui/css/codeblocks.css?v=500">
-  <link rel="stylesheet" href="ui/css/idescreen.css?v=500">
+  <link rel="stylesheet" href="ui/css/base.css?v=501">
+  <link rel="stylesheet" href="ui/css/layout.css?v=501">
+  <link rel="stylesheet" href="ui/css/chat.css?v=501">
+  <link rel="stylesheet" href="ui/css/topology.css?v=501">
+  <link rel="stylesheet" href="ui/css/modals.css?v=501">
+  <link rel="stylesheet" href="ui/css/components.css?v=501">
+  <link rel="stylesheet" href="ui/css/browser.css?v=501">
+  <link rel="stylesheet" href="ui/css/routingchart.css?v=501">
+  <link rel="stylesheet" href="ui/css/apilab.css?v=501">
+  <link rel="stylesheet" href="ui/css/brainlab.css?v=501">
+  <link rel="stylesheet" href="ui/css/codeblocks.css?v=501">
+  <link rel="stylesheet" href="ui/css/idescreen.css?v=501">
 
   <!-- Preload critical modules -->
-  <link rel="modulepreload" href="ui/js/app.js?v=500">
-  <link rel="modulepreload" href="ui/js/store.js?v=500">
-  <link rel="modulepreload" href="ui/js/api.js?v=500">
-  <link rel="modulepreload" href="ui/js/components/chat.js?v=500">
-  <link rel="modulepreload" href="ui/js/components/sidebar.js?v=500">
-  <link rel="modulepreload" href="ui/js/components/topology.js?v=500">
+  <link rel="modulepreload" href="ui/js/app.js?v=501">
+  <link rel="modulepreload" href="ui/js/store.js?v=501">
+  <link rel="modulepreload" href="ui/js/api.js?v=501">
+  <link rel="modulepreload" href="ui/js/components/chat.js?v=501">
+  <link rel="modulepreload" href="ui/js/components/sidebar.js?v=501">
+  <link rel="modulepreload" href="ui/js/components/topology.js?v=501">
 </head>
 <body data-theme="dark">
   <!-- Loading screen (shown before any JS runs) -->
@@ -180,7 +180,7 @@
       <div class="chat-input-area">
         <div class="mic-col">
           <button class="mic-btn" id="micBtn" title="Speech to text">&#127908;</button>
-          <span class="app-version" id="appVersion">v500</span>
+          <span class="app-version" id="appVersion">v501</span>
         <!-- Boot watchdog. Classic inline script on purpose: a MODULE that
              fails to load fires its error on the <script> element, which does
              not reach window.onerror -- so a missing or half-copied file left
@@ -289,82 +289,13 @@
     </div>
   </div>
 
-  <div class="modal-bg" id="configModal">
-    <div class="modal">
-      <div class="modal-head">
-        <span class="modal-title">Configuration</span>
-        <button class="modal-x" id="configModalClose">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Theme</label>
-          <select class="form-select" id="cfgTheme">
-            <option value="dark">Dark</option>
-            <option value="matrix">Matrix</option>
-            <option value="cyberpunk">Cyberpunk</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Temperature</label>
-          <input type="range" class="form-input" id="cfgTemp" min="0" max="2" step="0.1" value="0.7">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Max Tokens</label>
-          <input type="number" class="form-input" id="cfgMaxTokens" value="16384" min="256" max="131072">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Memory (past turns)</label>
-          <input type="number" class="form-input" id="cfgHistoryTurns" value="5" min="0" max="50">
-          <div class="form-hint">How many earlier messages an agent is shown before your new one, plus the replies that followed (so 5 = up to 10 messages). 0 = every message is independent. Higher values cost more tokens per agent.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Speech <span class="form-hint-inline">read replies aloud</span></label>
-          <select class="form-select" id="cfgAudioEngine">
-            <option value="auto">Auto — provider when usable, built-in voices otherwise</option>
-            <option value="cloud">Provider above (API key or custom endpoint)</option>
-            <option value="browser" selected>Built-in voices only (no API, works offline)</option>
-          </select>
-          <select class="form-select" id="cfgAudioProvider">
-            <option value="openai">OpenAI</option>
-            <option value="groq">Groq</option>
-          </select>
-          <div class="form-hint" id="cfgAudioEngineHint"></div>
-          <input type="text" class="form-input" id="cfgAudioEndpoint" placeholder="Custom TTS endpoint, e.g. http://localhost:8000/v1 (blank = provider default)" autocomplete="off" spellcheck="false">
-          <div class="form-hint">Optional: point speech at your own OpenAI-compatible TTS server. Local hosts may use http; anything else must be https.</div>
-          <select class="form-select" id="cfgAudioVoice" style="margin-top:6px"></select>
-          <input type="range" class="form-input" id="cfgAudioSpeed" min="0.5" max="2" step="0.05" value="1">
-          <div class="form-hint">Speed <span id="cfgAudioSpeedVal">1.00</span>&times;</div>
-          <input type="range" class="form-input" id="cfgAudioPitch" min="0.5" max="1.6" step="0.05" value="1" style="margin-top:6px">
-          <div class="form-hint">Default pitch <span id="cfgAudioPitchVal">1.00</span> &mdash; higher reads as female, lower as male. Each agent can override this.</div>
-          <label class="form-label" style="margin-top:8px"><input type="checkbox" id="cfgAutoSpeak"> Speak every reply automatically</label>
-          <div class="form-hint">Off by default: a busy fan-out of five agents will read all five aloud, and speech is billed per character.</div>
-          <div id="cfgAudioStatus" class="form-hint"></div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Sandbox <span class="form-hint-inline">internet + files for agents</span></label>
-          <textarea class="form-textarea" id="cfgSandboxRead" rows="2" placeholder="/var/www/site/myproject"></textarea>
-          <div class="form-hint">Directories agents may <b>read</b> — one absolute path per line. This is what powers <code>read_file</code>, <code>list_dir</code>, <code>glob_files</code> and <code>grep_code</code>. Leave empty to keep filesystem tools off.</div>
-          <textarea class="form-textarea" id="cfgSandboxWrite" rows="2" placeholder="/var/www/site/myproject/scratch"></textarea>
-          <div class="form-hint">Directories agents may <b>write</b> — one absolute path per line. Agents still ask you before each write. Keep this narrow, ideally a scratch folder you don't mind being overwritten.</div>
-          <input type="password" class="form-input" id="cfgSandboxToken" placeholder="(leave empty unless this install is publicly reachable)" autocomplete="off">
-          <div class="form-hint">Optional shared token. The API accepts cross-origin POSTs, so if anyone besides you can reach this URL, set <code>require_token</code> and a token in <code>storage/config.json</code>. This field holds the copy your browser sends.</div>
-          <div id="cfgSandboxStatus" class="form-hint"></div>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="cfgCancel">Cancel</button>
-        <button class="btn btn-primary" id="cfgSave">Save</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Toast container -->
   <div class="toast-container" id="toasts"></div>
 
   <!-- Scripts -->
-  <script type="module" src="ui/js/app.js?v=500"></script>
+  <script type="module" src="ui/js/app.js?v=501"></script>
   <!-- Desktop 2026 skin: desktop widths only (>1024px); loads its own CSS.
        Separate module so a failure here can never stop the app booting. -->
-  <script type="module" src="ui/js/desktop2026.js?v=500"></script>
+  <script type="module" src="ui/js/desktop2026.js?v=501"></script>
 </body>
 </html>

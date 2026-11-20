@@ -15,6 +15,17 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🏋 v501 — Captcha drills, LAN TTS, and a smarter forced-tool-choice memory
+
+*Training mode gains three captcha drills: Lev.1 a simple text code, Lev.2 a 3x3 grid selecting bus tiles, Lev.3 a 3x3 grid selecting stop-sign tiles. The Frontier drill now types "Autonomous Loop Studio - By MBHudson" instead of "Hello!", and step instructions were trimmed. The difficulty grid now lists Captcha Lev.1/2/3 alongside the other drills.*
+
+*Speech: a custom TTS endpoint may point at a LAN host (e.g. a GPU box) over plain http; the host check now accepts local-network addresses while the audio-path guard still applies, and the cloud provider key is never forwarded to a custom endpoint.*
+
+*Chat: a runner that refuses or ignores a forced tool_choice is remembered per provider+model, so later turns stop probing it; a turn that reaches the text dialect teaches it even when native mode was on at the start, and a pass with at least one successful call now writes a memo.*
+
+*Config moves out of a modal into the sidebar: the settings modal HTML and configPanel.js are removed, and /settings opens the Config tab. Suite green: JS 46 files / 1,757 assertions, PHP 39 files.*
+
+
 ## 🔊 Your own TTS server, half-rate training pacing, a tunable dialect harness, and Hyper Brute Force *(`VERSION` 499 → 500, cache-buster v499 → v500)*
 
 *Speech has a third door. Settings → Speech gains a custom endpoint field for any OpenAI-compatible TTS server — `http://localhost:8000/v1` for a local model, so no cloud is needed at all. When it is set, requests go there instead of the provider, no provider key is required, and your model and voice names pass through as-is; only a blank model or voice is filled with the canonical `tts-1`/`alloy` pair, because strict local servers reject empty fields instead of defaulting them. Cloud behaviour without the endpoint is untouched, and the engine choice is now Auto (provider when usable, built-in voices otherwise), provider, or built-in. Pinned by a 12-assertion loopback mock TTS regression test.*

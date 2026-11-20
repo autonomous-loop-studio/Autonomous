@@ -19,7 +19,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=500';
+import { store } from './store.js?v=501';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -43,6 +43,12 @@ export const TRAINING_FILE_TOKEN = '{file}';
  *  works at the root and under the Apache /router mount alike. */
 export const TRAINING_BROWSER_PATH = 'ui/drill/browser.html';
 export const TRAINING_BROWSER_TOKEN = '{browser}';
+export const TRAINING_CAPTCHA_PATH = 'ui/drill/captcha.html';
+export const TRAINING_CAPTCHA_TOKEN = '{captcha}';
+export const TRAINING_CAPTCHA2_PATH = 'ui/drill/captcha2.html';
+export const TRAINING_CAPTCHA2_TOKEN = '{captcha2}';
+export const TRAINING_CAPTCHA3_PATH = 'ui/drill/captcha3.html';
+export const TRAINING_CAPTCHA3_TOKEN = '{captcha3}';
 /**
  * The Advanced drill's target: a page THIS APP serves, not a public site.
  *
@@ -227,6 +233,12 @@ const fillFile = (text, agent, difficulty = 'hard') =>
   String(text).split(TRAINING_FILE_TOKEN).join(fileForSteps(agent, difficulty));
 const browserDrillUrl = () => new URL('../drill/browser.html', import.meta.url).href;
 const fillBrowser = (text) => String(text).split(TRAINING_BROWSER_TOKEN).join(browserDrillUrl());
+const captchaDrillUrl = () => new URL('../drill/captcha.html', import.meta.url).href;
+const fillCaptcha = (text) => String(text).split(TRAINING_CAPTCHA_TOKEN).join(captchaDrillUrl());
+const captcha2DrillUrl = () => new URL('../drill/captcha2.html', import.meta.url).href;
+const fillCaptcha2 = (text) => String(text).split(TRAINING_CAPTCHA2_TOKEN).join(captcha2DrillUrl());
+const captcha3DrillUrl = () => new URL('../drill/captcha3.html', import.meta.url).href;
+const fillCaptcha3 = (text) => String(text).split(TRAINING_CAPTCHA3_TOKEN).join(captcha3DrillUrl());
 const fillPage = (text) => String(text).split(TRAINING_PAGE_TOKEN).join(TRAINING_PAGE_URL);
 
 /**
@@ -258,23 +270,23 @@ const anchoredAppendCard = () => JSON.stringify({
 });
 
 export const TRAINING_TASKS = [
-  { tool: 'think', label: 'Call the think tool with one sentence about the drill before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
+  { tool: 'think', label: 'Call the think tool with one sentence about the drill before touching anything — a real tool call, not prose.' ,
     example: "{\"tool\":\"think\",\"arg\":\"I will work the drill in order.\"}"},
   { tool: 'todo_write', label: 'Write the drill steps below as your todo list, first one in_progress.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
-  { tool: 'echo', label: 'Echo the word "training" back — echo takes a bare string: {"tool":"echo","arg":"training"}, not an object like {"arg":{"text":"training"}}.' ,
+  { tool: 'echo', label: 'Echo "training" back — echo takes a bare string: {"tool":"echo","arg":"training"}, not {"arg":{"text":"training"}}.' ,
     example: "{\"tool\":\"echo\",\"arg\":\"training\"}"},
   { tool: 'now', label: 'Report the current date and time.' ,
     example: "{\"tool\":\"now\"}"},
-  { tool: 'write_file', label: 'Create {file} containing exactly the word "training". (Asks approval — wait for it, do not skip.)' ,
+  { tool: 'write_file', label: 'Create {file} containing exactly "training". (approval needed — wait, do not skip.)' ,
     example: "{\"tool\":\"write_file\",\"arg\":{\"path\":\"{file}\",\"content\":\"training\"}}"},
-  { tool: 'read_file', label: 'Read {file} back with read_file — not show_file — and confirm it says "training".' ,
+  { tool: 'read_file', label: 'Read {file} back with read_file — not show_file — confirm "training".' ,
     example: "{\"tool\":\"read_file\",\"arg\":\"{file}\"}"},
-  { tool: 'read_file', label: 'Read only line 1 of {file}: call read_file with the path and a trailing " 1-1" — not show_file. A range keeps a big file out of your context instead of pulling all of it in.' ,
+  { tool: 'read_file', label: 'Read only line 1 of {file}: read_file with path plus trailing " 1-1" — not show_file.' ,
     example: "{\"tool\":\"read_file\",\"arg\":\"{file} 1-1\"}"},
-  { tool: 'edit_file', label: 'In {file}, use edit_file — not write_file and not str_replace_editor — to replace the exact text "training" with two lines: "training", then "drill 2 passed". old_string is the text you match; new_string is the two-line text, with a real newline between the lines. Use exactly this call: ' + anchoredAppendCard() + '. Send the arguments flat — {"path":...,"old_string":...,"new_string":...} — not nested under a second "arg". edit_file is search-and-replace, never an append. (Asks approval — wait for it.)',
+  { tool: 'edit_file', label: 'In {file}, use edit_file — not write_file, not str_replace_editor — to replace "training" with two lines: "training", then "drill 2 passed". old_string matches; new_string is the two-line text with a real newline. Use exactly this call: ' + anchoredAppendCard() + '. Send the arguments flat — {"path":...,"old_string":...,"new_string":...} — not nested under a second "arg". edit_file replaces, never appends. (approval needed — wait.)',
     example: anchoredAppendCard() },
-  { tool: 'edit_file', label: 'Use edit_file again — not write_file and not str_replace_editor — to replace the exact line "drill 2 passed" with "drill 2 passed (exact match)". (Asks approval — old_string/new_string edits only touch the text you name.)' ,
+  { tool: 'edit_file', label: 'Use edit_file again — not write_file and not str_replace_editor — to replace the exact line "drill 2 passed" with "drill 2 passed (exact match)". (approval needed — edits touch only named text.)' ,
     example: "{\"tool\":\"edit_file\",\"arg\":{\"path\":\"{file}\",\"old_string\":\"drill 2 passed\",\"new_string\":\"drill 2 passed (exact match)\"}}"},
   { tool: 'list_dir', label: 'List the training folder.' ,
     example: "{\"tool\":\"list_dir\",\"arg\":\"training\"}"},
@@ -285,15 +297,15 @@ export const TRAINING_TASKS = [
   // The display family: each show_* call paints its output into the transcript
   // and ENDS the turn. Training mode resumes the drill after it, which is what
   // lets these sit mid-drill instead of only at the end.
-  { tool: 'show_find', label: 'Show me the search: use show_find for "training" — the matches on screen are your reply. This ends the turn; the drill resumes after it.' ,
+  { tool: 'show_find', label: 'Show the search: use show_find for "training" — matches on screen are your reply. Ends the turn; drill resumes after.' ,
     example: "{\"tool\":\"show_find\",\"arg\":\"training\"}"},
-  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (Asks approval — wait for it.)' ,
+  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (approval needed — wait.)' ,
     example: "{\"tool\":\"exec\",\"arg\":[\"echo\",\"training\"]}"},
-  { tool: 'show_command', label: 'Show me a command: use show_command for ["echo","training"] and let its output be your reply. (Asks approval — this is the display twin of exec: it ends the turn, and the drill resumes.)' ,
+  { tool: 'show_command', label: 'Show a command: use show_command for ["echo","training"]; its output is your reply. (approval needed — display twin of exec; ends the turn, drill resumes.)' ,
     example: "{\"tool\":\"show_command\",\"arg\":[\"echo\",\"training\"]}"},
   { tool: 'todo_write', label: 'Mark every drill step completed, and put your two-line summary (which tools passed, retries) in the last item.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
-  { tool: 'show_file', label: 'Show {file} to me with show_file — not read_file — the file on screen IS the drill report. This ends the turn; the mode then sends Continue for a fresh pass, so do not write the contents out again.' ,
+  { tool: 'show_file', label: 'Show {file} with show_file — not read_file — the file on screen IS the drill report. Ends the turn; mode sends Continue for a fresh pass, so do not reprint the contents.' ,
     example: "{\"tool\":\"show_file\",\"arg\":\"{file}\"}"},
 ];
 
@@ -315,7 +327,7 @@ export const TRAINING_TASKS = [
  * still teaches the same anchored shape in its own words.
  */
 export const TRAINING_TASKS_EASY = [
-  { tool: 'think', label: 'Call the think tool with one sentence about the drill before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
+  { tool: 'think', label: 'Call the think tool with one sentence about the drill before touching anything — a real tool call, not prose.' ,
     example: "{\"tool\":\"think\",\"arg\":\"I will work the drill in order.\"}"},
   { tool: 'todo_write', label: 'Write the drill steps below as your todo list, first one in_progress. Send a plain array of step strings — no nested JSON string.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":[\"step 1\",\"step 2\"]}"},
@@ -323,11 +335,11 @@ export const TRAINING_TASKS_EASY = [
     example: "{\"tool\":\"echo\",\"arg\":\"training\"}"},
   { tool: 'now', label: 'Report the current date and time.' ,
     example: "{\"tool\":\"now\"}"},
-  { tool: 'write_file', label: 'Create {file} containing exactly the word "training". (Asks approval — wait for it, do not skip.)' ,
+  { tool: 'write_file', label: 'Create {file} containing exactly "training". (approval needed — wait, do not skip.)' ,
     example: "{\"tool\":\"write_file\",\"arg\":{\"path\":\"{file}\",\"content\":\"training\"}}"},
   { tool: 'read_file', label: 'Read {file} back and confirm it says "training".' ,
     example: "{\"tool\":\"read_file\",\"arg\":\"{file}\"}"},
-  { tool: 'edit_file', label: 'Append a second line "drill 2 passed" to {file}. Read the file first with read_file and copy its existing text exactly — the line may not end with a newline. Use exactly this call: ' + anchoredAppendCard() + '. (Asks approval — wait for it.)',
+  { tool: 'edit_file', label: 'Append a second line "drill 2 passed" to {file}. Read the file first with read_file and copy its existing text exactly (line may lack trailing newline). Use exactly this call: ' + anchoredAppendCard() + '. (approval needed — wait.)',
     example: anchoredAppendCard() },
   { tool: 'list_dir', label: 'List the training folder.' ,
     example: "{\"tool\":\"list_dir\",\"arg\":\"training\"}"},
@@ -335,7 +347,7 @@ export const TRAINING_TASKS_EASY = [
     example: "{\"tool\":\"glob_files\",\"arg\":\"training/*\"}"},
   { tool: 'grep_code', label: 'Search the training folder for the word "training".' ,
     example: "{\"tool\":\"grep_code\",\"arg\":\"training\"}"},
-  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (Asks approval — wait for it.)' ,
+  { tool: 'exec', label: 'Run ["echo","training"] and confirm the output. (approval needed — wait.)' ,
     example: "{\"tool\":\"exec\",\"arg\":[\"echo\",\"training\"]}"},
   { tool: 'todo_write', label: 'Mark every drill step completed — this completes the 12-step pass.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
@@ -349,19 +361,19 @@ export const TRAINING_TASKS_EASY = [
  * then proves both the live page and the saved copy on screen.
  */
 export const TRAINING_TASKS_ADVANCED = [
-  { tool: 'think', label: 'Call the think tool with one sentence about the fetch → save → show pipeline before touching anything — a real {"tool":"think","arg":"..."} call, not a sentence in your reply.' ,
+  { tool: 'think', label: 'Call the think tool with one sentence about the fetch → save → show pipeline before touching anything — a real tool call, not a sentence in your reply.' ,
     example: "{\"tool\":\"think\",\"arg\":\"I will fetch the page, save it, then show both.\"}"},
   { tool: 'todo_write', label: 'Write the Advanced steps as your todo list, first one in_progress.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
-  { tool: 'fetch_url', label: 'Fetch {page} with fetch_url and read the page text. This is the read half of “show_url URL > log.txt”: show_url only displays a page and cannot redirect into a file. {page} is served by this app itself, so it always answers.' ,
+  { tool: 'fetch_url', label: 'Fetch {page} with fetch_url and read the page text. Read half of “show_url URL > log.txt”: show_url only displays and cannot redirect into a file. {page} is served by this app, so it always answers.' ,
     example: "{\"tool\":\"fetch_url\",\"arg\":\"{page}\"}"},
-  { tool: 'write_file', label: 'Save that fetched page text to {file} with write_file — the redirect half, done as a real file. (Asks approval — wait for it.)' ,
+  { tool: 'write_file', label: 'Save that fetched page text to {file} with write_file — the redirect half, done as a real file. (approval needed — wait.)' ,
     example: "{\"tool\":\"write_file\",\"arg\":{\"path\":\"{file}\",\"content\":\"<the fetched page text>\"}}"},
   { tool: 'read_file', label: 'Read {file} back with read_file and confirm it holds the page text you just fetched.' ,
     example: "{\"tool\":\"read_file\",\"arg\":\"{file}\"}"},
-  { tool: 'show_url', label: 'Show the live page with show_url at {page} — the page text on screen is your reply. This ends the turn; the drill resumes after it.' ,
+  { tool: 'show_url', label: 'Show the live page with show_url at {page} — page text on screen is your reply. Ends the turn; drill resumes after.' ,
     example: "{\"tool\":\"show_url\",\"arg\":\"{page}\"}"},
-  { tool: 'show_file', label: 'Show the saved copy with show_file at {file} — the file on screen proves the redirect, not just the fetch. This ends the turn; the drill resumes after it.' ,
+  { tool: 'show_file', label: 'Show the saved copy with show_file at {file} — file on screen proves the redirect, not just the fetch. Ends the turn; drill resumes after.' ,
     example: "{\"tool\":\"show_file\",\"arg\":\"{file}\"}"},
   { tool: 'todo_write', label: 'Mark every step completed and put your one-line summary (what was fetched, where it was saved) in the last item — this completes the 8-step Advanced pass.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
@@ -376,17 +388,17 @@ export const TRAINING_TASKS_ADVANCED = [
  * result, so the final step records it and leaves the window open.
  */
 export const TRAINING_TASKS_FRONTIER = [
-  { tool: 'think', label: 'Call the think tool with one sentence about the desktop demo before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
-    example: "{\"tool\":\"think\",\"arg\":\"I will find Notepad, open it, and type Hello!.\"}"},
+  { tool: 'think', label: 'Call the think tool with one sentence about the desktop demo before touching anything — a real tool call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will find Notepad, open it, and type Autonomous Loop Studio - By MBHudson.\"}"},
   { tool: 'todo_write', label: 'Write the Frontier steps as your todo list, first one in_progress.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
   { tool: 'window_list', label: 'Call window_list and find the configured program named “notepad”. Do not open anything yet.' ,
     example: "{\"tool\":\"window_list\"}"},
-  { tool: 'window_open', label: 'Open Notepad on the real desktop with window_open: {"name":"notepad"}. (Asks approval — the window is the demo, so leave it open.)' ,
+  { tool: 'window_open', label: 'Open Notepad on the real desktop with window_open: {"name":"notepad"}. (approval needed — leave the window open.)' ,
     example: "{\"tool\":\"window_open\",\"arg\":{\"name\":\"notepad\"}}"},
-  { tool: 'window_type', label: 'Type exactly “Hello!” into Notepad with window_type: {"name":"notepad","text":"Hello!"}. (Asks approval — the result must say the window was read back and contains the typed text; if it says unverified, retry.)' ,
-    example: "{\"tool\":\"window_type\",\"arg\":{\"name\":\"notepad\",\"text\":\"Hello!\"}}"},
-  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: Notepad is open and “Hello!” was typed on screen. This completes the 6-step Frontier pass.' ,
+  { tool: 'window_type', label: 'Type exactly “Autonomous Loop Studio - By MBHudson” into Notepad with window_type: {"name":"notepad","text":"Autonomous Loop Studio - By MBHudson"}. (approval needed — result must say read back; retry if unverified.)' ,
+    example: "{\"tool\":\"window_type\",\"arg\":{\"name\":\"notepad\",\"text\":\"Autonomous Loop Studio - By MBHudson\"}}"},
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: Notepad is open and “Autonomous Loop Studio - By MBHudson” was typed on screen. This completes the 6-step Frontier pass.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
 ];
 
@@ -400,7 +412,7 @@ export const TRAINING_TASKS_FRONTIER = [
  * recorded or repeated without a public site changing under it.
  */
 export const TRAINING_TASKS_BROWSER = [
-  { tool: 'think', label: 'Call the think tool with one sentence about the browser drill before touching anything — a real {"tool":"think","arg":"..."} call, not prose.' ,
+  { tool: 'think', label: 'Call the think tool with one sentence about the browser drill before touching anything — a real tool call, not prose.' ,
     example: "{\"tool\":\"think\",\"arg\":\"I will open the local page, type, click, and read it back.\"}"},
   { tool: 'todo_write', label: 'Write the Browser steps as your todo list, first one in_progress.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
@@ -408,7 +420,7 @@ export const TRAINING_TASKS_BROWSER = [
     example: "{\"tool\":\"browser_open\",\"arg\":{\"url\":\"{browser}\",\"headless\":false}}"},
   { tool: 'browser_read', label: 'Read the page with browser_read and confirm it says “Browser drill”.' ,
     example: "{\"tool\":\"browser_read\"}"},
-  { tool: 'browser_type', label: 'Type exactly “training” into the name field with browser_type: {"selector":"#drill-name","text":"training"}. (Asks approval — wait for it.)' ,
+  { tool: 'browser_type', label: 'Type exactly “training” into the name field with browser_type: {"selector":"#drill-name","text":"training"}. (approval needed — wait.)' ,
     example: "{\"tool\":\"browser_type\",\"arg\":{\"selector\":\"#drill-name\",\"text\":\"training\"}}"},
   { tool: 'browser_click', label: 'Click the “Say hello” button with browser_click: {"selector":"#drill-submit"}.' ,
     example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#drill-submit\"}}"},
@@ -418,6 +430,95 @@ export const TRAINING_TASKS_BROWSER = [
     example: "{\"tool\":\"browser_read\"}"},
   { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the browser opened the local drill page, “training” was typed, and “Hello, training” was read back. This completes the 9-step Browser pass.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}"},
+];
+
+/**
+ * Captcha mode: a local page with a fixed code the agent must read and type.
+ *
+ * Mirrors the Browser drill, but the page carries a captcha code instead of a
+ * name field: the agent opens it, reads the code, types it into the answer
+ * field, clicks Verify, waits, and reads "Captcha solved" back. The code is
+ * fixed so the pass is deterministic and repeatable.
+ */
+export const TRAINING_TASKS_CAPTCHA = [
+  { tool: 'think', label: 'Call the think tool with one sentence about the captcha drill before touching anything — a real tool call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will open the captcha page, read the code, type it, and verify.\"}" },
+  { tool: 'todo_write', label: 'Write the Captcha steps as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}" },
+  { tool: 'browser_open', label: 'Open the local Captcha drill page in a visible window with browser_open: {"url":"{captcha}","headless":false}. Wait for it to load.' ,
+    example: "{\"tool\":\"browser_open\",\"arg\":{\"url\":\"{captcha}\",\"headless\":false}}" },
+  { tool: 'browser_read', label: 'Read the page with browser_read and confirm it says "Captcha drill".' ,
+    example: "{\"tool\":\"browser_read\"}" },
+  { tool: 'browser_type', label: 'Type exactly "X7K9Q" into the answer field with browser_type: {"selector":"#captcha-answer","text":"X7K9Q"}. (Asks approval — wait for it.)' ,
+    example: "{\"tool\":\"browser_type\",\"arg\":{\"selector\":\"#captcha-answer\",\"text\":\"X7K9Q\"}}" },
+  { tool: 'browser_click', label: 'Click the "Verify" button with browser_click: {"selector":"#captcha-submit"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#captcha-submit\"}}" },
+  { tool: 'browser_wait', label: 'Wait for the page to settle with browser_wait: {"ms":300}.' ,
+    example: "{\"tool\":\"browser_wait\",\"arg\":{\"ms\":300}}" },
+  { tool: 'browser_read', label: 'Read the page again with browser_read and confirm it says "Captcha solved".' ,
+    example: "{\"tool\":\"browser_read\"}" },
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the captcha page opened, "X7K9Q" was typed, and "Captcha solved" was read back. This completes the 9-step Captcha pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}" },
+];
+
+/**
+ * Captcha Lev.2: a 3x3 grid; select all squares with a bus.
+ */
+export const TRAINING_TASKS_CAPTCHA2 = [
+  { tool: 'think', label: 'Call the think tool with one sentence about the captcha drill before touching anything — a real tool call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will open the grid captcha page, read the prompt, click every bus tile, and verify.\"}" },
+  { tool: 'todo_write', label: 'Write the Captcha steps as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}" },
+  { tool: 'browser_open', label: 'Open the local Captcha Lev.2 drill page in a visible window with browser_open: {"url":"{captcha2}","headless":false}. Wait for it to load.' ,
+    example: "{\"tool\":\"browser_open\",\"arg\":{\"url\":\"{captcha2}\",\"headless\":false}}" },
+  { tool: 'browser_read', label: 'Read the page with browser_read and confirm it says “Captcha drill”.' ,
+    example: "{\"tool\":\"browser_read\"}" },
+  { tool: 'browser_click', label: 'Click the first bus tile with browser_click: {"selector":"#tile-0"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-0\"}}" },
+  { tool: 'browser_click', label: 'Click the second bus tile with browser_click: {"selector":"#tile-3"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-3\"}}" },
+  { tool: 'browser_click', label: 'Click the third bus tile with browser_click: {"selector":"#tile-5"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-5\"}}" },
+  { tool: 'browser_click', label: 'Click the “Verify” button with browser_click: {"selector":"#captcha-submit"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#captcha-submit\"}}" },
+  { tool: 'browser_wait', label: 'Wait for the page to settle with browser_wait: {"ms":300}.' ,
+    example: "{\"tool\":\"browser_wait\",\"arg\":{\"ms\":300}}" },
+  { tool: 'browser_read', label: 'Read the page again with browser_read and confirm it says “Captcha solved”.' ,
+    example: "{\"tool\":\"browser_read\"}" },
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the grid captcha page opened, all bus tiles were clicked, and “Captcha solved” was read back. This completes the 11-step Captcha Lev.2 pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}" },
+];
+
+/**
+ * Captcha Lev.3: a 3x3 grid; select all squares with a stop sign.
+ */
+export const TRAINING_TASKS_CAPTCHA3 = [
+  { tool: 'think', label: 'Call the think tool with one sentence about the captcha drill before touching anything — a real tool call, not prose.' ,
+    example: "{\"tool\":\"think\",\"arg\":\"I will open the grid captcha page, read the prompt, click every stop-sign tile, and verify.\"}" },
+  { tool: 'todo_write', label: 'Write the Captcha steps as your todo list, first one in_progress.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}" },
+  { tool: 'browser_open', label: 'Open the local Captcha Lev.3 drill page in a visible window with browser_open: {"url":"{captcha3}","headless":false}. Wait for it to load.' ,
+    example: "{\"tool\":\"browser_open\",\"arg\":{\"url\":\"{captcha3}\",\"headless\":false}}" },
+  { tool: 'browser_read', label: 'Read the page with browser_read and confirm it says “Captcha drill”.' ,
+    example: "{\"tool\":\"browser_read\"}" },
+  { tool: 'browser_click', label: 'Click the first stop-sign tile with browser_click: {"selector":"#tile-0"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-0\"}}" },
+  { tool: 'browser_click', label: 'Click the second stop-sign tile with browser_click: {"selector":"#tile-2"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-2\"}}" },
+  { tool: 'browser_click', label: 'Click the third stop-sign tile with browser_click: {"selector":"#tile-4"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-4\"}}" },
+  { tool: 'browser_click', label: 'Click the fourth stop-sign tile with browser_click: {"selector":"#tile-6"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-6\"}}" },
+  { tool: 'browser_click', label: 'Click the fifth stop-sign tile with browser_click: {"selector":"#tile-8"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-8\"}}" },
+  { tool: 'browser_click', label: 'Click the “Verify” button with browser_click: {"selector":"#captcha-submit"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#captcha-submit\"}}" },
+  { tool: 'browser_wait', label: 'Wait for the page to settle with browser_wait: {"ms":300}.' ,
+    example: "{\"tool\":\"browser_wait\",\"arg\":{\"ms\":300}}" },
+  { tool: 'browser_read', label: 'Read the page again with browser_read and confirm it says “Captcha solved”.' ,
+    example: "{\"tool\":\"browser_read\"}" },
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the grid captcha page opened, all stop-sign tiles were clicked, and “Captcha solved” was read back. This completes the 13-step Captcha Lev.3 pass.' ,
+    example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}" },
 ];
 
 /**
@@ -433,7 +534,7 @@ export const TRAINING_TASKS_BROWSER = [
  * never reached the editor.
  */
 export const TRAINING_TASKS_IDE = [
-  { tool: 'think', label: 'Call the think tool with one sentence about the IDE drill: every file step goes through the operator\u2019s editor, not the sandbox tools — a real {"tool":"think","arg":"..."} call, not prose.' ,
+  { tool: 'think', label: 'Call the think tool with one sentence about the IDE drill: every file step goes through the operator\u2019s editor, not the sandbox tools — a real tool call, not prose.' ,
     example: "{\"tool\":\"think\",\"arg\":\"I will use the IDE tools for every file step.\"}"},
   { tool: 'todo_write', label: 'Write the IDE steps as your todo list, first one in_progress.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}"},
@@ -578,7 +679,7 @@ export const DRILL_CHECKS_FRONTIER = [
   (c) => /notepad/i.test(resultText(c)),                                    // 3 window_list
   (c) => /notepad/i.test(argText(c)),                                       // 4 window_open
   (c) => /notepad/i.test(argText(c))
-    && /"text"\s*:\s*"hello!"/.test(argText(c))
+    && /"text"\s*:\s*"autonomous loop studio - by mbhudson"/.test(argText(c))
     // Any wording that reports a read-back, and never one that says it could not
     // read the window: that sentence is the app's own, and pinning it word for
     // word meant a copy edit in PHP could silently break the drill.
@@ -599,6 +700,54 @@ export const DRILL_CHECKS_BROWSER = [
   (c) => /"ms"\s*:\s*\d+/.test(argText(c)) || /waited \d+ms/i.test(resultText(c)), // 7 browser_wait
   (c) => /hello,\s*training/i.test(resultText(c)),                          // 8 browser_read result
   null,                                                                     // 9 todo_write
+];
+
+/** Captcha checks, aligned with TRAINING_TASKS_CAPTCHA. */
+export const DRILL_CHECKS_CAPTCHA = [
+  null,                                                                     // 1 think
+  null,                                                                     // 2 todo_write
+  (c) => /drill\/captcha\.html/i.test(argText(c))
+    && /visible window/i.test(resultText(c)),                              // 3 browser_open (visible)
+  (c) => /captcha drill/i.test(resultText(c)),                              // 4 browser_read heading
+  (c) => /#captcha-answer/i.test(argText(c)) && /"text"\s*:\s*"x7k9q"/.test(argText(c)), // 5 browser_type
+  (c) => /#captcha-submit/i.test(argText(c)),                               // 6 browser_click
+  (c) => /"ms"\s*:\s*\d+/.test(argText(c)) || /waited \d+ms/i.test(resultText(c)), // 7 browser_wait
+  (c) => /captcha solved/i.test(resultText(c)),                             // 8 browser_read result
+  null,                                                                     // 9 todo_write
+];
+
+/** Grid captcha (Lev.2) checks: open, read, click three bus tiles, submit, wait, read “Captcha solved”. */
+export const DRILL_CHECKS_CAPTCHA2 = [
+  null,                                                                     // 1 think
+  null,                                                                     // 2 todo_write
+  (c) => /drill\/captcha2\.html/i.test(argText(c))
+    && /visible window/i.test(resultText(c)),                              // 3 browser_open (visible)
+  (c) => /captcha/i.test(resultText(c)),                                    // 4 browser_read heading
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 5 browser_click tile
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 6 browser_click tile
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 7 browser_click tile
+  (c) => /#captcha-submit/i.test(argText(c)),                               // 8 browser_click submit
+  (c) => /"ms"\s*:\s*\d+/.test(argText(c)) || /waited \d+ms/i.test(resultText(c)), // 9 browser_wait
+  (c) => /captcha solved/i.test(resultText(c)),                             // 10 browser_read result
+  null,                                                                     // 11 todo_write
+];
+
+/** Grid captcha (Lev.3) checks: open, read, click five stop-sign tiles, submit, wait, read “Captcha solved”. */
+export const DRILL_CHECKS_CAPTCHA3 = [
+  null,                                                                     // 1 think
+  null,                                                                     // 2 todo_write
+  (c) => /drill\/captcha3\.html/i.test(argText(c))
+    && /visible window/i.test(resultText(c)),                              // 3 browser_open (visible)
+  (c) => /captcha/i.test(resultText(c)),                                    // 4 browser_read heading
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 5 browser_click tile
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 6 browser_click tile
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 7 browser_click tile
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 8 browser_click tile
+  (c) => /#tile-\d+/i.test(argText(c)),                                     // 9 browser_click tile
+  (c) => /#captcha-submit/i.test(argText(c)),                               // 10 browser_click submit
+  (c) => /"ms"\s*:\s*\d+/.test(argText(c)) || /waited \d+ms/i.test(resultText(c)), // 11 browser_wait
+  (c) => /captcha solved/i.test(resultText(c)),                             // 12 browser_read result
+  null,                                                                     // 13 todo_write
 ];
 
 /**
@@ -644,7 +793,8 @@ function customChecksFrom(steps) {
 /** Which drill a mode setting selects. Unknown/legacy settings are Hard. */
 export function trainingDifficulty(mode) {
   const d = String((mode && mode.difficulty) || '').toLowerCase();
-  return ['easy', 'hard', 'advanced', 'frontier', 'browser', 'ide', 'custom'].includes(d) ? d : 'hard';
+  const normalized = d === 'captcha' ? 'captcha1' : d;
+  return ['easy', 'hard', 'advanced', 'frontier', 'browser', 'captcha1', 'captcha2', 'captcha3', 'ide', 'custom'].includes(normalized) ? normalized : 'hard';
 }
 
 /** The ordered task table for a difficulty. */
@@ -653,6 +803,9 @@ export function trainingTasksFor(difficulty, customSteps = undefined) {
   if (difficulty === 'advanced') return TRAINING_TASKS_ADVANCED;
   if (difficulty === 'frontier') return TRAINING_TASKS_FRONTIER;
   if (difficulty === 'browser') return TRAINING_TASKS_BROWSER;
+  if (difficulty === 'captcha' || difficulty === 'captcha1') return TRAINING_TASKS_CAPTCHA;
+  if (difficulty === 'captcha2') return TRAINING_TASKS_CAPTCHA2;
+  if (difficulty === 'captcha3') return TRAINING_TASKS_CAPTCHA3;
   if (difficulty === 'ide') return TRAINING_TASKS_IDE;
   if (difficulty === 'custom') return customTasksFrom(customSteps);
   return TRAINING_TASKS;
@@ -664,6 +817,9 @@ export function trainingChecksFor(difficulty, customSteps = undefined) {
   if (difficulty === 'advanced') return DRILL_CHECKS_ADVANCED;
   if (difficulty === 'frontier') return DRILL_CHECKS_FRONTIER;
   if (difficulty === 'browser') return DRILL_CHECKS_BROWSER;
+  if (difficulty === 'captcha' || difficulty === 'captcha1') return DRILL_CHECKS_CAPTCHA;
+  if (difficulty === 'captcha2') return DRILL_CHECKS_CAPTCHA2;
+  if (difficulty === 'captcha3') return DRILL_CHECKS_CAPTCHA3;
   if (difficulty === 'ide') return DRILL_CHECKS_IDE;
   if (difficulty === 'custom') return customChecksFrom(customSteps);
   return DRILL_CHECKS;
@@ -687,7 +843,7 @@ export function trainingTaskExample(task, agent = null, difficulty = 'hard') {
   }
   const raw = String((task && task.example) || '');
   if (!raw) return '';
-  return fillBrowser(fillPage(fillFile(raw, agent, difficulty)));
+  return fillCaptcha3(fillCaptcha2(fillCaptcha(fillBrowser(fillPage(fillFile(raw, agent, difficulty))))));
 }
 
 /**
@@ -990,11 +1146,23 @@ const DIFFICULTY_INFO = {
   },
   frontier: {
     label: 'Frontier',
-    hint: 'Frontier runs a 6-step real-desktop demo: window_list finds Notepad, window_open opens it, and window_type types “Hello!” and reads the window back to prove it landed. Leave the window open to watch it.',
+    hint: 'Frontier runs a 6-step real-desktop demo: window_list finds Notepad, window_open opens it, and window_type types “Autonomous Loop Studio - By MBHudson” and reads the window back to prove it landed. Leave the window open to watch it.',
   },
   browser: {
     label: 'Browser',
     hint: 'Browser runs a 9-step local-page demo in a visible window: open the page, read it, type “training”, click “Say hello”, wait, then read “Hello, training” back. Needs Config → Labs → Browser and Chrome or Edge.',
+  },
+  captcha1: {
+    label: 'Captcha Lev.1',
+    hint: 'Captcha runs a 9-step local-page demo in a visible window: open the page, read the code “X7K9Q”, type it into the answer field, click Verify, wait, then read “Captcha solved” back. Needs Config → Labs → Browser and Chrome or Edge.',
+  },
+  captcha2: {
+    label: 'Captcha Lev.2',
+    hint: 'Captcha Lev.2 runs an 11-step grid demo in a visible window: open the page, read the prompt, click every bus tile, click Verify, wait, then read “Captcha solved” back. Needs Config → Labs → Browser and Chrome or Edge.',
+  },
+  captcha3: {
+    label: 'Captcha Lev.3',
+    hint: 'Captcha Lev.3 runs a 13-step grid demo in a visible window: open the page, read the prompt, click every stop-sign tile, click Verify, wait, then read “Captcha solved” back. Needs Config → Labs → Browser and Chrome or Edge.',
   },
   ide: {
     label: 'IDE',
@@ -1029,6 +1197,15 @@ function trainingEnding(difficulty, total = 0) {
   }
   if (difficulty === 'browser') {
     return 'After each passed step, update your todo list; the final todo_write completes the 9-step Browser pass — the mode then sends Continue again, so begin a fresh pass instead of waiting. The local drill page stays open; do not navigate to other sites.';
+  }
+  if (difficulty === 'captcha' || difficulty === 'captcha1') {
+    return 'After each passed step, update your todo list; the final todo_write completes the 9-step Captcha pass � the mode then sends Continue again, so begin a fresh pass instead of waiting. The local captcha page stays open; do not close it.';
+  }
+  if (difficulty === 'captcha2') {
+    return 'After each passed step, update your todo list; the final todo_write completes the 11-step Captcha Lev.2 pass — the mode then sends Continue again, so begin a fresh pass instead of waiting. The local captcha page stays open; do not close it.';
+  }
+  if (difficulty === 'captcha3') {
+    return 'After each passed step, update your todo list; the final todo_write completes the 13-step Captcha Lev.3 pass — the mode then sends Continue again, so begin a fresh pass instead of waiting. The local captcha page stays open; do not close it.';
   }
   if (difficulty === 'ide') {
     return 'After each passed step, update your todo list; the final todo_write completes the 8-step IDE pass — the mode then sends Continue again, so begin a fresh pass instead of waiting. The file stays open in the operator\u2019s editor; leave it open.';
@@ -1511,7 +1688,7 @@ export function showsEveryPass(mode) {
 /** Short numbered recap for the popup dialog. */
 export function trainingStepList(agent = null, difficulty = 'hard', customSteps = undefined) {
   return trainingTasksFor(difficulty, customSteps)
-    .map((t, i) => `${i + 1}. ${t.tool} — ${fillBrowser(fillPage(fillFile(t.label, agent, difficulty)))}${t.expect ? ` (must include “${t.expect}”)` : ''}`);
+         .map((t, i) => `${i + 1}. ${t.tool} — ${fillCaptcha3(fillCaptcha2(fillCaptcha(fillCaptcha(fillBrowser(fillPage(fillFile(t.label, agent, difficulty)))))))}${t.expect ? ` (must include “${t.expect}”)` : ''}`);
 }
 
 /**
@@ -1530,8 +1707,8 @@ export function trainingKickoffFor(difficulty = null) {
   const mode = store.get('settings.trainingMode') || {};
   const diff = difficulty || trainingDifficulty(mode);
   const tasks = trainingTasksFor(diff, mode.customSteps);
-  const stepLabel = (label) => fillBrowser(fillPage(String(label).split(TRAINING_FILE_TOKEN)
-    .join(diff === 'advanced' ? 'your log file' : 'your drill file')));
+  const stepLabel = (label) => fillCaptcha3(fillCaptcha2(fillCaptcha(fillBrowser(fillPage(String(label).split(TRAINING_FILE_TOKEN)
+    .join(diff === 'advanced' ? 'your log file' : 'your drill file'))))));
   const steps = tasks.map((t, i) => `${i + 1}. ${t.tool}: ${stepLabel(t.label)}${t.expect ? ` (must include “${t.expect}”)` : ''}`).join('\n');
   const ending = trainingEnding(diff, tasks.length);
   const custom = diff === 'custom';
@@ -1611,7 +1788,7 @@ export function trainingBlockFor(agent = null) {
   const ide = difficulty === 'ide';
   const custom = difficulty === 'custom';
   const file = fileForSteps(agent, difficulty);
-  const steps = tasks.map((t, i) => `${i + 1}. ${t.tool}: ${fillBrowser(fillPage(fillFile(t.label, agent, difficulty)))}${t.expect ? ` (must include “${t.expect}”)` : ''}`).join('\n');
+     const steps = tasks.map((t, i) => `${i + 1}. ${t.tool}: ${fillCaptcha3(fillCaptcha2(fillCaptcha(fillCaptcha(fillBrowser(fillPage(fillFile(t.label, agent, difficulty)))))))}${t.expect ? ` (must include “${t.expect}”)` : ''}`).join('\n');
   const mine = agent ? (store.get('trainingVerdicts') || {})[agent.id] : null;
   const total = tasks.length;
   const recorded = mine && Number.isFinite(Number(mine.step)) ? Math.max(0, Number(mine.step)) : null;
@@ -1692,7 +1869,7 @@ export function trainingBlockFor(agent = null) {
       + retry
       + `- This is the REAL desktop, not the sandbox: window_list first, and use only the program names it shows. Never invent a path, executable or window name.\n`
       + `- window_open starts one configured program by name; the window outlives your reply. Call window_list again if you are unsure whether it is already running.\n`
-      + `- window_type types into the newest window of that program, live on screen, then reads the window back. Type exactly "Hello!" into Notepad, keep the burst short, and leave the window open afterwards — the result must say the typed text is there; if it says unverified, retry the step.\n`
+      + `- window_type types into the newest window of that program, live on screen, then reads the window back. Type exactly "Autonomous Loop Studio - By MBHudson" into Notepad, keep the burst short, and leave the window open afterwards — the result must say the typed text is there; if it says unverified, retry the step.\n`
       + positionRule
       + `- window_open and window_type ask the operator for approval. That pause is normal: wait for it, do not work around it, and do not narrate the call as text.\n`
       + continueRule

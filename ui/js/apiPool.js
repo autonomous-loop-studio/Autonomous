@@ -23,8 +23,8 @@
 // A 429 puts a key on cooldown so the next call tries a different one instead
 // of spending the same refusal again.
 
-import { store } from './store.js?v=500';
-import { agentCode } from './utils.js?v=500';
+import { store } from './store.js?v=501';
+import { agentCode } from './utils.js?v=501';
 
 const counts = new Map();      // keyId -> requests used this round
 const cooldown = new Map();    // keyId -> epoch ms a key is refused until

@@ -133,7 +133,7 @@ There is no binary to install — a release is the source folder, and "updating"
 
 | | What it is | Get it |
 |---|---|---|
-| **v497** — current | The IDE door unfolds pasted envelopes too, so the IDE drill's write step stops refusing every identical retry; its errors name the flat shape instead. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
+| **v501** — current | Captcha drills (Lev.1/2/3), LAN TTS endpoints, smarter forced-tool-choice memory, and config moved into the sidebar. | [Releases](https://github.com/autonomous-loop-studio/Autonomous/releases) |
 | **v496** | Pasted tool envelopes unfold instead of failing, the Hard drill teaches the flat call shape, and a same-error hint (toggleable) names it after three identical refusals. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v496) |
 | **v495** | Both clients gate the drill todo plan the same way, through one shared path scrub, so a new pass can't reuse the last pass's file. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v495) |
 | **v494** | A todo list that lost its commas no longer stalls Easy step 2: every quoted item is recovered in order instead of returning a schema error. | [Release](https://github.com/autonomous-loop-studio/Autonomous/releases/tag/v494) |
@@ -1916,11 +1916,12 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🔊 v500 — Your own TTS server, half-rate training pacing, a tunable dialect harness, Hyper Brute Force
+### 🏋 v501 — Captcha drills, LAN TTS, and a smarter forced-tool-choice memory
 
-*Settings → Speech gains a custom endpoint for any OpenAI-compatible TTS server (e.g. a local `http://localhost:8000/v1`) — your model/voice names pass through as-is, blanks fill with `tts-1`/`alloy`. Training gets a half-rate pacing switch (on, locals exempt) and an opt-in Hyper Brute Force mode that sweeps a failed step through all four shapes until one runs clean 3 times. The dialect memo moves under Config → Harness / Dialect with seven tuning switches (negative memo, cold hint and telemetry on; durable lock, real-success only, drill gate, clone inherit off).*
+*Training mode gains three captcha drills (Lev.1 text code, Lev.2 bus grid, Lev.3 stop-sign grid); the Frontier drill now types "Autonomous Loop Studio - By MBHudson"; step instructions were trimmed. Speech: a custom TTS endpoint may point at a LAN host over plain http, and the cloud key is never forwarded to it. Chat remembers runners that refuse or ignore a forced tool_choice, and a pass with at least one successful call now writes a memo. Config moves out of a modal into the sidebar.*
 
 *Full suite green: JS 46 files / 1,757 assertions, PHP 39 files.*
+
 
 
 ---

@@ -18,10 +18,10 @@
 // Toggle: Config → Harness / Dialect → "Dynamic tools" (settings.dynamicTools). Off = the
 // exact classic toolInstructions() output, byte for byte.
 
-import { store } from './store.js?v=500';
-import { api } from './api.js?v=500';
-import { toolInstructions } from './tools.js?v=500';
-import { visibleRoots } from './utils.js?v=500';
+import { store } from './store.js?v=501';
+import { api } from './api.js?v=501';
+import { toolInstructions } from './tools.js?v=501';
+import { visibleRoots } from './utils.js?v=501';
 
 const TTL_MS = 5 * 60 * 1000;
 let _facts = null;

@@ -12,9 +12,12 @@
 // passed through per request and never written to disk, exactly like the chat
 // relay in ModelManager.
 //
-// Only two hosts and only two paths are reachable. The path check is the
-// important half: without it, the localhost entry in the host list would turn
-// this into an open proxy against anything listening on the machine.
+// Only allowlisted hosts and only audio paths are reachable. The path check
+// is the important half: without it, the localhost entry in the host list
+// would turn this into an open proxy against anything listening on the
+// machine. A custom endpoint may additionally point at the LAN (a GPU box
+// running a local TTS server): the path check still applies, so only the
+// audio paths are reachable there too.
 namespace Src;
 
 class Audio {
@@ -134,14 +137,23 @@ class Audio {
             throw new \RuntimeException('Audio endpoint is not a valid URL.');
         }
         $host = strtolower($parts['host']);
-        if (!in_array($host, self::$hostAllow, true)) {
+        // A custom endpoint may point at another box on the LAN — a GPU host
+        // running a local OpenAI-compatible TTS server — which is never on
+        // the host allowlist. The same canonical local-network check the TLS
+        // policy and the chat relay's LAN-runner rule use decides, and the
+        // audio-path check below stays the SSRF guard either way.
+        $localOverride = $endpoint !== '' && Tls::isLocalUrl($base);
+        if (!in_array($host, self::$hostAllow, true) && !$localOverride) {
             throw new \RuntimeException(
                 'Audio host "' . $host . '" is not allowed. Permitted: '
-                . implode(', ', self::$hostAllow) . '.'
+                . implode(', ', self::$hostAllow) . ' plus local-network hosts as a custom endpoint.'
             );
         }
         $scheme = strtolower($parts['scheme']);
-        if ($scheme !== 'https' && !in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+        $isLoopback = in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+        // Plain http never crosses the public internet from loopback or the
+        // LAN, so it is fine there, exactly as the TLS AUTO policy holds.
+        if ($scheme !== 'https' && !$isLoopback && !$localOverride) {
             throw new \RuntimeException('Audio endpoint must use https.');
         }
 
@@ -241,12 +253,16 @@ class Audio {
             return ['error' => $e->getMessage()];
         }
 
+        $hasCustomEndpoint = trim((string)($spec['endpoint'] ?? '')) !== '';
+        if ($hasCustomEndpoint) {
+            $spec['api_key'] = '';
+        }
+
         // A custom endpoint (a local OpenAI-compatible TTS server) may sit
         // behind a strict validator that rejects blank fields. The catalogue
         // already supplies the cloud defaults below; when those are still
         // blank, fall back to the OpenAI canonical pair so the request is
         // accepted as-is. Providers without an endpoint override are untouched.
-        $hasCustomEndpoint = trim((string)($spec['endpoint'] ?? '')) !== '';
 
         // A whitespace-only model is blank, not a name: trim first so the
         // strict local servers behind a custom endpoint never see a field of
@@ -351,6 +367,10 @@ class Audio {
             $base = self::baseFor($provider, $spec['endpoint'] ?? '');
         } catch (\RuntimeException $e) {
             return ['error' => $e->getMessage()];
+        }
+
+        if (trim((string)($spec['endpoint'] ?? '')) !== '') {
+            $spec['api_key'] = '';
         }
 
         $fields = [
