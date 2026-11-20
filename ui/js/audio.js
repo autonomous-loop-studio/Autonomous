@@ -234,17 +234,28 @@ export class AudioController {
   spec(text, extra = {}) {
     // extra.voice overrides the global choice for cloud providers too.
     const p = this.provider();
-    return {
+    const custom = String(this.settings.audioEndpoint || '').trim();
+    const body = {
       provider: this.providerId(),
       endpoint: this.endpointFor(p),
       api_key: (p && p.apiKey) || '',
       model: this.settings.audioModel || '',
-      voice: (extra && extra.voice) || this.settings.audioVoice || '',
+      voice: this.settings.audioVoice || '',
       speed: this.settings.audioSpeed ?? 1,
       pitch: this.resolvePitch(extra && extra.pitch),
       text,
       ...extra,
     };
+    // A custom endpoint is usually a local OpenAI-compatible TTS server, and
+    // the strict ones reject a blank model/voice instead of defaulting them.
+    // Send the OpenAI canonical pair so the request is accepted as-is. Cloud
+    // behavior is untouched: without a custom endpoint blanks still go out
+    // and the server applies the provider catalogue exactly as before.
+    if (custom) {
+      if (!String(body.model || '').trim()) body.model = 'tts-1';
+      if (!String(body.voice || '').trim()) body.voice = 'alloy';
+    }
+    return body;
   }
 
   async loadCapabilities() {

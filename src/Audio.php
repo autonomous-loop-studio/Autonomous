@@ -241,9 +241,33 @@ class Audio {
             return ['error' => $e->getMessage()];
         }
 
+        // A custom endpoint (a local OpenAI-compatible TTS server) may sit
+        // behind a strict validator that rejects blank fields. The catalogue
+        // already supplies the cloud defaults below; when those are still
+        // blank, fall back to the OpenAI canonical pair so the request is
+        // accepted as-is. Providers without an endpoint override are untouched.
+        $hasCustomEndpoint = trim((string)($spec['endpoint'] ?? '')) !== '';
+
+        // A whitespace-only model is blank, not a name: trim first so the
+        // strict local servers behind a custom endpoint never see a field of
+        // spaces where a model belongs.
+        $model = trim((string)($spec['model'] ?? ''));
+        if ($model === '') {
+            $model = $catalogue[$provider]['speech_model'];
+        }
+        if ($model === '' && $hasCustomEndpoint) {
+            $model = 'tts-1';
+        }
+
         $voice = (string)($spec['voice'] ?? '');
         $voiceList = $catalogue[$provider]['voices'];
-        if ($voice === '' || !in_array($voice, $voiceList, true)) {
+        if ($hasCustomEndpoint) {
+            // A local server has its own voice names, so a custom voice passes
+            // through as-is; only a blank one gets the canonical default.
+            if (trim($voice) === '') {
+                $voice = 'alloy';
+            }
+        } elseif ($voice === '' || !in_array($voice, $voiceList, true)) {
             $voice = $catalogue[$provider]['voice'];
         }
 
@@ -252,7 +276,7 @@ class Audio {
         if ($speed > 4.0) { $speed = 4.0; }
 
         $payload = [
-            'model' => (string)($spec['model'] ?? '') ?: $catalogue[$provider]['speech_model'],
+            'model' => $model,
             'input' => $text,
             'voice' => $voice,
             'response_format' => 'mp3',
