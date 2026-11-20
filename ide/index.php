@@ -19,6 +19,12 @@
 
 header_remove('X-Frame-Options');
 header("Content-Security-Policy: frame-ancestors 'self'");
+// Never cache this entry point: same policy as the root .htaccess HTML rule
+// and serve.php. Without it a deploy ships new editor JS while the browser
+// keeps showing yesterday's page around it.
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 ?>
 <!DOCTYPE html>
 <!--
