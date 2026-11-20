@@ -27,9 +27,9 @@ import {
   TOOL_PATTERNS,
   CONTEXT_LIMITS,
   DEFAULT_RPM,
-} from './harness.data.js?v=499';
-import { store } from './store.js?v=499';
-import { persistence } from './persistence.js?v=499';
+} from './harness.data.js?v=500';
+import { store } from './store.js?v=500';
+import { persistence } from './persistence.js?v=500';
 
 export { API_FAMILIES };
 
@@ -262,14 +262,58 @@ export function toolProtocolFor(agent, provider, resolvedEndpoint) {
   // one, because the tool set and prompt that made a syntax work are theirs.
   // Feature-gated, and skipped when the operator has pinned one above.
   const memo = learnedDialect(provider || agent?.provider, agent?.model, agent?.id);
-  if (memo && BY_ID.has(memo)) return memo;
+  if (memo && BY_ID.has(memo)) { bumpTelemetry('memoHits'); return memo; }
+  bumpTelemetry('memoMisses');
   return autoProtocol(provider || agent?.provider, agent?.model, family);
 }
 
-// --- Learned tool dialect (Config → Labs → "Remember the working dialect") ---
+// --- Learned tool dialect (Config → Harness / Dialect) ---
 
 function dialectMemoEnabled() {
   return (store.get('settings') || {}).toolDialectMemo !== false;
+}
+
+/** Negative memo: deprioritize a dialect after repeated parse fails. ON by default. */
+export function dialectNegMemoEnabled() {
+  return (store.get('settings') || {}).dialectNegMemo !== false;
+}
+
+/** Cold-start hint: name another agent's dialect without applying it. ON by default. */
+export function dialectColdHintEnabled() {
+  return (store.get('settings') || {}).dialectColdHint !== false;
+}
+
+/** Durable lock: { on, need, evict }. OFF by default — single-ok locks. */
+export function dialectDurableSettings() {
+  const raw = (store.get('settings') || {}).dialectDurable || {};
+  const need = Math.max(2, Math.min(9, Math.floor(Number(raw.need) || 2)));
+  const evict = Math.max(2, Math.min(9, Math.floor(Number(raw.evict) || 3)));
+  return { on: raw.on === true, need, evict };
+}
+
+/** Drill-verdict gate: only remember training turns that semantically pass. OFF by default. */
+export function dialectDrillGateEnabled() {
+  return (store.get('settings') || {}).dialectDrillGate === true;
+}
+
+/** Clone inherit: copying an agent copies its memo entries. OFF by default. */
+export function dialectCloneInheritEnabled() {
+  return (store.get('settings') || {}).dialectCloneInherit === true;
+}
+
+/** Telemetry: count memo hits/misses/remembers. ON by default. */
+export function dialectTelemetryEnabled() {
+  return (store.get('settings') || {}).dialectTelemetry !== false;
+}
+
+function bumpTelemetry(key) {
+  if (!dialectTelemetryEnabled()) return;
+  try {
+    const s = store.get('settings') || {};
+    const stats = { memoHits: 0, memoMisses: 0, remembers: 0, ...(s.dialectTelemetryStats || {}) };
+    if (key in stats) stats[key] = (Number(stats[key]) || 0) + 1;
+    store.set('settings.dialectTelemetryStats', stats);
+  } catch { /* counting never breaks a turn */ }
 }
 
 /** The provider+model slot, the harness-wide memory the app had before. */
@@ -327,11 +371,130 @@ export function rememberDialect(provider, model, dialect, agentId) {
     : providerMemoKey(provider, model);
   if (!key) return;
   const settings = store.get('settings') || {};
+  // Durable lock (Harness / Dialect, OFF by default): the same dialect must
+  // prove itself `need` consecutive times before it is stored. Streaks are
+  // per memo key + dialect, so alternating dialects never accumulate.
+  const durable = dialectDurableSettings();
+  if (durable.on && key) {
+    const streakKey = `${key}::${d}`;
+    const streaks = { ...((settings.dialectMemoStreaks) || {}) };
+    const n = (Number(streaks[streakKey]) || 0) + 1;
+    if (n < durable.need) {
+      streaks[streakKey] = n;
+      store.set('settings.dialectMemoStreaks', streaks);
+      try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+      return;
+    }
+    delete streaks[streakKey];
+    store.set('settings.dialectMemoStreaks', streaks);
+  }
   const map = { ...(settings.toolDialectMap || {}) };
-  if (map[key] === d) return;
+  if (map[key] === d) { bumpTelemetry('remembers'); return; }
   map[key] = d;
+  // A stored success clears that key's failure counters and negative memo.
+  const fails = { ...((store.get('settings') || {}).dialectMemoFails || {}) };
+  let failsTouched = false;
+  for (const k of Object.keys(fails)) {
+    if (k === key || k.startsWith(key + '::')) { delete fails[k]; failsTouched = true; }
+  }
+  const neg = { ...((store.get('settings') || {}).toolDialectNegMap || {}) };
+  let negTouched = false;
+  for (const k of Object.keys(neg)) {
+    if (k === key || k.startsWith(key + '::')) { delete neg[k]; negTouched = true; }
+  }
+  store.set('settings.toolDialectMap', map);
+  if (failsTouched) store.set('settings.dialectMemoFails', fails);
+  if (negTouched) store.set('settings.toolDialectNegMap', neg);
+  bumpTelemetry('remembers');
+  try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+}
+
+/**
+ * Record that `dialect` FAILED to parse for this agent. After `evict`
+ * consecutive fails the stored memo for that key is dropped, so a stale
+ * memo cannot pin an agent to a dead syntax. Never writes a memo.
+ */
+export function recordDialectFail(provider, model, dialect, agentId) {
+  if (!dialectNegMemoEnabled()) return '';
+  const d = String(dialect || '').trim().toLowerCase();
+  if (!BY_ID.has(d)) return '';
+  const key = agentId
+    ? dialectMemoKey(provider, model, agentId)
+    : providerMemoKey(provider, model);
+  if (!key) return '';
+  const settings = store.get('settings') || {};
+  const neg = { ...((settings.toolDialectNegMap) || {}) };
+  const negKey = `${key}::${d}`;
+  neg[negKey] = (Number(neg[negKey]) || 0) + 1;
+  store.set('settings.toolDialectNegMap', neg);
+  const fails = { ...((settings.dialectMemoFails) || {}) };
+  fails[key] = (Number(fails[key]) || 0) + 1;
+  store.set('settings.dialectMemoFails', fails);
+  try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+  const { evict } = dialectDurableSettings();
+  // Auto-evict only runs when the durable block is switched on; the negative
+  // memo above already deprioritizes the dialect while it is off.
+  if (dialectDurableSettings().on && (Number(fails[key]) || 0) >= evict) {
+    return forgetDialect(provider, model, agentId);
+  }
+  return '';
+}
+
+/** How many times `dialect` has failed for this memo key (negative memo). */
+export function dialectFailCount(provider, model, dialect, agentId) {
+  if (!dialectNegMemoEnabled()) return 0;
+  const d = String(dialect || '').trim().toLowerCase();
+  const key = agentId
+    ? dialectMemoKey(provider, model, agentId)
+    : providerMemoKey(provider, model);
+  if (!key || !d) return 0;
+  const neg = (store.get('settings') || {}).toolDialectNegMap || {};
+  return Number(neg[`${key}::${d}`]) || 0;
+}
+
+/**
+ * Cold-start hint: another agent's dialect on the same provider+model, for
+ * display only. Never consulted by toolProtocolFor and never written — the
+ * new agent still starts from the heuristic and must earn its own memo.
+ */
+export function coldStartHintFor(provider, model, agentId) {
+  if (!dialectColdHintEnabled()) return '';
+  if (learnedDialect(provider, model, agentId)) return '';
+  const slot = providerMemoKey(provider, model);
+  if (!slot) return '';
+  const map = (store.get('settings') || {}).toolDialectMap || {};
+  for (const [key, dialect] of Object.entries(map)) {
+    const d = String(dialect || '').toLowerCase();
+    if (!BY_ID.has(d)) continue;
+    const parts = String(key).split('::');
+    if (parts.length < 3) continue;
+    const rest = parts.slice(1).join('::');
+    if (rest !== slot) continue;
+    if (agentId && parts[0] === String(agentId)) continue;
+    return d;
+  }
+  return '';
+}
+
+/** Copy one agent's memo entries onto a new agent id. No-op unless enabled. */
+export function copyDialectMemo(srcAgentId, dstAgentId) {
+  const src = String(srcAgentId || '').trim();
+  const dst = String(dstAgentId || '').trim();
+  if (!src || !dst || src === dst) return 0;
+  if (!dialectCloneInheritEnabled()) return 0;
+  const settings = store.get('settings') || {};
+  const map = { ...(settings.toolDialectMap || {}) };
+  let n = 0;
+  for (const [key, dialect] of Object.entries(map)) {
+    const parts = String(key).split('::');
+    if (parts.length < 3 || parts[0] !== src) continue;
+    const next = [dst, ...parts.slice(1)].join('::');
+    if (!(next in map)) { map[next] = dialect; n++; }
+  }
+  if (!n) return 0;
   store.set('settings.toolDialectMap', map);
   try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+  return n;
 }
 
 /**
@@ -341,7 +504,7 @@ export function rememberDialect(provider, model, dialect, agentId) {
  * Strictly per agent: forgetting one agent never clears another agent's
  * entry, nor the shared slot other callers may still read.
  *
- * Deliberately NOT gated by the Labs switch: turning the memo off must not
+ * Deliberately NOT gated by the Harness switch: turning the memo off must not
  * strand entries the operator can no longer clear. Forgetting is always
  * allowed, and the return value lets the caller say whether anything was
  * actually dropped.
@@ -387,7 +550,7 @@ export function memoProvenance(provider, model, agentId) {
  * agent id never changes out from under its memo. Shapes this module never
  * writes are skipped, never deleted.
  *
- * Deliberately NOT gated by the Labs switch: a switched-off memo is still
+ * Deliberately NOT gated by the Harness switch: a switched-off memo is still
  * stored, still listed, and still forgettable.
  */
 export function listDialectMemos() {

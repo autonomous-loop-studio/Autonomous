@@ -13,6 +13,7 @@
 // agent. These assertions pin that, plus the two operators over it: the Labs
 // switch and an explicitly pinned dialect.
 //
+// Harness / Dialect: strict per-agent memo plus its seven tuning switches.
 // The `?v=` is read from store.js rather than written here, so a cache-buster
 // bump cannot split the test from the modules under test.
 
@@ -26,7 +27,10 @@ if (!version) {
   process.exit(1);
 }
 const { store } = await import(`../../ui/js/store.js?v=${version}`);
-const { learnedDialect, rememberDialect, forgetDialect, toolProtocolFor, memoProvenance } =
+const { learnedDialect, rememberDialect, forgetDialect, toolProtocolFor, memoProvenance,
+  dialectNegMemoEnabled, dialectColdHintEnabled, dialectDurableSettings,
+  dialectDrillGateEnabled, dialectCloneInheritEnabled, copyDialectMemo,
+  coldStartHintFor, recordDialectFail, dialectFailCount, dialectTelemetryEnabled } =
   await import(`../../ui/js/harness.js?v=${version}`);
 const { realSuccessOnlyEnabled } =
   await import(`../../ui/js/training.js?v=${version}`);
@@ -125,6 +129,76 @@ eq(realSuccessOnlyEnabled({}), false, 'real-success only defaults to off');
 eq(realSuccessOnlyEnabled({ realSuccessOnly: true }), true, 'the Training popup can switch it on');
 eq(realSuccessOnlyEnabled({ realSuccessOnly: false }), false, 'and back off again');
 eq(memoProvenance(a.provider, a.model, a.id), '', 'A has no memo here (it was forgotten above)');
+
+// Harness / Dialect section defaults: safe helpers ON, strict gates OFF.
+eq(dialectNegMemoEnabled(), true, 'negative memo defaults on');
+eq(dialectColdHintEnabled(), true, 'cold-start hint defaults on');
+eq(dialectDurableSettings().on, false, 'durable lock defaults off');
+eq(dialectDrillGateEnabled(), false, 'drill-verdict gate defaults off');
+eq(dialectCloneInheritEnabled(), false, 'clone inherit defaults off');
+eq(dialectTelemetryEnabled(), true, 'telemetry defaults on');
+store.set('settings.trainingRealSuccessOnly', true);
+eq(realSuccessOnlyEnabled(), true, 'the Harness switch turns real-success only on');
+store.set('settings.trainingRealSuccessOnly', false);
+store.set('settings.trainingMode', { ...(store.get('settings.trainingMode') || {}), realSuccessOnly: true });
+eq(realSuccessOnlyEnabled(), false, 'the Harness switch wins over the legacy Training key');
+eq(realSuccessOnlyEnabled({ realSuccessOnly: true }), true, 'the legacy key still answers when passed directly');
+store.set('settings.trainingMode', { ...(store.get('settings.trainingMode') || {}), realSuccessOnly: false });
+
+// Negative memo: failures count, never teach, and can be switched off.
+store.set('settings.dialectNegMemo', true);
+store.set('settings.toolDialectNegMap', {});
+store.set('settings.dialectMemoFails', {});
+eq(dialectFailCount('openai', 'model-x', 'native', 'agent-neg'), 0, 'no failures counted yet');
+recordDialectFail('openai', 'model-x', 'native', 'agent-neg');
+eq(dialectFailCount('openai', 'model-x', 'native', 'agent-neg'), 1, 'one parse failure is counted');
+eq(learnedDialect('openai', 'model-x', 'agent-neg'), '', 'a failure never writes a memo');
+store.set('settings.dialectNegMemo', false);
+recordDialectFail('openai', 'model-x', 'native', 'agent-neg');
+eq(dialectFailCount('openai', 'model-x', 'native', 'agent-neg'), 0, 'switch off: the count reads as unused');
+eq((store.get('settings').toolDialectNegMap || {})['agent-neg::openai::model-x::native'], 1, 'and the stored count is left untouched');
+store.set('settings.dialectNegMemo', true);
+
+// Cold-start hint: suggest, never apply (fresh model pair, so no agent has a memo yet).
+store.set('settings.dialectColdHint', true);
+rememberDialect('openai', 'model-cold', 'native', 'agent-cold-a');
+eq(coldStartHintFor('openai', 'model-cold', 'agent-cold-b'), 'native', 'B is told what A proved');
+eq(learnedDialect('openai', 'model-cold', 'agent-cold-b'), '', 'but B still starts with no memo of its own');
+eq(toolProtocolFor({ id: 'agent-cold-b', provider: 'openai', model: 'model-cold' }), 'json', 'and the hint never changes the heuristic');
+store.set('settings.dialectColdHint', false);
+eq(coldStartHintFor('openai', 'model-cold', 'agent-cold-b'), '', 'switch off: no hint is offered');
+store.set('settings.dialectColdHint', true);
+forgetDialect('openai', 'model-cold', 'agent-cold-a');
+
+// Durable lock: OFF means one ok still locks (today's behaviour).
+store.set('settings.dialectDurable', { on: false, need: 2, evict: 3 });
+store.set('settings.dialectMemoStreaks', {});
+rememberDialect('openai', 'model-x', 'plain', 'agent-dur');
+eq(learnedDialect('openai', 'model-x', 'agent-dur'), 'plain', 'durable off: a single ok locks');
+forgetDialect('openai', 'model-x', 'agent-dur');
+// Durable ON: the same dialect must repeat before it sticks.
+store.set('settings.dialectDurable', { on: true, need: 2, evict: 3 });
+rememberDialect('openai', 'model-x', 'plain', 'agent-dur');
+eq(learnedDialect('openai', 'model-x', 'agent-dur'), '', 'durable on: the first ok only streaks');
+rememberDialect('openai', 'model-x', 'plain', 'agent-dur');
+eq(learnedDialect('openai', 'model-x', 'agent-dur'), 'plain', 'the repeat locks it');
+forgetDialect('openai', 'model-x', 'agent-dur');
+store.set('settings.dialectDurable', { on: false, need: 2, evict: 3 });
+store.set('settings.dialectMemoStreaks', {});
+
+// Clone inherit: OFF means a copy starts clean (today's behaviour).
+store.set('settings.dialectCloneInherit', false);
+rememberDialect('openai', 'model-x', 'native', 'agent-src');
+eq(copyDialectMemo('agent-src', 'agent-dst'), 0, 'clone off: nothing is copied');
+eq(learnedDialect('openai', 'model-x', 'agent-dst'), '', 'the copy starts clean');
+store.set('settings.dialectCloneInherit', true);
+// Clean the destination first so the copy has somewhere to land.
+forgetDialect('openai', 'model-x', 'agent-dst');
+ok(copyDialectMemo('agent-src', 'agent-dst') >= 1, 'clone on: the memo is copied');
+eq(learnedDialect('openai', 'model-x', 'agent-dst'), 'native', 'and the copy starts from it');
+store.set('settings.dialectCloneInherit', false);
+forgetDialect('openai', 'model-x', 'agent-src');
+forgetDialect('openai', 'model-x', 'agent-dst');
 
 for (const line of errors) console.log(line);
 console.log(`dialectMemo: ${pass} passed, ${fail} failed`);

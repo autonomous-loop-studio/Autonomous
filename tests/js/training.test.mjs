@@ -35,7 +35,8 @@ const {
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
   drillPassFile, drillWriteRefusal, drillStepRefusal,
   trainingTaskExample, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice,
-  drillSameErrorNotice, sameErrorHintEnabled, trainingThrottleEnabled, normaliseErrorText,
+  drillSameErrorNotice, sameErrorHintEnabled, trainingThrottleEnabled, hyperBruteEnabled, normaliseErrorText,
+  BRUTE_SHAPES, BRUTE_CONFIRM, bruteNextShape, bruteNew, brutePinFor, bruteFail, bruteWin,
   trainingAccuracy, todoPlanIsCurrent, DRILL_REPEAT_HINT, DRILL_REPEAT_LIMIT, SAME_ERROR_HINT,
 } = await import(`../../ui/js/training.js?v=${version}`);
 const trainingModule = await import(`../../ui/js/training.js?v=${version}`);
@@ -785,6 +786,84 @@ eq(localArmed.rpm, 40, 'the global ceiling still applies, uncut');
 if (prevRpm === undefined) delete store.get('settings').rateLimitRpm;
 else store.set('settings.rateLimitRpm', prevRpm);
 store.set('settings.trainingMode', { active: false, startedAt: 0 });
+
+// --- Hyper brute force: the pure sweep engine --------------------------------
+// Off by default; the dialog opts in.
+eq(hyperBruteEnabled({}), false, 'brute force defaults off');
+eq(hyperBruteEnabled({ hyperBrute: true }), true, 'the dialog switch arms brute force');
+eq(hyperBruteEnabled({ hyperBrute: false }), false, 'the unchecked switch stays off');
+// Four shapes, simplest first — the same set the parse escalation covers.
+eq(BRUTE_SHAPES.join(','), 'plain,json,native,anthropic', 'the sweep tries all four shapes in order');
+eq(BRUTE_CONFIRM, 3, 'a winner must repeat cleanly 3 times');
+eq(bruteNextShape([]), 'plain', 'an unswept step starts at plain JSON');
+eq(bruteNextShape(['plain']), 'json', 'the sweep advances in fixed order');
+eq(bruteNextShape(new Set(['plain', 'json'])), 'native', 'tried works as a set too');
+eq(bruteNextShape(['plain', 'json', 'native', 'anthropic']), null, 'all four tried means exhausted');
+// A first execution failure is a free same-shape retry (usually a typo).
+{
+  const st = bruteNew();
+  const r1 = bruteFail(st, 4, 'json', 'exec');
+  eq(r1.retry, true, 'first exec failure retries the same shape');
+  eq(r1.swept, false, 'the free retry does not start a sweep');
+  eq(brutePinFor(st, 4), 'json', 'the retry is pinned to the same shape');
+  const r2 = bruteFail(st, 4, 'json', 'exec');
+  eq(r2.swept, true, 'the repeat failure starts the sweep');
+  ok(r2.note.includes('Hyper brute (1/4)') && r2.note.includes('plain JSON'), 'the sweep notice names the count and the next shape');
+  eq(brutePinFor(st, 4), 'plain', 'the sweep pins the next untried shape');
+}
+// Parse failures sweep at once: the shape itself is the suspect.
+{
+  const st = bruteNew();
+  const r = bruteFail(st, 2, 'json', 'parse');
+  eq(r.swept, true, 'a parse failure sweeps immediately');
+  eq(brutePinFor(st, 2), 'plain', 'the next shape is pinned');
+}
+// Exhaustion falls back to the normal retry instead of looping shapes.
+{
+  const st = bruteNew();
+  let r;
+  for (const s of BRUTE_SHAPES) r = bruteFail(st, 0, s, 'parse');
+  eq(r.exhausted, true, 'all four shapes failing exhausts the step');
+  eq(r.note, '', 'exhaustion adds no notice: the normal retry takes over');
+  eq(brutePinFor(st, 0), null, 'an exhausted step pins nothing');
+}
+// A hit starts confirmation; three in a row in one shape proves it.
+{
+  const st = bruteNew();
+  bruteFail(st, 1, 'json', 'parse');
+  let r = bruteWin(st, 1, 'plain');
+  eq(r.proven, null, 'the hit alone proves nothing');
+  eq(st.winners[1], 'plain', 'the hit records the winning shape');
+  r = bruteWin(st, 2, 'plain');
+  eq(r.proven, null, 'two in a row is still confirming');
+  r = bruteWin(st, 3, 'plain');
+  eq(r.proven, 'plain', 'three in a row proves the shape');
+  // A shape change restarts the count.
+  const st2 = bruteNew();
+  bruteWin(st2, 1, 'json');
+  bruteWin(st2, 2, 'native');
+  r = bruteWin(st2, 3, 'native');
+  eq(r.proven, null, 'switching shapes restarts confirmation');
+  r = bruteWin(st2, 4, 'native');
+  eq(r.proven, 'native', 'three consecutive in the new shape proves it');
+}
+// A failing winner is dethroned so evidence picks the shape.
+{
+  const st = bruteNew();
+  bruteWin(st, 1, 'json');
+  bruteFail(st, 1, 'json', 'exec');
+  const r = bruteFail(st, 1, 'json', 'exec');
+  eq(r.swept, true, 'the repeat failure sweeps past a dethroned winner');
+  eq(st.winners[1], undefined, 'the failed winner is dropped');
+}
+// Winner steps pin their winner; other steps follow the latest winner.
+{
+  const st = bruteNew();
+  eq(brutePinFor(st, 0), null, 'no history pins nothing');
+  bruteWin(st, 0, 'native');
+  eq(brutePinFor(st, 0), 'native', 'a proven step pins its winner');
+  eq(brutePinFor(st, 1), 'native', 'later steps confirm the latest winner');
+}
 
 // --- The IDE drill: the shared write path, exercised by the agent ----------
 // The point of this mode is the DOOR, not the content. A model that answered it

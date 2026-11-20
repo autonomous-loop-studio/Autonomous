@@ -30,4 +30,16 @@ export {
   learnedDialect,
   rememberDialect,
   forgetDialect,
-} from './harness.js?v=499';
+  memoProvenance,
+  listDialectMemos,
+  dialectDrillGateEnabled,
+  dialectNegMemoEnabled,
+  dialectColdHintEnabled,
+  coldStartHintFor,
+  recordDialectFail,
+  dialectFailCount,
+  dialectDurableSettings,
+  dialectCloneInheritEnabled,
+  copyDialectMemo,
+  dialectTelemetryEnabled,
+} from './harness.js?v=500';

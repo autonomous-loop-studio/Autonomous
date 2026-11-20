@@ -19,7 +19,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=499';
+import { store } from './store.js?v=500';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -779,9 +779,121 @@ export function trainingThrottleEnabled(mode = undefined) {
   return m.throttle !== false;
 }
 
-/** Whether dialect memory requires a real tool success. Default off; the dialog can switch it on. */
-export function realSuccessOnlyEnabled(mode = undefined) {
+/** Whether hyper brute force is armed. Default off; the Training dialog can switch it on. A failing drill step is swept through every shape in turn instead of retried in one. */
+export function hyperBruteEnabled(mode = undefined) {
   const m = mode === undefined ? (store.get('settings.trainingMode') || {}) : (mode || {});
+  return !!(m && m.hyperBrute);
+}
+
+/** The four prompt shapes a brute sweep tries, simplest first — the same order the parse-failure escalation already uses, so a same-turn reteach and the next turn agree on what comes next. */
+export const BRUTE_SHAPES = ['plain', 'json', 'native', 'anthropic'];
+/** Consecutive clean runs in the winning shape that prove it (the hit counts as the first). */
+export const BRUTE_CONFIRM = 3;
+/** Operator words for the four shapes, for sweep notices. */
+export const BRUTE_LABEL = { plain: 'plain JSON', json: 'JSON object', native: 'native tags', anthropic: 'Claude XML' };
+
+/** First of BRUTE_SHAPES not in `tried` (an array or Set), or null when all four failed. Pure so the sweep order is testable without a chat instance. */
+export function bruteNextShape(tried) {
+  const set = new Set(Array.isArray(tried) ? tried : [...(tried || [])]);
+  for (const s of BRUTE_SHAPES) {
+    if (!set.has(s)) return s;
+  }
+  return null;
+}
+
+/** Fresh per-agent brute state for one run. `tried`/`winners` are keyed by drill step index; `dead` steps exhausted all four shapes and fall back to the normal retry. */
+export function bruteNew() {
+  return { tried: {}, winners: {}, proven: {}, wins: 0, lastWinner: null, sweep: null, retry: null, retryOnce: {}, dead: {} };
+}
+
+/**
+ * Which shape the next attempt on this step must use, or null for the normal path.
+ *
+ * A sweep in progress pins its next untried shape; a step with a winner pins
+ * the winner; otherwise the most recent winner stays pinned while it confirms.
+ * Pure: the chat instance owns the state object, this only reads it.
+ */
+export function brutePinFor(st, step) {
+  const s = st || bruteNew();
+  if (s.sweep != null && s.sweep !== step) s.sweep = null;
+  if (s.retry && s.retry.step !== step) s.retry = null;
+  if ((s.dead || {})[step]) return null;
+  if (s.retry && s.retry.step === step) return s.retry.shape;
+  if (s.sweep === step) return bruteNextShape(s.tried[step] || []);
+  if (s.winners && s.winners[step]) return s.winners[step];
+  return s.lastWinner || null;
+}
+
+/**
+ * Record a failed attempt on a drill step. Pure: mutates and returns the decision.
+ *
+ * A first execution failure is usually a typo, not the shape, so the step gets
+ * one free retry in the same shape; parse failures and repeats start the sweep
+ * at once. The sweep pins each untried shape in turn; when all four failed the
+ * step is marked dead and the normal retry takes over. A failing winner is
+ * dethroned so evidence, not history, picks the shape.
+ *
+ * @param {object} st brute state (see bruteNew)
+ * @param {number} step 0-based drill step that failed
+ * @param {string} shape the shape that was taught for the failed attempt
+ * @param {'parse'|'exec'} kind parse failures are shape evidence; exec failures may be typos
+ */
+export function bruteFail(st, step, shape, kind) {
+  const s = st || bruteNew();
+  const tried = s.tried[step] || (s.tried[step] = []);
+  if (kind === 'exec' && !tried.includes(shape) && !(s.retryOnce && s.retryOnce[step])) {
+    (s.retryOnce || (s.retryOnce = {}))[step] = true;
+    s.retry = { step, shape };
+    return { pin: shape, note: '', swept: false, exhausted: false, retry: true };
+  }
+  if (s.retry && s.retry.step === step) s.retry = null;
+  if (s.retryOnce) delete s.retryOnce[step];
+  if (!tried.includes(shape)) tried.push(shape);
+  s.wins = 0;
+  if (s.winners && s.winners[step] === shape) delete s.winners[step];
+  const next = bruteNextShape(tried);
+  if (!next) {
+    if (s.sweep === step) s.sweep = null;
+    (s.dead || (s.dead = {}))[step] = true;
+    return { pin: null, note: '', swept: true, exhausted: true };
+  }
+  s.sweep = step;
+  return {
+    pin: next, swept: true, exhausted: false, retry: false,
+    note: `Hyper brute (${tried.length}/4): the "${BRUTE_LABEL[shape] || shape}" shape did not run step ${step + 1}. Same step again, now ONLY in the "${BRUTE_LABEL[next]}" shape — one attempt, in the exact format your system prompt teaches.`,
+  };
+}
+
+/**
+ * Record a clean run on a drill step. The hit counts as the first of
+ * BRUTE_CONFIRM consecutive runs; when the count is reached the shape is
+ * proven and the caller saves it. A shape change restarts the count.
+ */
+export function bruteWin(st, step, shape) {
+  const s = st || bruteNew();
+  if (s.sweep === step) s.sweep = null;
+  if (s.retryOnce) delete s.retryOnce[step];
+  if (s.retry && s.retry.step === step) s.retry = null;
+  if (shape !== s.lastWinner) { s.lastWinner = shape; s.wins = 0; }
+  (s.winners || (s.winners = {}))[step] = shape;
+  s.wins += 1;
+  if (s.wins >= BRUTE_CONFIRM && !(s.proven || {})[shape]) {
+    (s.proven || (s.proven = {}))[shape] = true;
+    return { proven: shape };
+  }
+  return { proven: null };
+}
+
+/** Whether dialect memory requires a real tool success. Default off; Config → Harness / Dialect can switch it on. Reads the new top-level key first, then the legacy Training popup key. */
+export function realSuccessOnlyEnabled(mode = undefined) {
+  if (mode !== undefined) {
+    const m = mode || {};
+    if (typeof m.trainingRealSuccessOnly === 'boolean') return m.trainingRealSuccessOnly;
+    return !!(m && m.realSuccessOnly);
+  }
+  const s = store.get('settings') || {};
+  if (typeof s.trainingRealSuccessOnly === 'boolean') return s.trainingRealSuccessOnly;
+  const m = s.trainingMode || {};
   return !!(m && m.realSuccessOnly);
 }
 
@@ -1446,7 +1558,7 @@ export function trainingKickoffFor(difficulty = null) {
         : 'write_file, edit_file and exec ask for my approval — waiting for it is part of the drill';
   return `Training mode is ON — work this drill now, step by step, ${scope}. Nothing else while it is on.\n`
     + `Steps:\n${steps}\n`
-    + `Rules: one step at a time; a failed step is retried until it passes, never skipped — but READ the error and change the argument, because "Did you mean ..." or "not a file" means the path is wrong, not that the call should be sent again unchanged; ${fileRule}; ${approvalRule}. ${ending}`;
+    + `Rules: one step at a time; a failed step is retried until it passes, never skipped — but READ the error and change the argument, because "Did you mean ..." or "not a file" means the path is wrong, not that the call should be sent again unchanged; ${fileRule}; ${approvalRule}.${hyperBruteEnabled(mode) ? ' Hyper brute force is ON: when a step fails you will redo it in each untried shape in turn — plain JSON, JSON object, native tags, Claude XML — until one runs, then repeat the winning shape until it has run cleanly 3 times in a row.' : ''} ${ending}`;
 }
 
 /**
@@ -1519,7 +1631,8 @@ export function trainingBlockFor(agent = null) {
   const fileLine = (frontier || browser || custom)
     ? ''
     : `YOUR FILE FOR THIS PASS: ${file} — every file step reads and writes exactly that path. A path from an earlier pass, or one copied out of your own todo list, is the WRONG file.\n`;
-  const opening = `[TRAINING MODE — paced drill, ~50% request rate. Nothing else matters until training mode is switched off.]\n`
+  const pacing = trainingThrottleEnabled(mode);
+  const opening = `[TRAINING MODE — ${pacing ? 'paced drill, ~50% request rate' : 'drill at full request rate'}. Nothing else matters until training mode is switched off.]\n`
     + fileLine
     + (frontier
       ? `Work ONLY these steps, in order, on the real desktop. Do not answer other questions, do not open unrelated programs, do not start other work — if asked anything else, finish the current drill step first and say the drill comes first.\n`

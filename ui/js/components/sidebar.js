@@ -7,23 +7,23 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=499';
-import { K } from '../storage.js?v=499';
-import { persistence } from '../persistence.js?v=499';
-import { api } from '../api.js?v=499';
-import { isNoTokenError } from '../apiError.js?v=499';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=499';
-import { errText } from '../api.js?v=499';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=499';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=499';
-import { snapshot } from '../rateGovernor.js?v=499';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy } from '../training.js?v=499';
-import { resetBrowserEnabled } from '../toolManifest.js?v=499';
-import { listDialectMemos, forgetDialect, protocolLabel } from '../harness.js?v=499';
-import { perf } from '../perf.js?v=499';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=499';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=499';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=499';
+import { store } from '../store.js?v=500';
+import { K } from '../storage.js?v=500';
+import { persistence } from '../persistence.js?v=500';
+import { api } from '../api.js?v=500';
+import { isNoTokenError } from '../apiError.js?v=500';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=500';
+import { errText } from '../api.js?v=500';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=500';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=500';
+import { snapshot } from '../rateGovernor.js?v=500';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy, hyperBruteEnabled } from '../training.js?v=500';
+import { resetBrowserEnabled } from '../toolManifest.js?v=500';
+import { listDialectMemos, forgetDialect, protocolLabel, dialectDurableSettings } from '../harness.js?v=500';
+import { perf } from '../perf.js?v=500';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=500';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=500';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=500';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -515,7 +515,7 @@ export class Sidebar {
         </div>
       </span>
       <span class="preprompt-wrap">
-        <button class="agent-menu-btn training-btn${trainingActive ? ' armed' : ''}" id="trainingBtn" title="Training mode${trainingActive ? ' (ON — drill only, agents at ~50% rate)' : ' (off)'}"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 3.5v9M10 3.5v9M2.5 6v4M13.5 6v4M4.5 4.8v6.4M11.5 4.8v6.4M6 8h4"/></svg></button>
+        <button class="agent-menu-btn training-btn${trainingActive ? ' armed' : ''}" id="trainingBtn" title="Training mode${trainingActive ? ` (ON — drill only, ${tm.throttle !== false ? 'cloud ~50% rate' : 'full rate'})` : ' (off)'}"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 3.5v9M10 3.5v9M2.5 6v4M13.5 6v4M4.5 4.8v6.4M11.5 4.8v6.4M6 8h4"/></svg></button>
       </span>
       <button class="btn btn-primary btn-sm" id="addAgentBtn">+ ADD</button>
     </div>`;
@@ -814,9 +814,13 @@ export class Sidebar {
     // Default on: unset keeps today's half-rate drill, so nothing gets faster
     // until the operator opts out. Local models are never throttled either way.
     const throttled = tm.throttle !== false;
+    const hyperBrute = hyperBruteEnabled(tm);
     // Default off: unset keeps today's loose memory, so nothing gets stricter
-    // until the operator opts in.
-    const realSuccessOnly = !!tm.realSuccessOnly;
+    // until the operator opts in. Reads the Harness switch first, then the
+    // legacy Training key it was migrated from.
+    const realSuccessOnly = typeof store.get('settings.trainingRealSuccessOnly') === 'boolean'
+      ? store.get('settings.trainingRealSuccessOnly') === true
+      : !!tm.realSuccessOnly;
     const customHint = difficulty === 'custom' && !customSteps.length
       ? ' No custom steps saved yet — open the builder below.'
       : '';
@@ -867,14 +871,20 @@ export class Sidebar {
             <input type="checkbox" id="trainingRealSuccessOnly" ${realSuccessOnly ? 'checked' : ''}>
             <span>Real-success only</span>
           </label>
-          <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">Off (today's behaviour): a dialect is remembered when every call parsed and ran. On: a todo_write or think alone never teaches it — at least one real tool must succeed. Nothing old is deleted.</div>
+          <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">Off (today's behaviour): a dialect is remembered when every call parsed and ran. On: a todo_write or think alone never teaches it — at least one real tool must succeed. Nothing old is deleted. Same switch as Config → Harness / Dialect.</div>
           <label class="training-show-passes">
             <input type="checkbox" id="trainingThrottle" ${throttled ? 'checked' : ''}>
             <span>Half-rate pacing</span>
           </label>
           <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">On (default): cloud agents train at ~50% of their normal request rate, so the drill exercises patience as well as tools. Local models always run full rate — there is no quota to protect. Off: everyone runs full rate.</div>
+          <label class="training-show-passes">
+            <input type="checkbox" id="trainingHyperBrute" ${hyperBrute ? 'checked' : ''}>
+            <span>Hyper brute force</span>
+          </label>
+          <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">Off (default): a failed step is retried in the same dialect until it passes. On: a failed step is swept through all four shapes in order — first shape that runs wins, must then run cleanly 3 times in a row, and the win is saved to the memo. The run then needs one final clean pass after the last sweep. Best with local models: on cloud keys every sweep attempt is a billed call.</div>
           <ul class="training-points">
             <li>${throttled ? 'Cloud agents are throttled to ~50% of their normal request rate; local models always run full rate.' : 'Pacing is off: every agent runs at its full request rate.'}</li>
+            ${hyperBrute ? '<li><strong>Hyper brute force is armed:</strong> failing steps sweep all four shapes, winners confirm 3× and are saved, and the run ends only on a clean pass after the last sweep.</li>' : ''}
             <li>They work ONLY the drill below, in order — inside the <code>training/</code> sandbox for the file drills, on the real desktop for Frontier, in the built-in browser for Browser, or wherever a custom step directs — nothing else while the mode is on.</li>
             <li><strong>It repeats the whole drill until a pass is 100% clean.</strong> Every finished turn — a display step, a short reply, even the last step of the drill — is followed automatically by <code>Continue</code>, so agents cannot end the loop early. The clean-pass target below is the one exception: it defaults to 1, so the run repeats whole passes and ends at the first one with every step correct, 0 failed attempts and 0 retries.</li>
             <li>A failed step must be retried until it passes, never skipped; each pass is logged to the todo list.</li>
@@ -931,13 +941,20 @@ export class Sidebar {
       try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
     });
     overlay.querySelector('#trainingRealSuccessOnly').addEventListener('change', (e) => {
+      const val = !!e.target.checked;
+      store.set('settings.trainingRealSuccessOnly', val);
       const cur = store.get('settings.trainingMode') || {};
-      store.set('settings.trainingMode', { ...cur, realSuccessOnly: !!e.target.checked });
+      store.set('settings.trainingMode', { ...cur, realSuccessOnly: val });
       try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
     });
     overlay.querySelector('#trainingThrottle').addEventListener('change', (e) => {
       const cur = store.get('settings.trainingMode') || {};
       store.set('settings.trainingMode', { ...cur, throttle: !!e.target.checked });
+      try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+    });
+    overlay.querySelector('#trainingHyperBrute').addEventListener('change', (e) => {
+      const cur = store.get('settings.trainingMode') || {};
+      store.set('settings.trainingMode', { ...cur, hyperBrute: !!e.target.checked });
       try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
     });
     overlay.querySelector('#trainingShowEveryPass').addEventListener('change', (e) => {
@@ -1283,12 +1300,13 @@ export class Sidebar {
     store.set('trainingVerdicts', {});
     store.set('trainingPassLog', {});
     store.set('trainingStuck', {});
+    store.set('trainingBrute', {});
     persistence.set('settings', store.get('settings'));
     const modeLabel = `${trainingDifficultyLabel(difficulty)} · ${tasks.length} steps`;
     store.emit('toast', {
       message: fresh
-        ? `Training mode ON — ${modeLabel}, fresh session (${fresh.title.replace('Training drill — ', '')}), ~50% rate (Stop to end)`
-        : `Training mode ON — ${modeLabel}, continuous drill at ~50% rate (Stop to end)`,
+        ? `Training mode ON — ${modeLabel}, fresh session (${fresh.title.replace('Training drill — ', '')}), ${tm.throttle !== false ? '~50% cloud rate' : 'full rate'} (Stop to end)`
+        : `Training mode ON — ${modeLabel}, continuous drill at ${tm.throttle !== false ? '~50% cloud rate' : 'full rate'} (Stop to end)`,
       type: 'success',
     });
     store.emit('training:changed', { active: true });
@@ -1325,6 +1343,21 @@ export class Sidebar {
     if (!tm.active) return;
     const hit = reachedCleanTarget(tm, store.get('trainingVerdicts') || {});
     if (!hit) return;
+    // Hyper brute: the validating pass must come AFTER the last sweep pass. A
+    // sweep pass is never clean (the sweep exists because a step failed), so
+    // without this the run could stop on passes whose winners were never
+    // re-tried one by one. Parse-only failures never touch the verdict, so
+    // the sweep pass number — not the failure count — is what is compared.
+    if (hyperBruteEnabled(tm)) {
+      const verdicts = store.get('trainingVerdicts') || {};
+      const agentId = Object.keys(verdicts).find(k => verdicts[k] === hit);
+      const sweepPass = agentId ? (store.get('trainingBrute') || {})[agentId] : null;
+      if (agentId && sweepPass != null) {
+        const log = (store.get('trainingPassLog') || {})[agentId] || [];
+        const validated = log.some(e => e && e.clean && Number(e.pass) > Number(sweepPass));
+        if (!validated) return;
+      }
+    }
     const target = trainingCleanTarget(tm);
     this._stopTraining(null, `${hit.name || 'Agent'}: ${target} clean pass${target === 1 ? '' : 'es'} reached — training stopped`);
   }
@@ -2467,7 +2500,7 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
         <div class="form-hint" id="sbPolicyHint" style="margin:4px 0 0"></div>
       `)}
 
-      ${this._cfgSection('labs', 'Labs', settings.dynamicTools !== false
+      ${this._cfgSection('harness', 'Harness / Dialect', (settings.dynamicTools !== false || settings.toolDialectMemo !== false)
         ? { text: 'ON', cls: 'ok' } : { text: 'OFF' }, `
         <div class="toggle-row">
           <span class="toggle-label">Dynamic tools <span class="form-hint-inline">adapt to the model &amp; server</span></span>
@@ -2481,6 +2514,46 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
         <div class="form-hint">Once an agent's tool calls parse AND execute, remember which dialect worked for that agent (and the provider + model it ran on) and start there next time. Another agent on the same model is unaffected, and a model switch makes it learn again. Off re-derives it every turn.</div>
         <div class="form-hint" style="margin-top:8px">Learned dialects, filed per agent id — the id never changes, while provider and model names can be retyped or relayed, so those are shown for context only. Forgetting here is immediate.</div>
         <div id="sbDialectList" style="margin-top:8px"></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Negative memo <span class="form-hint-inline">deprioritize what failed</span></span>
+          <div class="toggle ${settings.dialectNegMemo !== false ? 'active' : ''}" id="sbDialectNeg"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="form-hint">Counts parse failures per agent + dialect and never teaches from a failure. Off retries a dead dialect until the turn runs out.</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Cold-start hint <span class="form-hint-inline">suggest, don't apply</span></span>
+          <div class="toggle ${settings.dialectColdHint !== false ? 'active' : ''}" id="sbDialectColdHint"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="form-hint">A new agent with no memo is told what other agents on its model usually speak — as a hint only. It still starts from the provider heuristic and must earn its own memo.</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Durable lock + auto-evict <span class="form-hint-inline">needs repeats</span></span>
+          <div class="toggle ${(settings.dialectDurable || {}).on === true ? 'active' : ''}" id="sbDialectDurable"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="form-hint">On: one success no longer locks a dialect — it must repeat, and repeated memo failures evict it. Off (today): a single ok locks, only Forget clears. Play with it; defaults stay off until you say otherwise.</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Real-success only <span class="form-hint-inline">no housekeeping teaches</span></span>
+          <div class="toggle ${settings.trainingRealSuccessOnly === true ? 'active' : ''}" id="sbRealSuccessOnly"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="form-hint">On: a think / todo_write alone never teaches a dialect — at least one real tool must succeed. Off (today): every fully-executed turn teaches. Same switch as the Training popup; they stay in sync.</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Drill-verdict gate <span class="form-hint-inline">training only</span></span>
+          <div class="toggle ${settings.dialectDrillGate === true ? 'active' : ''}" id="sbDialectDrillGate"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="form-hint">On: training turns teach only when the drill semantically passes (right file, right bytes), not merely when every tool returned ok. Off (today): executed-ok teaches.</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Clone inherits memo <span class="form-hint-inline">copy learns too</span></span>
+          <div class="toggle ${settings.dialectCloneInherit === true ? 'active' : ''}" id="sbDialectClone"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="form-hint">On: duplicating an agent copies its learned dialects to the new id. Off (today): a copy starts clean and must earn its own.</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Memo telemetry <span class="form-hint-inline">counts only</span></span>
+          <div class="toggle ${settings.dialectTelemetry !== false ? 'active' : ''}" id="sbDialectTelemetry"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="form-hint">Counts memo hits, misses and remembers (shown below). Read-only numbers for deciding whether Real-success only should become the default.</div>
+        <div class="form-hint" id="sbHarnessStatus"></div>
+      `)}
+
+      ${this._cfgSection('labs', 'Labs', settings.apiPool
+        ? { text: 'ON', cls: 'ok' } : { text: '' }, `
         <div class="toggle-row">
           <span class="toggle-label">API pool <span class="form-hint-inline">rotate extra provider keys</span></span>
           <div class="toggle ${settings.apiPool ? 'active' : ''}" id="sbApiPool"><div class="toggle-knob"></div></div>
@@ -2861,10 +2934,25 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
     document.getElementById('sbPolicyBtn')?.addEventListener('click', () => this.openPolicyEditor());
     this._loadPolicyHint();
 
-    // Labs: dynamic tools + dialect memo. Both read live from settings, so a
-    // change takes effect on the next turn with no SAVE.
+    // Harness / Dialect: every switch reads live from settings, so a change
+    // takes effect on the next turn with no SAVE.
     this._initToggle('sbDynTools', (val) => store.set('settings.dynamicTools', val));
     this._initToggle('sbDialectMemo', (val) => store.set('settings.toolDialectMemo', val));
+    this._initToggle('sbDialectNeg', (val) => store.set('settings.dialectNegMemo', val));
+    this._initToggle('sbDialectColdHint', (val) => store.set('settings.dialectColdHint', val));
+    this._initToggle('sbDialectDurable', (val) => {
+      const cur = store.get('settings.dialectDurable') || {};
+      store.set('settings.dialectDurable', { need: 2, evict: 3, ...cur, on: val });
+    });
+    this._initToggle('sbRealSuccessOnly', (val) => {
+      store.set('settings.trainingRealSuccessOnly', val);
+      const cur = store.get('settings.trainingMode') || {};
+      if (!!cur.realSuccessOnly !== val) store.set('settings.trainingMode', { ...cur, realSuccessOnly: val });
+    });
+    this._initToggle('sbDialectDrillGate', (val) => store.set('settings.dialectDrillGate', val));
+    this._initToggle('sbDialectClone', (val) => store.set('settings.dialectCloneInherit', val));
+    this._initToggle('sbDialectTelemetry', (val) => store.set('settings.dialectTelemetry', val));
+    // Labs: API pool + browser. Harness switches moved to their own section.
     this._initToggle('sbApiPool', (val) => store.set('settings.apiPool', val));
     this._initToggle('sbLiveBg', (val) => store.set('settings.browserLiveBackground', val));
     this._initBrowserToggle();
@@ -5743,26 +5831,34 @@ const ghost = { on: true, color: '#a8c0d8', size: 11, opacity: 0.3, ...(settings
       .catch(() => { /* leave it as rendered */ });
   }
 
-  /** Config → Labs: server OS + how much was detected. */
+  /** Config → Harness / Labs: server OS + memo/telemetry counts. */
   async _loadLabsStatus() {
+    const harnessEl = document.getElementById('sbHarnessStatus');
     const el = document.getElementById('sbLabsStatus');
-    if (!el) return;
+    if (!harnessEl && !el) return;
+    const paint = (os, total, have) => {
+      const settings = store.get('settings') || {};
+      const memo = Object.keys(settings.toolDialectMap || {}).length;
+      const st = settings.dialectTelemetryStats || {};
+      const tele = `hits ${Number(st.memoHits) || 0} · misses ${Number(st.memoMisses) || 0} · remembers ${Number(st.remembers) || 0}`;
+      if (harnessEl) harnessEl.textContent = `${memo} learned dialect${memo === 1 ? '' : 's'} remembered. Telemetry: ${tele}.`;
+      if (el) el.textContent = `Server: ${os}. ${total ? `${have}/${total} allowlisted commands resolve. ` : ''}`
+        + `${memo} learned dialect${memo === 1 ? '' : 's'} remembered.`;
+    };
     try {
       const s = await api.getSandboxStatus();
       const os = s.os === 'windows' ? 'Windows' : 'POSIX (Linux/macOS)';
       const bins = s.binaries || {};
       const total = Object.keys(bins).length;
       const have = Object.keys(bins).filter(k => bins[k]).length;
-      const memo = Object.keys((store.get('settings') || {}).toolDialectMap || {}).length;
-      el.textContent = `Server: ${os}. ${total ? `${have}/${total} allowlisted commands resolve. ` : ''}`
-        + `${memo} learned dialect${memo === 1 ? '' : 's'} remembered.`;
+      paint(os, total, have);
     } catch {
-      el.textContent = '';
+      try { paint('Server', 0, 0); } catch { /* never break Config on status */ }
     }
   }
 
   /**
-   * Config → Labs: every remembered dialect, grouped by agent id.
+   * Config → Harness / Dialect: every remembered dialect, grouped by agent id.
    *
    * The agent id is the stable handle; provider and model strings are shown
    * for context only. Known ids resolve to roster names; keys for deleted

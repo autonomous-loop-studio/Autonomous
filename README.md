@@ -1079,7 +1079,8 @@ One switch writes **the same nine settings the controls above already own** — 
 | Section | Defaults |
 | --- | --- |
 | 🖥️ **Desktop** | tuck panels away **on** · chat background **4%** · glass blur **1px** · glow **100%** · ambient motion **100%** · background fog **on** · bloom **on** · floating floor **on** · floor **pinned** · auto-rotate **on** · map detail **100%** · **60fps** · performance mode **off** |
-| 🧪 **Labs** | dynamic tools **on** · dialect memo **on** · API pool **on** · Keep Live when hidden **on** · built-in **Browser off** |
+| 🧪 **Labs** | API pool **on** · Keep Live when hidden **on** · built-in **Browser off** |
+| 🛠️ **Harness / Dialect** | dynamic tools **on** · dialect memo **on** · negative memo **on** · cold hint **on** · telemetry **on** · durable lock · real-success only · drill gate · clone inherit **off** |
 | 🧮 **Resource Manager** | all four switches **off** |
 
 Saved settings always win: a fresh copy starts here, and an existing install keeps whatever you already chose until you move that control. 💾
@@ -1111,7 +1112,7 @@ Talk to the team, and let them talk back. 🗣️🔊
 
 - 🎤 **Speech to text** — the mic button turns your voice into a message in the composer.
 - 🔊 **Speak replies** — a speaker button reads any reply aloud; flip **Speak every reply automatically** to hear them all.
-- 🧰 **Two engines** — use your provider's TTS, or the browser's 🏠 built-in voices (works offline, no API, no key). Pick the engine, provider and voice.
+- 🧰 **Three engine choices** — Auto (provider when usable, built-in voices otherwise), your provider's TTS via API key, or the browser's 🏠 built-in voices (works offline, no API, no key). A custom endpoint field takes an OpenAI-compatible TTS server — e.g. `http://localhost:8000/v1` for a local model — so no cloud is needed at all.
 - ⏩ **Speed** and 🎚️ **pitch** — tune playback; pitch reads higher as female, lower as male. 🤖 **Each agent can override the pitch**, so a whole roster can sound distinct.
 
 </details>
@@ -1266,7 +1267,7 @@ Adding a provider is one line in the alias table, or just a new provider in the 
 ---
 ## 🧠 Dynamic tools & the learned dialect
 
-![Config → Labs: dynamic tools, the learned dialect, the API pool and the browser](screenshots/Learn-Dialect.png)
+![Config → Harness / Dialect: dynamic tools and the learned dialect](screenshots/Learn-Dialect.png)
 
 No two models are alike — and the **free** ones are the fussiest of all. 🔧 **Dynamic tools** hands each model the environment it is *actually* running in — the server's 🪟/🐧 OS, the working directory, and which shell commands **really exist** — then shows **one correct example per tool in that model's own dialect** (JSON, Claude XML, native `<|tool_call|>` tags, or plain). No more `findstr` on Linux, no more guessing the syntax: the model is *told*, up front. 🎯
 
@@ -1307,15 +1308,16 @@ One registry decides per request — `src/Harness.php` in PHP, generated into `u
 
 ### 🗣️ Dialects: taught, rescued, remembered
 
-🔧 **Dynamic tools** (Config → Labs, on by default) hands each model the environment it is *actually* running in — the server's 🪟/🐧 OS, working directory, and which shell commands **really exist** — then shows **one correct example per tool in that model's own dialect**: JSON `{"tool":…}`, Claude XML `<function_calls><invoke>`, native `<|tool_call|>` tags, or strict plain JSON. The free, fussy models stop burning calls guessing the syntax. 🎯
+🔧 **Dynamic tools** (Config → Harness / Dialect, on by default) hands each model the environment it is *actually* running in — the server's 🪟/🐧 OS, working directory, and which shell commands **really exist** — then shows **one correct example per tool in that model's own dialect**: JSON `{"tool":…}`, Claude XML `<function_calls><invoke>`, native `<|tool_call|>` tags, or strict plain JSON. The free, fussy models stop burning calls guessing the syntax. 🎯
 
 And when a reply still misses: 🔍
 
 - 🛟 **One rescue retry** — a reply that *looks* like a call but parses to nothing is re-taught **once** in a different dialect instead of becoming the answer. 🔄
 - 🩹 **Near misses are read, not dropped** — `list_agent` for `list_agents`, a guessed wrapper like `<|begin|>…<|end|>` — repaired to what was meant. Invented names and prose fences are still refused. 🙅
-- 🧠 **The winner is remembered** — once a dialect parses, it is stored per `provider + model` and tried first next time. Config → Labs → *Remember the working dialect* turns the memo off; detection then re-derives every turn. 🏆
-- 🗂️ **Every memo is listed, and says who earned it** — Config → Labs names each remembered dialect by the agent that proved it, keeps the shared provider slots in their own group, and forgets one or all on the spot. Each agent's editor says whether its memo is its own or inherited, so “Forget learned dialect” is never a guess.
-- 🛑 **Off in one click** — Config → Labs → *Dynamic tools* restores the classic fixed instructions exactly, if you ever want them. 🔙
+- 🧠 **The winner is remembered** — once a dialect parses, it is stored per agent (`agent id :: provider + model`) and tried first next time. Config → Harness / Dialect → *Remember the working dialect* turns the memo off; detection then re-derives every turn. 🏆
+- 🗂️ **Every memo is listed, and says who earned it** — Config → Harness / Dialect names each remembered dialect by the agent that proved it, keeps the shared provider slots in their own group, and forgets one or all on the spot. Each agent's editor says whether its memo is its own or inherited, so “Forget learned dialect” is never a guess.
+- 🛑 **Off in one click** — Config → Harness / Dialect → *Dynamic tools* restores the classic fixed instructions exactly, if you ever want them. 🔙
+- 🎛️ **Seven tuning switches live beside them** — negative memo + cold-start hint + telemetry default on; durable lock, real-success only, drill-verdict gate and clone inherit default off. Flip, play, keep what you like.
 
 ### 🎛️ Choosing by hand — harness & dialect pins
 
@@ -1330,6 +1332,7 @@ The 🏋️ **dumbbell in the Agents-tab header** arms it; its popup explains th
 
 - ⚡ **Speed up custom forming harnesses and learning dialect via a brute force training method.** This method is especially successful on models above the 1.5b parameters mark (1.4-1.9gb) but not typically any lower. Run the agent through the 1st time, takes around 2-4 minutes with varying degrees of success. Run that same agent a 2nd time, and it's more common to see a 100% success rate (a full pass, 0 retries) than anything lower. The system remembers only successful calls and makes sure to use the winning syntax from that point forward. 🏆
 - 🐢 **~50% request rate** — cloud agents are throttled to half pace (`TRAINING_THROTTLE = 0.5` in `ui/js/training.js`), so the drill exercises patience as well as tools. The Training popup's **Half-rate pacing** switch (on by default) turns the cut off; local models always run full rate — there is no quota to protect. ⏳
+- 💥 **Hyper brute force (Training popup, off by default)** — a failed drill step is swept through all four shapes in order (plain JSON → JSON object → native tags → Claude XML) until one runs; the winner must then run cleanly 3 times in a row and is saved to the dialect memo, and the run ends only on a clean pass after the last sweep. A first execution failure gets one free same-shape retry (usually a typo, not the shape). Best with local models — on cloud keys every sweep attempt is a billed call. 🎯
 - 🔒 **One drill, nothing else** — the popup picks **Easy (12)**, **Hard (17)**, **Advanced (8)**, **Frontier (6, real desktop)**, **Browser (9, built-in browser)** or **Custom**; the system prompt locks to that step list, each agent in its own `training/training-<agent id>.txt` (Browser reads its shipped local page instead) so two passes can never share or corrupt one file, simplest first, worked in order: `think` 🤔, `todo_write` 📝, `echo` 🔊, `now` 🕒, `write_file` ✍️ → `read_file` 📖 → a ranged read (line 1 only) → `edit_file` 🩹 append and exact replace, `list_dir` 📁, `glob_files` 🔍, `grep_code` 🧵, `show_find` 📺, `exec` ⌨️, `show_command` 📺, a `todo_write` ✅, and a final `show_file` 📺. (That sequence is Easy/Hard; Advanced, Frontier and Browser have their own shorter lists — Browser's is just below.) **It never stops on its own:** every finished turn — a display step, a short reply, even the last step — is followed automatically by a silent `Continue`, so the drill keeps running until you switch training off or press Stop, and a completed drill starts another pass. The header grades the pass for you — `drill 12/17`, or `12/12` in Easy — green and `clean` when a pass had no failed attempts — computed from the tool records, never from the agent's todo list. A live strip above the transcript shows every active agent's pass, failures and clean passes as each call lands, and the Training dialog opens with the same scoreboard for the current run. Approval-gated steps (write/edit/exec/show_command, plus browser_type in Browser) come after the free ones — waiting on your Approve button ✅ is part of the lesson, not something to route around.
 - 🔁 **Retry until it passes** — a failed step is never skipped; the error comes back with the shape to retry with, so a miss becomes practice instead of a skip. Each pass is logged with `todo_write`. ✅
 - ▶️ **Start dispatches the drill** — Start opens a fresh `Training drill — <date/time>` session, then posts it into chat as a turn (or steers it into a running one if the old turn would not stop), so messages 🗨️, map 🗺️, metrics 📊 and trace 🔎 all move exactly as usual. With no active agents it says so instead of arming. 🤫
@@ -1913,11 +1916,11 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🧩 v499 — One agent's syntax stays its own, and training can demand a real success
+### 🔊 v500 — Your own TTS server, half-rate training pacing, a tunable dialect harness, Hyper Brute Force
 
-*The dialect memo is now strictly per agent: one agent's syntax never answers for another, forgetting one never clears another's entry, and the shared provider slot serves only lookups without an agent. Training adds an opt-in **Real-success only** checkbox in the popup (off by default) — on, a `think` / `todo_write`-only run never teaches a dialect; at least one real tool must succeed.*
+*Settings → Speech gains a custom endpoint for any OpenAI-compatible TTS server (e.g. a local `http://localhost:8000/v1`) — your model/voice names pass through as-is, blanks fill with `tts-1`/`alloy`. Training gets a half-rate pacing switch (on, locals exempt) and an opt-in Hyper Brute Force mode that sweeps a failed step through all four shapes until one runs clean 3 times. The dialect memo moves under Config → Harness / Dialect with seven tuning switches (negative memo, cold hint and telemetry on; durable lock, real-success only, drill gate, clone inherit off).*
 
-*Full suite green: JS 46 files / 1,694 assertions, PHP 39 files.*
+*Full suite green: JS 46 files / 1,757 assertions, PHP 39 files.*
 
 
 ---

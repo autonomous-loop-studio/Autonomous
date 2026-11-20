@@ -15,6 +15,18 @@ usual file deploy.
 reads and compares alongside that cache-buster — see the first entry below.
 
 ---
+## 🔊 Your own TTS server, half-rate training pacing, a tunable dialect harness, and Hyper Brute Force *(`VERSION` 499 → 500, cache-buster v499 → v500)*
+
+*Speech has a third door. Settings → Speech gains a custom endpoint field for any OpenAI-compatible TTS server — `http://localhost:8000/v1` for a local model, so no cloud is needed at all. When it is set, requests go there instead of the provider, no provider key is required, and your model and voice names pass through as-is; only a blank model or voice is filled with the canonical `tts-1`/`alloy` pair, because strict local servers reject empty fields instead of defaulting them. Cloud behaviour without the endpoint is untouched, and the engine choice is now Auto (provider when usable, built-in voices otherwise), provider, or built-in. Pinned by a 12-assertion loopback mock TTS regression test.*
+
+*Training mode gains a half-rate pacing switch, on by default and locals-exempt: cloud agents drill at ~50% request rate so the drill exercises patience as well as tools, while local models always run full rate — there is no quota to protect. The drill's opening line, the Start toast and the dumbbell title all read the switch, so nothing still says 50% when pacing is off.*
+
+*The dialect memo moves under Config → Harness / Dialect with seven tuning switches beside it. Negative memo (on) stops re-teaching a shape after repeated parse failures and eventually evicts a stale memo; the cold-start hint (on) names another agent's dialect without applying it; telemetry (on) counts hits, misses and remembers. Durable lock, real-success only, drill-verdict gate and clone inherit default off — each makes learning stricter or copies state, so they wait for an explicit opt-in. The real-success gate lives in both the Training popup and the Harness section; the memo list still groups per-agent entries apart from shared provider slots.*
+
+*The Training popup also arms Hyper Brute Force (off by default): a failed drill step is swept through all four shapes in order — plain JSON, JSON object, native tags, Claude XML — until one runs, and the winner must then run cleanly 3 times in a row before it is saved to the memo. A first execution failure gets one free same-shape retry (usually a typo, not the shape); a step that exhausts all four falls back to the normal retry. Best with local models — on cloud keys every sweep attempt is a billed call.*
+
+*Full suite green: JS 47 files, training 433 passed, dialectMemo 60 passed. `VERSION` 499 → 500, `APP_VERSION` 499 → 500, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+
 ## 🧩 One agent's syntax stays its own, and training can demand a real success *(`VERSION` 498 → 499, cache-buster v498 → v499)*
 
 *The dialect memo is now strictly per agent. `learnedDialect` answers only the calling agent's own slot, `rememberDialect` with an agent id writes only that slot and never the shared provider+model one, and `forgetDialect` drops only the named slot — one agent's success can no longer rewrite another's starting dialect, and forgetting one agent never clears another's entry or the shared slot. Lookups without an agent still use the provider slot, and legacy shared entries stay listed until forgotten but are never consulted or rewritten by an agent turn.*

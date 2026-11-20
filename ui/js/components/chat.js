@@ -7,8 +7,8 @@
 // CHAT.JS — Chat panel controller
 // ============================================
 
-import { store } from '../store.js?v=499';
-import { K as STORAGE_K } from '../storage.js?v=499';
+import { store } from '../store.js?v=500';
+import { K as STORAGE_K } from '../storage.js?v=500';
 
 const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
 
@@ -17,29 +17,29 @@ const CURRENT_SESSION_KEY = STORAGE_K.CURRENT_SESSION;
  * purpose: steering is a human override, not a licence to run unbounded.
  */
 const MAX_STEER_STEPS = 8;
-import { api, errText } from '../api.js?v=499';
-import { persistence } from '../persistence.js?v=499';
-import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=499';
-import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=499';
-import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect } from '../toolProtocol.js?v=499';
-import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=499';
-import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=499';
-import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=499';
-import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=499';
-import { usageFor } from '../rateGovernor.js?v=499';
-import { trace } from '../trace.js?v=499';
-import { offerRebind } from './rebindOffer.js?v=499';
-import { latency } from '../latency.js?v=499';
-import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=499';
-import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=499';
-import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal, drillStepRefusal, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice, drillSameErrorNotice, sameErrorHintEnabled, realSuccessOnlyEnabled, normaliseErrorText, todoPlanIsCurrent, scrubDrillFile } from '../training.js?v=499';
-import { SlashCommands } from '../slashCommands.js?v=499';
-import { parseRoute, routingHelp } from '../routing.js?v=499';
-import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=499';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=499';
-import { MessageRenderer, renderToolCalls } from './message.js?v=499';
-import { createAvatar } from './avatar.js?v=499';
-import * as comms from '../commsLog.js?v=499';
+import { api, errText } from '../api.js?v=500';
+import { persistence } from '../persistence.js?v=500';
+import { DEFAULT_HISTORY_TURNS, agentCode, asText, historyCharBudget, compactMessages, contextInputBudget, compactText, isNearBottom, scrollFollowWanted, reasoningOpenByDefault, isPlaceholderReply, finishedWithoutAnswer, claimsCompletedToolWork, fileToolWarning, FILE_TOOL_WARNING_PREFIX, withoutFileToolWarnings, isFileToolWarning, looksLikeToolReply, narratesToolUse, shouldFallBackFromNative, isContextOverflow, contextLimitFromError, estimateTokens } from '../utils.js?v=500';
+import { settingFor, alwaysAppendFor, sandboxRootFor, contextLimitForAgent, endpointForAgent } from '../agentConfig.js?v=500';
+import { toolProtocolFor, detectFamily, harnessOverride, rememberDialect, rememberContextLimit, learnedDialect, dialectDrillGateEnabled } from '../toolProtocol.js?v=500';
+import { toolInstructions, parseToolCalls, stripToolCall, runTool, deniedToolNames, MAX_TOOL_STEPS, bindAgentComms, defaultTools, ALWAYS_ON_TOOLS, BROWSER_TOOLS, IDE_TOOLS, TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow, isDisplayTool, displayCaption, MAX_DISPLAY_CHARS, resolveToolName, aliasToolArgs } from '../tools.js?v=500';
+import { nativeToolDefs, nativeToolChoice, nativeToolArgs, NATIVE_FAMILIES } from '../nativeTools.js?v=500';
+import { buildToolInstructions, getEnvFacts, nextDialect, browserEnabled } from '../toolManifest.js?v=500';
+import { poolEnabled, pickKey, noteResult } from '../apiPool.js?v=500';
+import { usageFor } from '../rateGovernor.js?v=500';
+import { trace } from '../trace.js?v=500';
+import { offerRebind } from './rebindOffer.js?v=500';
+import { latency } from '../latency.js?v=500';
+import { buildContent, mergeContent, stripImages, acceptAttr } from '../attachments.js?v=500';
+import { blockFor as memoryBlockFor, MEMORY_TOOLS } from '../memory.js?v=500';
+import { trainingBlockFor, isTrainingActive, trainingResumeFor, shouldResumeDrill, drillVerdict, drillVerdictText, drillStripTitle, trainingFileNow, trainingFileCheckFor, trainingPassOf, trainingDifficulty, drillPassFile, drillWriteRefusal, drillStepRefusal, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice, drillSameErrorNotice, sameErrorHintEnabled, realSuccessOnlyEnabled, normaliseErrorText, todoPlanIsCurrent, scrubDrillFile, hyperBruteEnabled, bruteNew, bruteNextShape, bruteFail, bruteWin, brutePinFor, BRUTE_SHAPES } from '../training.js?v=500';
+import { SlashCommands } from '../slashCommands.js?v=500';
+import { parseRoute, routingHelp } from '../routing.js?v=500';
+import { substituteCurlTemplate, parseCurl, bearerFromHeaders, bodyHasSystemMessage, findLeftoverVars, parseJsonLenient, hasTemplateVars } from '../curlParser.js?v=500';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=500';
+import { MessageRenderer, renderToolCalls } from './message.js?v=500';
+import { createAvatar } from './avatar.js?v=500';
+import * as comms from '../commsLog.js?v=500';
 
 /**
  * How long an agent may keep working on a single task.
@@ -1418,6 +1418,106 @@ _commitAgentReply(agent, result, live) {
     }
   }
 
+  /**
+   * Hyper brute force: sweep a failing drill step through every shape.
+   *
+   * Per-agent state lives here (not in the store): it resets with the run,
+   * exactly like _drillRepeats. The transition rules themselves are pure
+   * functions in training.js (bruteFail/bruteWin/brutePinFor) so the sweep
+   * order, the free typo retry, the 3-in-a-row proof and exhaustion are all
+   * unit-tested; these methods only wire them to the turn loop.
+   */
+  _bruteArmed(agent) {
+    try {
+      if (!isTrainingActive()) return false;
+      const tm = store.get('settings.trainingMode') || {};
+      if (!hyperBruteEnabled(tm)) return false;
+      const pos = trainingNow(agent);
+      return !!(pos && pos.task && !pos.complete);
+    } catch { return false; }
+  }
+  _bruteState(agent) {
+    const tm = store.get('settings.trainingMode') || {};
+    const run = Number(tm.startedAt) || 0;
+    const key = `${run}|${agent.id}`;
+    if (this._bruteRun !== key) { this._bruteRun = key; this._brute = {}; }
+    this._brute = this._brute || {};
+    if (!this._brute[agent.id]) this._brute[agent.id] = bruteNew();
+    return this._brute[agent.id];
+  }
+  /** The stop rule reads this: the last pass number in which a sweep ran. */
+  _bruteMarkSwept(agent) {
+    try {
+      const tm = store.get('settings.trainingMode') || {};
+      const m = { ...(store.get('trainingBrute') || {}) };
+      m[agent.id] = trainingPassOf(tm);
+      store.set('trainingBrute', m);
+    } catch { /* the stop rule loses one signal; the sweep itself still runs */ }
+  }
+  /** Shape the next attempt must use, or null for the normal dialect path. */
+  _brutePin(agent, nativeMode) {
+    if (nativeMode || !this._bruteArmed(agent)) return null;
+    const pos = trainingNow(agent);
+    return brutePinFor(this._bruteState(agent), pos.step);
+  }
+  /**
+   * Sweep-aware alternative for the parse-failure escalation. Undefined means
+   * brute is not sweeping and the caller falls back to the heuristic; null
+   * means every shape failed and the normal narration rescue takes over.
+   */
+  _bruteAlt(agent, taught, triedDialects) {
+    if (!this._bruteArmed(agent)) return undefined;
+    const pos = trainingNow(agent);
+    const st = this._bruteState(agent);
+    const tried = st.tried[pos.step] || [];
+    return bruteNextShape(new Set([...tried, ...(triedDialects || [])]));
+  }
+  /** A reteach happened: the shape just taught failed to parse. Record it so the next turn does not teach it again. */
+  _bruteNoteTaught(agent, shape) {
+    if (!this._bruteArmed(agent)) return;
+    if (!BRUTE_SHAPES.includes(String(shape))) return;
+    const pos = trainingNow(agent);
+    const st = this._bruteState(agent);
+    const tried = st.tried[pos.step] || (st.tried[pos.step] = []);
+    if (!tried.includes(shape)) tried.push(shape);
+    if (st.retry && st.retry.step === pos.step) st.retry = null;
+    if (st.sweep == null) st.sweep = pos.step;
+    this._bruteMarkSwept(agent);
+  }
+  /** An executed call failed the drill step. Returns the sweep notice for the result, or ''. */
+  _noteBruteFail(agent, drillBefore, shape, isNative) {
+    if (isNative || !this._bruteArmed(agent)) return '';
+    if (!BRUTE_SHAPES.includes(String(shape))) return '';
+    const before = Number(drillBefore && drillBefore.step);
+    if (!Number.isFinite(before)) return '';
+    const pos = trainingNow(agent);
+    // Only the awaited step sweeps: off-step refusals stay on the normal retry.
+    if (!pos.task || before !== pos.step) return '';
+    const r = bruteFail(this._bruteState(agent), before, String(shape), 'exec');
+    if (r.swept) this._bruteMarkSwept(agent);
+    return r.note;
+  }
+  /** An executed call advanced the drill step. Confirms the winner; proving it saves the memo. */
+  _noteBruteWin(agent, drillBefore, shape, isNative) {
+    if (isNative || !this._bruteArmed(agent)) return;
+    if (!BRUTE_SHAPES.includes(String(shape))) return;
+    const before = Number(drillBefore && drillBefore.step);
+    if (!Number.isFinite(before)) return;
+    const r = bruteWin(this._bruteState(agent), before, String(shape));
+    if (r.proven) {
+      // The 3-in-a-row proof is the save moment. The drill-verdict gate stays
+      // in charge when it is on: then the normal turn-end path saves the memo
+      // once the pass is clean instead of this shortcut.
+      if (!dialectDrillGateEnabled()) {
+        try { rememberDialect(agent.provider, agent.model, r.proven, agent.id); } catch { /* best effort */ }
+      }
+      store.emit('toast', {
+        message: `${agent.name}: hyper brute proved "${r.proven}" 3\u00d7 — ${dialectDrillGateEnabled() ? 'memo takes it on the next clean turn' : 'saved to the dialect memo'}`,
+        type: 'success',
+      });
+    }
+  }
+
   /** Recompute mid-turn so the strip moves as each call settles. */
   _publishDrillLive(agent, log) {
     if (!isTrainingActive()) return null;
@@ -2206,7 +2306,11 @@ _makeLiveNode(agent) {
     // `dialect` is kept in a variable so the parse-failure escalation below can
     // move it without rebuilding everything. Env facts (OS, cwd, which commands
     // exist) come from the SERVER, cached — see toolManifest.js.
-    let dialect = toolProtocolFor(agent, undefined, baseSpec.endpoint);
+    let dialect = this._brutePin(agent, nativeMode) || toolProtocolFor(agent, undefined, baseSpec.endpoint);
+    // The prompt shape taught for the reply being built. The brute sweep reads
+    // it back at outcome time, so every reassignment of `dialect` below keeps
+    // it in sync — the recorded shape is always the one actually taught.
+    let attemptShape = dialect;
     const envFacts = await getEnvFacts().catch(() => null);
     let instructions = buildToolInstructions(enabled, sandboxRoot,
       nativeMode ? 'native-api' : dialect, envFacts);
@@ -2375,6 +2479,7 @@ _makeLiveNode(agent) {
             && (Number(err?.status) === 400 || Number(err?.status) === 422)) {
           nativeMode = false;
           dialect = toolProtocolFor(agent, undefined, baseSpec.endpoint);
+          attemptShape = dialect;
           const promptInstructions = buildToolInstructions(enabled, sandboxRoot, dialect, envFacts);
           const sysIdx = working.findIndex(m => m && m.role === 'system');
           if (sysIdx !== -1) {
@@ -2467,9 +2572,15 @@ _makeLiveNode(agent) {
         // native, anthropic. The first guess is already in triedDialects, so
         // up to three reteaches cover the whole set.
         if (looksLikeTool && parseRetries < 3 && !outOfTime() && !(signal && signal.aborted)) {
-          const alt = nextDialect(dialect, triedDialects);
+          // Hyper brute: the sweep order replaces the heuristic, so a same-turn
+          // reteach and the next turn agree on what comes next. Undefined (not
+          // null) means brute is not sweeping and the heuristic still decides.
+          const bruteAlt = this._bruteAlt(agent, attemptShape, triedDialects);
+          const alt = bruteAlt !== undefined ? bruteAlt : nextDialect(dialect, triedDialects);
           if (alt) {
             parseRetries++;
+            this._bruteNoteTaught(agent, attemptShape);
+            attemptShape = alt;
             // An extra model call with no visible cause is the worst thing a run
             // trace can hide: this one exists because a reply LOOKED like a call
             // and parsed to nothing. Recorded before the re-ask so the note sits
@@ -2557,6 +2668,7 @@ _makeLiveNode(agent) {
           nativeFallbackUsed = true;
           nativeMode = false;
           dialect = toolProtocolFor(agent, undefined, baseSpec.endpoint);
+          attemptShape = dialect;
           const promptDialect = buildToolInstructions(enabled, sandboxRoot, dialect, envFacts);
           const sysAt = working.findIndex(m => m && m.role === 'system');
           if (sysAt !== -1) {
@@ -2745,6 +2857,8 @@ _makeLiveNode(agent) {
               record.status = 'error';
             }
             if (guard.notice) notice = notice ? `${notice}\n\n${guard.notice}` : guard.notice;
+            const bruteNote = this._noteBruteFail(agent, drillBefore, attemptShape, nativeMode || call?.native);
+            if (bruteNote) notice = notice ? `${notice}\n\n${bruteNote}` : bruteNote;
             if (notice) {
               result = `${asText(result)}\n\n${notice}`;
               record.result = toolResultForUi(result, record.display);
@@ -2752,6 +2866,7 @@ _makeLiveNode(agent) {
             }
           } else if (advancedNow) {
             this._clearDrillRepeat(agent);
+            this._noteBruteWin(agent, drillBefore, attemptShape, nativeMode || call?.native);
           }
         }
 
@@ -2827,16 +2942,32 @@ _makeLiveNode(agent) {
       const skippedInTurn = r => String((r && r.result) || '').startsWith('Skipped: this step ended');
       const allOk = calls.length && calls.every(c => !c.native) && !nativeMode
         && records.every(r => r && (r.status === 'ok' || skippedInTurn(r)));
-      // Real-success only (Training popup, off by default): housekeeping alone
-      // (think / todo_write) never teaches a dialect — at least one real tool
-      // must have run ok. Off keeps today's behaviour: parsed + executed ok.
+      // Real-success only (Harness / Dialect, off by default): housekeeping
+      // alone (think / todo_write) never teaches a dialect — at least one
+      // real tool must have run ok. Off keeps today's behaviour.
       let realOk = true;
       if (allOk && realSuccessOnlyEnabled()) {
         const isHousekeeping = (t) => t === 'think' || t === 'todo_write';
         realOk = calls.some((c, i) => !c.native && !isHousekeeping(c.tool)
           && records[i] && records[i].status === 'ok');
       }
-      if (allOk && realOk) {
+      // Drill-verdict gate (Harness / Dialect, off by default): a training
+      // turn teaches only when the drill semantically passes — the verdict
+      // for this agent is clean — not merely when every tool returned ok.
+      // Off keeps today's executed-ok behaviour. While the gate is on,
+      // training turns that are not clean teach nothing; non-training turns
+      // are unaffected.
+      let drillOk = true;
+      if (allOk && realOk && dialectDrillGateEnabled()) {
+        try {
+          if (isTrainingActive()) {
+            const verdicts = store.get('trainingVerdicts') || {};
+            const v = verdicts[agent.id];
+            drillOk = !!(v && v.complete && v.clean);
+          }
+        } catch { drillOk = true; }
+      }
+      if (allOk && realOk && drillOk) {
         rememberDialect(agent.provider, agent.model, dialect, agent.id);
       }
 

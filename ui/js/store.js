@@ -22,7 +22,7 @@
  *                                appends to the Prism vendor scripts it injects
  *   * every `from './x.js?v='`   : this number
  */
-export const APP_VERSION = 499;
+export const APP_VERSION = 500;
 
 class Store {
   constructor() {
@@ -87,14 +87,30 @@ class Store {
       brainNotes: '',
       brainProfiles: [],
       customTools: [],
-      // Config → Labs. "Dynamic tools" adapts the tool instructions to the
-      // model's dialect and the SERVER's real environment (OS, cwd, which
-      // commands exist); the memo remembers the dialect that last worked for a
-      // provider::model. Both default ON — switching either off restores the
-      // classic behaviour exactly.
+      // Config → Harness / Dialect. "Dynamic tools" adapts the tool
+      // instructions to the model's dialect and the SERVER's real environment
+      // (OS, cwd, which commands exist); the memo remembers the dialect that
+      // last worked for an agent. Both default ON — switching either off
+      // restores the classic behaviour exactly.
       dynamicTools: true,
       toolDialectMemo: true,
       toolDialectMap: {},
+      // Harness / Dialect tuning switches. Neg memo + cold hint default ON
+      // (safe: neither writes a positive memo); durable lock, real-success
+      // only, drill gate and clone inherit default OFF (each makes learning
+      // stricter or copies state, so they wait for an explicit opt-in).
+      // Telemetry defaults ON: it only counts hits/misses/remembers.
+      dialectNegMemo: true,
+      dialectColdHint: true,
+      dialectDurable: { on: false, need: 2, evict: 3 },
+      trainingRealSuccessOnly: false,
+      dialectDrillGate: false,
+      dialectCloneInherit: false,
+      dialectTelemetry: true,
+      toolDialectNegMap: {},
+      dialectMemoStreaks: {},
+      dialectMemoFails: {},
+      dialectTelemetryStats: { memoHits: 0, memoMisses: 0, remembers: 0 },
       // API pool: rotate a provider's extra keys after N requests. Default ON,
       // because it only ever engages for a provider that actually carries a
       // pool — with no pool keys it falls straight back to the single provider

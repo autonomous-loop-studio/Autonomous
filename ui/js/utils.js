@@ -234,7 +234,7 @@ export function mergeLearnedSettings(local, incoming) {
   if (!local || typeof local !== 'object') return incoming;
   const isMap = v => !!v && typeof v === 'object' && !Array.isArray(v);
   const merged = { ...incoming };
-  for (const key of ['toolDialectMap', 'contextLimits']) {
+  for (const key of ['toolDialectMap', 'contextLimits', 'toolDialectNegMap', 'dialectMemoStreaks', 'dialectMemoFails']) {
     if (!isMap(local[key]) && !isMap(incoming[key])) continue;
     merged[key] = {
       ...(isMap(local[key]) ? local[key] : {}),

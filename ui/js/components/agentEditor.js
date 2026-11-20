@@ -7,17 +7,17 @@
 // AGENTEDITOR.JS — Agent CRUD modal
 // ============================================
 
-import { store } from '../store.js?v=499';
-import { persistence } from '../persistence.js?v=499';
-import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=499';
-import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=499';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=499';
-import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=499';
-import { sandboxRootFor } from '../agentConfig.js?v=499';
-import { learnedDialect, forgetDialect, memoProvenance, protocolLabel } from '../harness.js?v=499';
-import { audio } from '../audio.js?v=499';
-import { api } from '../api.js?v=499';
-import * as memory from '../memory.js?v=499';
+import { store } from '../store.js?v=500';
+import { persistence } from '../persistence.js?v=500';
+import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=500';
+import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=500';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=500';
+import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=500';
+import { sandboxRootFor } from '../agentConfig.js?v=500';
+import { learnedDialect, forgetDialect, memoProvenance, protocolLabel } from '../harness.js?v=500';
+import { audio } from '../audio.js?v=500';
+import { api } from '../api.js?v=500';
+import * as memory from '../memory.js?v=500';
 
 /** Toast wording per recognized snippet language. */
 const KIND_LABEL = { curl: 'Curl', python: 'Python', node: 'Node', sdk: 'SDK', json: 'JSON API' };
@@ -894,7 +894,7 @@ export class AgentEditor {
     }
     const memo = learnedDialect(agent.provider, agent.model, agent.id);
     if ((store.get('settings') || {}).toolDialectMemo === false) {
-      el.textContent = 'The dialect memo is switched off in Config → Labs, so this agent is not using a stored memo right now. '
+      el.textContent = 'The dialect memo is switched off in Config → Harness / Dialect, so this agent is not using a stored memo right now. '
         + 'Any entry it learned earlier is still stored and can be forgotten here.';
       return;
     }

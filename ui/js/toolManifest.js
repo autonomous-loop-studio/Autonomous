@@ -15,20 +15,20 @@
 // (which lies whenever the app is served from a different machine than the one
 // the sandbox runs on).
 //
-// Toggle: Config → Labs → "Dynamic tools" (settings.dynamicTools). Off = the
+// Toggle: Config → Harness / Dialect → "Dynamic tools" (settings.dynamicTools). Off = the
 // exact classic toolInstructions() output, byte for byte.
 
-import { store } from './store.js?v=499';
-import { api } from './api.js?v=499';
-import { toolInstructions } from './tools.js?v=499';
-import { visibleRoots } from './utils.js?v=499';
+import { store } from './store.js?v=500';
+import { api } from './api.js?v=500';
+import { toolInstructions } from './tools.js?v=500';
+import { visibleRoots } from './utils.js?v=500';
 
 const TTL_MS = 5 * 60 * 1000;
 let _facts = null;
 let _at = 0;
 let _inflight = null;
 
-/** Config → Labs → "Dynamic tools". Default ON; off restores classic output. */
+  /** Config → Harness / Dialect → "Dynamic tools". Default ON; off restores classic output. */
 export function dynamicToolsEnabled() {
   return (store.get('settings') || {}).dynamicTools !== false;
 }
