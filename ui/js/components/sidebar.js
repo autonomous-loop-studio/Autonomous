@@ -811,6 +811,9 @@ export class Sidebar {
     const showEveryPass = !!tm.showEveryPass;
     // Default on: unset reads as enabled, so existing installs keep the hint.
     const sameErrorHint = tm.sameErrorHint !== false;
+    // Default on: unset keeps today's half-rate drill, so nothing gets faster
+    // until the operator opts out. Local models are never throttled either way.
+    const throttled = tm.throttle !== false;
     // Default off: unset keeps today's loose memory, so nothing gets stricter
     // until the operator opts in.
     const realSuccessOnly = !!tm.realSuccessOnly;
@@ -865,8 +868,13 @@ export class Sidebar {
             <span>Real-success only</span>
           </label>
           <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">Off (today's behaviour): a dialect is remembered when every call parsed and ran. On: a todo_write or think alone never teaches it — at least one real tool must succeed. Nothing old is deleted.</div>
+          <label class="training-show-passes">
+            <input type="checkbox" id="trainingThrottle" ${throttled ? 'checked' : ''}>
+            <span>Half-rate pacing</span>
+          </label>
+          <div class="form-hint" style="margin-top:-2px;margin-bottom:10px">On (default): cloud agents train at ~50% of their normal request rate, so the drill exercises patience as well as tools. Local models always run full rate — there is no quota to protect. Off: everyone runs full rate.</div>
           <ul class="training-points">
-            <li>All active agents are throttled to ~50% of their normal request rate.</li>
+            <li>${throttled ? 'Cloud agents are throttled to ~50% of their normal request rate; local models always run full rate.' : 'Pacing is off: every agent runs at its full request rate.'}</li>
             <li>They work ONLY the drill below, in order — inside the <code>training/</code> sandbox for the file drills, on the real desktop for Frontier, in the built-in browser for Browser, or wherever a custom step directs — nothing else while the mode is on.</li>
             <li><strong>It repeats the whole drill until a pass is 100% clean.</strong> Every finished turn — a display step, a short reply, even the last step of the drill — is followed automatically by <code>Continue</code>, so agents cannot end the loop early. The clean-pass target below is the one exception: it defaults to 1, so the run repeats whole passes and ends at the first one with every step correct, 0 failed attempts and 0 retries.</li>
             <li>A failed step must be retried until it passes, never skipped; each pass is logged to the todo list.</li>
@@ -925,6 +933,11 @@ export class Sidebar {
     overlay.querySelector('#trainingRealSuccessOnly').addEventListener('change', (e) => {
       const cur = store.get('settings.trainingMode') || {};
       store.set('settings.trainingMode', { ...cur, realSuccessOnly: !!e.target.checked });
+      try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
+    });
+    overlay.querySelector('#trainingThrottle').addEventListener('change', (e) => {
+      const cur = store.get('settings.trainingMode') || {};
+      store.set('settings.trainingMode', { ...cur, throttle: !!e.target.checked });
       try { persistence.set('settings', store.get('settings')); } catch { /* best effort */ }
     });
     overlay.querySelector('#trainingShowEveryPass').addEventListener('change', (e) => {

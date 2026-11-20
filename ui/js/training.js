@@ -8,7 +8,8 @@
 // ============================================
 //
 // While armed (Agents-tab header, dumbbell button), every active agent is:
-//   * throttled to ~50% of its normal request rate (see rateGovernor.js), and
+//   * throttled to ~50% of its normal request rate (see rateGovernor.js) —
+//     unless the dialog's pacing switch is off or the model runs locally, and
 //   * locked by system prompt to one simple drill, worked in order, with a
 //     retry-until-it-works rule so a miss becomes practice instead of a skip.
 //
@@ -770,6 +771,12 @@ export const SAME_ERROR_HINT = 3;
 export function sameErrorHintEnabled(mode = undefined) {
   const m = mode === undefined ? (store.get('settings.trainingMode') || {}) : (mode || {});
   return m.sameErrorHint !== false;
+}
+
+/** Whether training mode halves the request rate. Default on; the Training dialog can switch it off. Local runners are never throttled either way — they have no quota to respect (see rateGovernor.js). */
+export function trainingThrottleEnabled(mode = undefined) {
+  const m = mode === undefined ? (store.get('settings.trainingMode') || {}) : (mode || {});
+  return m.throttle !== false;
 }
 
 /** Whether dialect memory requires a real tool success. Default off; the dialog can switch it on. */

@@ -33,7 +33,7 @@
 // a 429 the retry path already handles.
 
 import { store } from './store.js?v=499';
-import { TRAINING_THROTTLE } from './training.js?v=499';
+import { TRAINING_THROTTLE, trainingThrottleEnabled } from './training.js?v=499';
 import { settingFor, hasRateLock, overridesOf } from './agentConfig.js?v=499';
 import { defaultRpmFor } from './harness.js?v=499';
 
@@ -91,6 +91,23 @@ export function bucketKey(endpoint, apiKey) {
   return `${hostOf(endpoint)}:${hash(`${hostOf(endpoint)}|${apiKey || ''}`)}`;
 }
 
+/**
+ * Whether the training ~50% cut applies to this call.
+ *
+ * Three gates: the mode is armed, the operator left the Training dialog's
+ * pacing switch on (it defaults on), and the call is not headed for a local
+ * runner. A box on this machine or the LAN has no quota to protect — halving
+ * it only makes a 300ms local model behave like a throttled free tier.
+ */
+function trainingCutApplies(endpoint) {
+  try {
+    const tm = settings().trainingMode;
+    if (!tm || !tm.active) return false;
+    if (!trainingThrottleEnabled(tm)) return false;
+    return defaultRpmFor(endpoint) !== 0;
+  } catch { return false; }
+}
+
 function agentFor(spec) {
   const id = spec?.agent_id;
   if (!id) return null;
@@ -130,7 +147,7 @@ function rateConf(spec) {
   if (!agent) {
     let rpm0 = globalRpm;
     try {
-      if (settings().trainingMode && settings().trainingMode.active && rpm0) {
+      if (rpm0 && trainingCutApplies(spec?.endpoint)) {
         rpm0 = Math.max(1, Math.floor(rpm0 * TRAINING_THROTTLE));
       }
     } catch { /* the training flag is decorative to pacing */ }
@@ -146,11 +163,12 @@ function rateConf(spec) {
   const provider = providerFor(agent);
   const providerRpm = provider ? asRpm(provider.rateRpm) : null;
   let rpm = has(o, 'rateRpm') ? asRpm(o.rateRpm) ?? globalRpm : (providerRpm ?? globalRpm);
-  // Training mode throttles every agent to ~50% of its normal ceiling. All
-  // pacing flows through here, so this one spot covers every call path and
-  // the Config status line reports the halved ceiling automatically.
+  // Training mode throttles every cloud agent to ~50% of its normal ceiling
+  // (unless the dialog's pacing switch is off; local runners are never cut).
+  // All pacing flows through here, so this one spot covers every call path
+  // and the Config status line reports the halved ceiling automatically.
   try {
-    if (settings().trainingMode && settings().trainingMode.active && rpm) {
+    if (rpm && trainingCutApplies(spec?.endpoint)) {
       rpm = Math.max(1, Math.floor(rpm * TRAINING_THROTTLE));
     }
   } catch { /* the training flag is decorative to pacing */ }

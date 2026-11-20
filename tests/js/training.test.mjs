@@ -35,7 +35,7 @@ const {
   trainingDifficultyLabel, trainingDifficultyHint, drillVerdict, drillVerdictText, normalizeCustomSteps, CUSTOM_STEP_MAX,
   drillPassFile, drillWriteRefusal, drillStepRefusal,
   trainingTaskExample, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice,
-  drillSameErrorNotice, sameErrorHintEnabled, normaliseErrorText,
+  drillSameErrorNotice, sameErrorHintEnabled, trainingThrottleEnabled, normaliseErrorText,
   trainingAccuracy, todoPlanIsCurrent, DRILL_REPEAT_HINT, DRILL_REPEAT_LIMIT, SAME_ERROR_HINT,
 } = await import(`../../ui/js/training.js?v=${version}`);
 const trainingModule = await import(`../../ui/js/training.js?v=${version}`);
@@ -53,6 +53,12 @@ console.log('-'.repeat(60));
 
 // The throttle is the documented half rate.
 eq(TRAINING_THROTTLE, 0.5, 'throttle is 50%');
+
+// The pacing switch defaults on and reads the dialog value.
+eq(trainingThrottleEnabled({}), true, 'pacing defaults on');
+eq(trainingThrottleEnabled(), true, 'pacing reads on from a fresh store');
+eq(trainingThrottleEnabled({ throttle: true }), true, 'the checked switch keeps pacing');
+eq(trainingThrottleEnabled({ throttle: false }), false, 'the unchecked switch turns pacing off');
 
 // The drill lives in one sandbox folder and names it.
 ok(TRAINING_TASKS.length >= 10, `drill has a full tool list (got ${TRAINING_TASKS.length})`);
@@ -761,6 +767,23 @@ store.set('settings.trainingMode', { active: true, startedAt: 1 });
 const on = limitsFor(ENDPOINT, 'k-half-check');
 eq(on.rpm, Math.max(1, Math.floor(off.rpm * TRAINING_THROTTLE)), 'armed ceiling is ~50% of disarmed');
 ok(off.rpm > 0 && plain.rpm === off.rpm, 'disarmed ceiling is untouched');
+// The dialog switch turns the cut off: armed but unchecked runs full rate.
+store.set('settings.trainingMode', { active: true, startedAt: 1, throttle: false });
+const full = limitsFor(ENDPOINT, 'k-half-check');
+eq(full.rpm, off.rpm, 'unchecked pacing runs the full ceiling while armed');
+// Local runners skip the cut even when a global ceiling would pace them:
+// there is no quota to protect on this box or the LAN.
+const prevRpm = store.get('settings').rateLimitRpm;
+store.set('settings.rateLimitRpm', 40);
+const LOCAL_EP = 'http://localhost:11434/v1/chat/completions';
+store.set('settings.trainingMode', { active: false, startedAt: 0 });
+const localPlain = limitsFor(LOCAL_EP, 'k-local');
+store.set('settings.trainingMode', { active: true, startedAt: 1 });
+const localArmed = limitsFor(LOCAL_EP, 'k-local');
+eq(localArmed.rpm, localPlain.rpm, 'an armed local runner keeps its full ceiling');
+eq(localArmed.rpm, 40, 'the global ceiling still applies, uncut');
+if (prevRpm === undefined) delete store.get('settings').rateLimitRpm;
+else store.set('settings.rateLimitRpm', prevRpm);
 store.set('settings.trainingMode', { active: false, startedAt: 0 });
 
 // --- The IDE drill: the shared write path, exercised by the agent ----------
