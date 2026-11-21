@@ -37,7 +37,7 @@ header('Expires: 0');
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="dark">
   <title>IDE // Autonomous Loop Studio</title>
-  <link rel="stylesheet" href="css/ide.css?v=508">
+  <link rel="stylesheet" href="css/ide.css?v=509">
 </head>
 <body>
   <!-- Token lock: shown when the API answers 401 and no token is known -->
@@ -221,6 +221,6 @@ header('Expires: 0');
 
   <div class="ide-toasts" id="toasts"></div>
 
-  <script type="module" src="js/ide.js?v=508"></script>
+  <script type="module" src="js/ide.js?v=509"></script>
 </body>
 </html>

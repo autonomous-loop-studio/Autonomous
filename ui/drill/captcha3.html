@@ -129,7 +129,7 @@
     btn.className = 'tile';
     btn.id = 'tile-' + i;
     btn.type = 'button';
-    btn.textContent = emoji;
+    btn.innerHTML = emoji;
     btn.addEventListener('click', () => {
       if (selected.has(i)) { selected.delete(i); btn.classList.remove('selected'); }
       else { selected.add(i); btn.classList.add('selected'); }

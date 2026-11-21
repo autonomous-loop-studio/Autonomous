@@ -45,8 +45,8 @@
 // the server as storage; it rides along inside the prompt to the provider you
 // already call.
 
-import { K } from './storage.js?v=508';
-import { asText } from './utils.js?v=508';
+import { K } from './storage.js?v=509';
+import { asText } from './utils.js?v=509';
 
 export const COLLECTIVE = '__collective__';
 

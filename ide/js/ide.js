@@ -19,11 +19,11 @@
 // explorer, and the parent window can hand us the token any time via
 // postMessage (see api.js).
 
-import { ideApi, ApiError } from './api.js?v=508';
-import { Editor } from './editor.js?v=508';
-import { Tree } from './tree.js?v=508';
-import { detectLang, langLabel } from './highlight.js?v=508';
-import { planChanges, describeChange } from './changes.js?v=508';
+import { ideApi, ApiError } from './api.js?v=509';
+import { Editor } from './editor.js?v=509';
+import { Tree } from './tree.js?v=509';
+import { detectLang, langLabel } from './highlight.js?v=509';
+import { planChanges, describeChange } from './changes.js?v=509';
 
 const $ = (id) => document.getElementById(id);
 

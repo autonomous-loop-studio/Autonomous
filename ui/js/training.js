@@ -19,7 +19,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=508';
+import { store } from './store.js?v=509';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;

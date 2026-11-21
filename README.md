@@ -1916,9 +1916,9 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🏋 v508 — Captcha Lev.2 traffic-signal grid
+### 🏋 v509 — Browser screenshot viewer + captcha emoji tiles
 
-*Training mode gains three captcha drills (Lev.1 text code, Lev.2 bus grid, Lev.3 stop-sign grid); the Frontier drill now types "Autonomous Loop Studio - By MBHudson"; step instructions were trimmed. Speech: a custom TTS endpoint may point at a LAN host over plain http, and the cloud key is never forwarded to it. Chat remembers runners that refuse or ignore a forced tool_choice, and a pass with at least one successful call now writes a memo. Config moves out of a modal into the sidebar.*
+*Browser screenshot viewer now centers and fits images (max-height/contain); captcha drill tiles render emoji via innerHTML so multi-codepoint emoji display correctly.*
 
 *Full suite green: JS 46 files / 1,757 assertions, PHP 39 files.*
 
