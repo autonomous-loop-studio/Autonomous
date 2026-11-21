@@ -19,7 +19,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=502';
+import { store } from './store.js?v=508';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -466,18 +466,16 @@ export const TRAINING_TASKS_CAPTCHA = [
  */
 export const TRAINING_TASKS_CAPTCHA2 = [
   { tool: 'think', label: 'Call the think tool with one sentence about the captcha drill before touching anything — a real tool call, not prose.' ,
-    example: "{\"tool\":\"think\",\"arg\":\"I will open the grid captcha page, read the prompt, click every bus tile, and verify.\"}" },
+    example: "{\"tool\":\"think\",\"arg\":\"I will open the grid captcha page, read the prompt, click every traffic-signal tile, and verify.\"}" },
   { tool: 'todo_write', label: 'Write the Captcha steps as your todo list, first one in_progress.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"step 1\",\"status\":\"completed\"},{\"content\":\"step 2\",\"status\":\"in_progress\"}]}}" },
   { tool: 'browser_open', label: 'Open the local Captcha Lev.2 drill page in a visible window with browser_open: {"url":"{captcha2}","headless":false}. Wait for it to load.' ,
     example: "{\"tool\":\"browser_open\",\"arg\":{\"url\":\"{captcha2}\",\"headless\":false}}" },
   { tool: 'browser_read', label: 'Read the page with browser_read and confirm it says “Captcha drill”.' ,
     example: "{\"tool\":\"browser_read\"}" },
-  { tool: 'browser_click', label: 'Click the first bus tile with browser_click: {"selector":"#tile-0"}.' ,
-    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-0\"}}" },
-  { tool: 'browser_click', label: 'Click the second bus tile with browser_click: {"selector":"#tile-3"}.' ,
-    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-3\"}}" },
-  { tool: 'browser_click', label: 'Click the third bus tile with browser_click: {"selector":"#tile-5"}.' ,
+  { tool: 'browser_click', label: 'Click the first traffic-signal tile with browser_click: {"selector":"#tile-4"}.' ,
+    example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-4\"}}" },
+  { tool: 'browser_click', label: 'Click the second traffic-signal tile with browser_click: {"selector":"#tile-5"}.' ,
     example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#tile-5\"}}" },
   { tool: 'browser_click', label: 'Click the “Verify” button with browser_click: {"selector":"#captcha-submit"}.' ,
     example: "{\"tool\":\"browser_click\",\"arg\":{\"selector\":\"#captcha-submit\"}}" },
@@ -485,7 +483,7 @@ export const TRAINING_TASKS_CAPTCHA2 = [
     example: "{\"tool\":\"browser_wait\",\"arg\":{\"ms\":300}}" },
   { tool: 'browser_read', label: 'Read the page again with browser_read and confirm it says “Captcha solved”.' ,
     example: "{\"tool\":\"browser_read\"}" },
-  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the grid captcha page opened, all bus tiles were clicked, and “Captcha solved” was read back. This completes the 11-step Captcha Lev.2 pass.' ,
+  { tool: 'todo_write', label: 'Mark every step completed and put one line in the last item: the grid captcha page opened, all traffic-signal tiles were clicked, and “Captcha solved” was read back. This completes the 10-step Captcha Lev.2 pass.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":{\"todos\":[{\"content\":\"all steps done\",\"status\":\"completed\"}]}}" },
 ];
 
@@ -711,7 +709,7 @@ export const DRILL_CHECKS_CAPTCHA = [
   null,                                                                     // 9 todo_write
 ];
 
-/** Grid captcha (Lev.2) checks: open, read, click three bus tiles, submit, wait, read “Captcha solved”. */
+/** Grid captcha (Lev.2) checks: open, read, click three traffic-signal tiles, submit, wait, read “Captcha solved”. */
 export const DRILL_CHECKS_CAPTCHA2 = [
   null,                                                                     // 1 think
   null,                                                                     // 2 todo_write
@@ -720,8 +718,7 @@ export const DRILL_CHECKS_CAPTCHA2 = [
   (c) => /captcha/i.test(resultText(c)),                                    // 4 browser_read heading
   (c) => /#tile-\d+/i.test(argText(c)),                                     // 5 browser_click tile
   (c) => /#tile-\d+/i.test(argText(c)),                                     // 6 browser_click tile
-  (c) => /#tile-\d+/i.test(argText(c)),                                     // 7 browser_click tile
-  (c) => /#captcha-submit/i.test(argText(c)),                               // 8 browser_click submit
+  (c) => /#captcha-submit/i.test(argText(c)),                               // 7 browser_click submit
   (c) => /"ms"\s*:\s*\d+/.test(argText(c)) || /waited \d+ms/i.test(resultText(c)), // 9 browser_wait
   (c) => /captcha solved/i.test(resultText(c)),                             // 10 browser_read result
   null,                                                                     // 11 todo_write
@@ -1153,7 +1150,7 @@ const DIFFICULTY_INFO = {
   },
   captcha2: {
     label: 'Captcha Lev.2',
-    hint: 'Captcha Lev.2 runs an 11-step grid demo in a visible window: open the page, read the prompt, click every bus tile, click Verify, wait, then read “Captcha solved” back. Needs Config → Labs → Browser and Chrome or Edge.',
+    hint: 'Captcha Lev.2 runs an 11-step grid demo in a visible window: open the page, read the prompt, click every traffic-signal tile, click Verify, wait, then read “Captcha solved” back. Needs Config → Labs → Browser and Chrome or Edge.',
   },
   captcha3: {
     label: 'Captcha Lev.3',

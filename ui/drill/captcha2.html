@@ -57,24 +57,52 @@
     font-size: 17px;
     line-height: 1.55;
   }
-  .grid {
+   .grid {
+    position: relative;
+    width: 400px;
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+  }
+  .grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 0;
   }
   .tile {
+    border: 1px solid rgba(255,255,255,.35);
+    background: rgba(255,255,255,0);
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .tile:hover { background: rgba(0,229,255,.25); }
+  .tile.selected { background: rgba(54,241,162,.35); }
+.tile {
     min-height: 72px;
-    border: 1px solid var(--edge);
-    border-radius: 12px;
-    background: #070c13;
-    color: var(--ink);
-    font-size: 34px;
+    border: 2px solid rgba(255,255,255,.55);
+    border-radius: 8px;
+    background: rgba(0,0,0,.18);
+    color: #fff;
+    font-size: 30px;
     cursor: pointer;
     display: grid;
     place-items: center;
     transition: border-color .12s, background .12s, transform .06s;
+    backdrop-filter: blur(1px);
   }
+  .tile:hover { border-color: #00e5ff; background: rgba(0,229,255,.25); }
   .tile:hover { border-color: var(--cyan); }
   .tile.selected {
     border-color: var(--green);
@@ -113,41 +141,41 @@
 <main>
   <p class="eyebrow">Loop Studio / local practice page</p>
   <h1>Captcha drill</h1>
-  <p class="lede">Select all squares containing a bus 🚌, then click Verify. This page is served locally and never leaves the machine.</p>
-  <div class="grid" id="grid"></div>
+  <p class="lede">Select all squares containing a traffic signal 🚦, then click Verify. This page is served locally and never leaves the machine.</p>
+  <div class="grid" id="grid">
+    <img src="captcha.jpg" alt="captcha scene" onerror="this.onerror=null; this.src='../../screenshots/captcha.jpg';">
+    <div class="overlay" id="overlay"></div>
+  </div>
   <button class="verify" id="captcha-submit" type="button">Verify</button>
   <p id="captcha-result" role="status" aria-live="polite">Waiting for selections.</p>
   <p class="footnote">No network requests. Safe to replay.</p>
 </main>
-<script>
-  const TILES = ['🚌','🚗','🌳','🚌','🏠','🚌','🚗','🌳','🚗'];
-  const EXPECTED = [0, 3, 5];
-  const grid = document.getElementById('grid');
-  const selected = new Set();
-  TILES.forEach((emoji, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'tile';
-    btn.id = 'tile-' + i;
-    btn.type = 'button';
-    btn.textContent = emoji;
-    btn.addEventListener('click', () => {
-      if (selected.has(i)) { selected.delete(i); btn.classList.remove('selected'); }
-      else { selected.add(i); btn.classList.add('selected'); }
-    });
-    grid.appendChild(btn);
-  });
-  document.getElementById('captcha-submit').addEventListener('click', () => {
-    const result = document.getElementById('captcha-result');
-    const got = [...selected].sort((a,b)=>a-b);
-    const ok = got.length === EXPECTED.length && got.every((v,i)=>v===EXPECTED[i]);
-    if (ok) {
-      result.textContent = 'Captcha solved: all bus squares selected.';
-      result.style.color = '#36f1a2';
-    } else {
-      result.textContent = 'Wrong selection, try again.';
-      result.style.color = '#ff6b6b';
-    }
-  });
+<script>   const EXPECTED = [4, 5];
+   const grid = document.getElementById('overlay');
+   const selected = new Set();
+   for (let i = 0; i < 16; i++) {
+     const btn = document.createElement('button');
+     btn.className = 'tile';
+     btn.id = 'tile-' + i;
+     btn.type = 'button';
+     btn.addEventListener('click', () => {
+       if (selected.has(i)) { selected.delete(i); btn.classList.remove('selected'); }
+       else { selected.add(i); btn.classList.add('selected'); }
+     });
+     grid.appendChild(btn);
+   }
+   document.getElementById('captcha-submit').addEventListener('click', () => {
+     const result = document.getElementById('captcha-result');
+     const got = [...selected].sort((a,b)=>a-b);
+     const ok = got.length === EXPECTED.length && got.every((v,i)=>v===EXPECTED[i]);
+     if (ok) {
+       result.textContent = 'Captcha solved: correct squares selected.';
+       result.style.color = '#36f1a2';
+     } else {
+       result.textContent = 'Wrong selection, try again.';
+       result.style.color = '#ff6b6b';
+     }
+   });
 </script>
 </body>
 </html>

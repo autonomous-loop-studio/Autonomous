@@ -7,8 +7,8 @@
 // THINKINGPANEL.JS — Thinking overlay panel
 // ============================================
 
-import { store } from '../store.js?v=502';
-import { esc, scrollFollowWanted } from '../utils.js?v=502';
+import { store } from '../store.js?v=508';
+import { esc, scrollFollowWanted } from '../utils.js?v=508';
 
 export class ThinkingPanel {
   constructor() {
