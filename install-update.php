@@ -58,6 +58,24 @@ line('');
 line('Autonomous Loop Studio — update installer (command line)');
 line(str_repeat('-', 58));
 
+// Storage permission check: a non-writable storage/ is the #1 cause of
+// "everything broke after an update". Print the fix, ready to copy.
+$storageDir = __DIR__ . '/storage';
+$writable = is_dir($storageDir) && is_writable($storageDir);
+line('Storage folder: ' . ($writable ? 'writable (ok)' : 'NOT writable by this user'));
+if (!$writable) {
+    $user = 'www-data'; // change to your web user (apache, nginx, ...) if needed
+    line('');
+    line('Fix it (copy and paste):');
+    line('  sudo chown -R ' . $user . ':' . $user . ' ' . $storageDir);
+    line('  sudo find ' . $storageDir . ' -type d -exec chmod 775 {} \\;');
+    line('  sudo find ' . $storageDir . ' -type f -exec chmod 664 {} \\;');
+    line('');
+    line('Or run the bundled helper:');
+    line('  sudo sh tools/fix-permissions.sh');
+    line('');
+}
+
 try {
     if ($arg === '--status' || $arg === 'status') {
         $pre = \Src\Install::preflight();

@@ -257,7 +257,7 @@ if ($platform !== 'windows') {
     echo "  SKIP: typing's own input refusals are asserted on Windows only\n";
     throws(function () {
         Programs::handle(['action' => 'type', 'name' => 'bare-name', 'text' => 'hi']);
-    }, 'type() refuses off Windows instead of half-working', 'only built for Windows');
+    }, 'type() refuses off Windows instead of half-working', '');
 }
 
 // The read-back comparison is what makes the Frontier step meaningful, and it

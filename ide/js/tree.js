@@ -14,7 +14,7 @@
 // Row actions live in a context menu raised by right-click AND by a long
 // press (500 ms), because phones have no right-click.
 
-import { ideApi } from './api.js?v=501';
+import { ideApi } from './api.js?v=502';
 
 const FOLDER_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M1.8 12.6V4a1.2 1.2 0 0 1 1.2-1.2h3l1.5 1.8h5.5A1.2 1.2 0 0 1 14.2 6v6.6a1.2 1.2 0 0 1-1.2 1.2H3a1.2 1.2 0 0 1-1.2-1.2z"/></svg>';
 const FILE_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9 1.8H4.2A1.2 1.2 0 0 0 3 3v10a1.2 1.2 0 0 0 1.2 1.2h7.6A1.2 1.2 0 0 0 13 13V5.8z"/><path d="M9 1.8V5.8H13"/></svg>';

@@ -163,6 +163,31 @@ class Programs {
         return 'posix';
     }
 
+    /** Whether this host can inject keystrokes into a window, and which tool. */
+    public static function keystrokeInjector() {
+        $p = self::platform();
+        if ($p === 'windows') { return 'windows'; }
+        if ($p === 'macos') { return self::hasCommand('osascript') ? 'osascript' : null; }
+        if ($p === 'linux') {
+            foreach (['xdotool', 'ydotool', 'wtype'] as $cmd) {
+                if (self::hasCommand($cmd)) { return $cmd; }
+            }
+        }
+        return null;
+    }
+
+    /** Whether a command is on PATH. */
+    private static function hasCommand($cmd) {
+        if (!function_exists('proc_open')) { return false; }
+        $desc = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $proc = @proc_open(['sh', '-c', 'command -v ' . escapeshellarg((string)$cmd)], $desc, $pipes);
+        if (!is_resource($proc)) { return false; }
+        $out = stream_get_contents($pipes[1]);
+        @fclose($pipes[1]); @fclose($pipes[2]);
+        @proc_close($proc);
+        return trim((string)$out) !== '';
+    }
+
     /**
      * Environment truths the operator (and the model) need to know, because
      * both of the interesting failure modes are invisible from the UI:
@@ -185,6 +210,10 @@ class Programs {
         if ($display === '' && $wayland === '') {
             return 'No desktop session here (DISPLAY and WAYLAND_DISPLAY are both unset), so a window has '
                 . 'nowhere to appear. Programs can still be started; nothing will be visible.';
+        }
+        if ($wayland !== '' && $display === '') {
+            return 'Wayland session on ' . $wayland . ': programs open on the desktop this Apache runs under. '
+                . 'Typing needs ydotool or wtype installed.';
         }
         return 'X11 session on ' . $display . ': programs open on the desktop this Apache runs under.';
     }
@@ -497,9 +526,18 @@ class Programs {
         }
         $problem = self::policyProblem($exe);
         if ($problem !== '') { throw new \RuntimeException($problem); }
-        if (self::platform() !== 'windows') {
-            throw new \RuntimeException('Typing into a program window is only built for Windows in this '
-                . 'release, and this host is ' . self::platform() . '. Nothing was typed.');
+        $platform = self::platform();
+        if ($platform === 'windows') {
+            // Windows path: unchanged.
+        } elseif (in_array($platform, ['linux', 'macos'], true)) {
+            if (self::keystrokeInjector() === null) {
+                throw new \RuntimeException('Typing into a program window needs a keystroke injector on this '
+                    . 'host (xdotool/ydotool/wtype on Linux, or osascript on macOS), and none was found. '
+                    . 'Nothing was typed.');
+            }
+        } else {
+            throw new \RuntimeException('Typing into a program window is only built for Windows, Linux and '
+                . 'macOS in this release, and this host is ' . $platform . '. Nothing was typed.');
         }
         // Newlines are the line separator whatever the caller sent; everything
         // else goes through byte-identical, so what the operator reads back is
@@ -590,7 +628,64 @@ class Programs {
      *
      * @return array{ok:bool,pid:int,error:string}
      */
+    private static function sendKeysPosix(array $pids, $text, $enter, $focusOnly = false, $timeout = 30) {
+        $injector = self::keystrokeInjector();
+        if ($injector === null) {
+            return ['ok' => false, 'pid' => 0, 'error' => 'No keystroke injector available. Nothing was typed.'];
+        }
+        // Pick the newest pid with a window. xdotool can search by pid.
+        $targetPid = 0;
+        $windows = [];
+        if ($injector === 'xdotool') {
+            foreach ($pids as $pid) {
+                $res = self::run(['xdotool', 'search', '--pid', (string)(int)$pid], 5);
+                foreach (preg_split('/\\s+/', trim((string)$res['out'])) as $wid) {
+                    if ($wid !== '' && ctype_digit($wid)) { $windows[] = $wid; }
+                }
+                if ($windows) { $targetPid = (int)$pid; break; }
+            }
+        } else {
+            // ydotool/wtype/osascript: best effort, use the first pid.
+            $targetPid = (int)($pids[0] ?? 0);
+        }
+        if ($targetPid <= 0) {
+            return ['ok' => false, 'pid' => 0, 'error' => 'it is running but has no window yet'];
+        }
+        // Focus the window.
+        if ($injector === 'xdotool' && $windows) {
+            self::run(['xdotool', 'windowactivate', $windows[0]], 5);
+            self::run(['xdotool', 'windowraise', $windows[0]], 5);
+            usleep(200000);
+        }
+        if ($focusOnly) {
+            return ['ok' => true, 'pid' => $targetPid, 'error' => ''];
+        }
+        // Type the text. Pass via stdin where possible; xdotool type --file is
+        // not portable, so use --clearmodifiers with the text as one argv element
+        // (proc_open gives us a real argv, no shell).
+        $args = [];
+        if ($injector === 'xdotool') {
+            $args = ['xdotool', 'type', '--clearmodifiers', '--delay', '12', (string)$text];
+            if ($enter) { $args = ['xdotool', 'type', '--clearmodifiers', '--delay', '12', (string)$text . "\n"]; }
+        } elseif ($injector === 'ydotool') {
+            $args = ['ydotool', 'type', (string)$text];
+        } elseif ($injector === 'wtype') {
+            $args = ['wtype', (string)$text];
+        } elseif ($injector === 'osascript') {
+            $script = 'tell application "System Events" to keystroke ' . json_encode((string)$text);
+            $args = ['osascript', '-e', $script];
+        }
+        $res = self::run($args, (int)$timeout);
+        if (!empty($res['timed_out'])) {
+            return ['ok' => false, 'pid' => 0, 'error' => 'Typing timed out. Nothing was typed.'];
+        }
+        return ['ok' => true, 'pid' => $targetPid, 'error' => ''];
+    }
+
     private static function sendKeys(array $pids, $text, $enter, $focusOnly = false, $timeout = 30) {
+        if (self::platform() !== 'windows') {
+            return self::sendKeysPosix($pids, $text, $enter, $focusOnly, $timeout);
+        }
         $tmp = rtrim(sys_get_temp_dir(), '/\\');
         $tag = 'router-type-' . getmypid() . '-' . substr(bin2hex(random_bytes(4)), 0, 8);
         $txtFile = $tmp . DIRECTORY_SEPARATOR . $tag . '.txt';
@@ -828,7 +923,15 @@ class Programs {
         // nothing here can kill it later -- which is the point (pid tracking and
         // closing are by process lookup, see runningPids()).
         $line = implode(' ', array_map('escapeshellarg', array_merge([$exe], $args)));
-        @exec($line . ' > /dev/null 2>&1 &');
+        // setsid detaches into its own session so Apache ending the request
+        // does not take the window with it; fall back to nohup, then plain.
+        if (self::hasCommand('setsid')) {
+            @exec('setsid ' . $line . ' > /dev/null 2>&1 &');
+        } elseif (self::hasCommand('nohup')) {
+            @exec('nohup ' . $line . ' > /dev/null 2>&1 &');
+        } else {
+            @exec($line . ' > /dev/null 2>&1 &');
+        }
         return $line;
     }
 

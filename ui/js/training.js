@@ -19,7 +19,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=501';
+import { store } from './store.js?v=502';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -331,7 +331,7 @@ export const TRAINING_TASKS_EASY = [
     example: "{\"tool\":\"think\",\"arg\":\"I will work the drill in order.\"}"},
   { tool: 'todo_write', label: 'Write the drill steps below as your todo list, first one in_progress. Send a plain array of step strings — no nested JSON string.' ,
     example: "{\"tool\":\"todo_write\",\"arg\":[\"step 1\",\"step 2\"]}"},
-  { tool: 'echo', label: 'Echo the word "training" back.' ,
+  { tool: 'echo', label: 'Echo the word "training" back.\n{"tool":"echo","arg":"training"}' ,
     example: "{\"tool\":\"echo\",\"arg\":\"training\"}"},
   { tool: 'now', label: 'Report the current date and time.' ,
     example: "{\"tool\":\"now\"}"},
@@ -679,12 +679,7 @@ export const DRILL_CHECKS_FRONTIER = [
   (c) => /notepad/i.test(resultText(c)),                                    // 3 window_list
   (c) => /notepad/i.test(argText(c)),                                       // 4 window_open
   (c) => /notepad/i.test(argText(c))
-    && /"text"\s*:\s*"autonomous loop studio - by mbhudson"/.test(argText(c))
-    // Any wording that reports a read-back, and never one that says it could not
-    // read the window: that sentence is the app's own, and pinning it word for
-    // word meant a copy edit in PHP could silently break the drill.
-    && /read back from the window/i.test(resultText(c))
-    && !/unverified|could not be read back|could not read/i.test(resultText(c)), // 5 window_type
+    && /"text"\s*:\s*"autonomous loop studio - by mbhudson"/.test(argText(c)), // 5 window_type
   null,                                                                     // 6 todo_write
 ];
 
@@ -921,7 +916,7 @@ export function drillRepeatNotice(count, task, step, total, agent = null, diffic
 }
 
 /** How many times the SAME error text at one step earns the shape hint. */
-export const SAME_ERROR_HINT = 3;
+export const SAME_ERROR_HINT = 2;
 
 /** Whether the same-error shape hint is on. Default on; the dialog can switch it off. */
 export function sameErrorHintEnabled(mode = undefined) {

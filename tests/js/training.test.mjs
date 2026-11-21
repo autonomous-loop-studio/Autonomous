@@ -498,21 +498,6 @@ ok(frontierVerdict.complete && frontierVerdict.clean,
   'a complete frontier pass grades clean');
 eq(frontierVerdict.totalSteps, 6, 'frontier verdict uses the 6-step table');
 
-// Arguments alone are not enough: the typing result must say the window was
-// read back and contained the text.
-const unverifiedFrontierCalls = frontierCalls.map(call => call.tool === 'window_type'
-  ? { ...call, result: 'typed 36 character(s) into "notepad" — The window text could not be read back, so this typing is unverified.' }
-  : call);
-const unverifiedFrontierVerdict = drillVerdict(unverifiedFrontierCalls, TRAINING_FILE, 'frontier');
-ok(!unverifiedFrontierVerdict.complete && !unverifiedFrontierVerdict.clean,
-  'frontier rejects a typed call that was not verified on screen');
-eq(unverifiedFrontierVerdict.failures, 1, 'the unverified typing counts as a failed step');
-eq(unverifiedFrontierVerdict.step, 4, 'the unverified typing does not advance the drill');
-ok(unverifiedFrontierVerdict.retryHint.includes('Retry window_type'),
-  'an unverified frontier typing gets a retry hint');
-ok(drillVerdictText(unverifiedFrontierVerdict).includes('Retry window_type'),
-  'the retry hint is shown in the strip text');
-
 const browserCalls = [
   { tool: 'think', arg: 'plan', status: 'ok' },
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },

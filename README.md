@@ -1916,7 +1916,7 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🏋 v501 — Captcha drills, LAN TTS, and a smarter forced-tool-choice memory
+### 🏋 v502 — Linux parity for Programs and Training
 
 *Training mode gains three captcha drills (Lev.1 text code, Lev.2 bus grid, Lev.3 stop-sign grid); the Frontier drill now types "Autonomous Loop Studio - By MBHudson"; step instructions were trimmed. Speech: a custom TTS endpoint may point at a LAN host over plain http, and the cloud key is never forwarded to it. Chat remembers runners that refuse or ignore a forced tool_choice, and a pass with at least one successful call now writes a memo. Config moves out of a modal into the sidebar.*
 

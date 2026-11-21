@@ -1,4 +1,4 @@
-<!--
+﻿<!--
  Copyright 2026 M. Bryce Hudson
  SPDX-License-Identifier: Apache-2.0
 -->
@@ -6,16 +6,20 @@
 # Changelog
 
 All work in this session. UI changes ship with a full `ui/` sync and the
-`?v=` cache-buster bumped in `ui/js/store.js` → `APP_VERSION`, kept equal to
+`?v=` cache-buster bumped in `ui/js/store.js` â†’ `APP_VERSION`, kept equal to
 `VERSION` at the repo root; each entry's heading names the release it belongs
 to, so nothing here has to guess the current number. PHP changes need only the
 usual file deploy.
 
 `VERSION` at the repo root carries the release number, which the update check now
-reads and compares alongside that cache-buster — see the first entry below.
+reads and compares alongside that cache-buster â€” see the first entry below.
 
 ---
-## 🏋 v501 — Captcha drills, LAN TTS, and a smarter forced-tool-choice memory
+## Unreleased - Linux parity for Programs and Training
+
+* Programs: typing is no longer Windows-only; Linux/macOS use an available keystroke injector (xdotool/ydotool/wtype/osascript) and POSIX launches detach via setsid/nohup. Frontier drill grades on typed arguments so Linux agents can pass without a text-control read-back. Storage permission helper added to install/update flow.
+
+## ðŸ‹ v501 â€” Captcha drills, LAN TTS, and a smarter forced-tool-choice memory
 
 *Training mode gains three captcha drills: Lev.1 a simple text code, Lev.2 a 3x3 grid selecting bus tiles, Lev.3 a 3x3 grid selecting stop-sign tiles. The Frontier drill now types "Autonomous Loop Studio - By MBHudson" instead of "Hello!", and step instructions were trimmed. The difficulty grid now lists Captcha Lev.1/2/3 alongside the other drills.*
 
@@ -26,69 +30,69 @@ reads and compares alongside that cache-buster — see the first entry below.
 *Config moves out of a modal into the sidebar: the settings modal HTML and configPanel.js are removed, and /settings opens the Config tab. Suite green: JS 46 files / 1,757 assertions, PHP 39 files.*
 
 
-## 🔊 Your own TTS server, half-rate training pacing, a tunable dialect harness, and Hyper Brute Force *(`VERSION` 499 → 500, cache-buster v499 → v500)*
+## ðŸ”Š Your own TTS server, half-rate training pacing, a tunable dialect harness, and Hyper Brute Force *(`VERSION` 499 â†’ 500, cache-buster v499 â†’ v500)*
 
-*Speech has a third door. Settings → Speech gains a custom endpoint field for any OpenAI-compatible TTS server — `http://localhost:8000/v1` for a local model, so no cloud is needed at all. When it is set, requests go there instead of the provider, no provider key is required, and your model and voice names pass through as-is; only a blank model or voice is filled with the canonical `tts-1`/`alloy` pair, because strict local servers reject empty fields instead of defaulting them. Cloud behaviour without the endpoint is untouched, and the engine choice is now Auto (provider when usable, built-in voices otherwise), provider, or built-in. Pinned by a 12-assertion loopback mock TTS regression test.*
+*Speech has a third door. Settings â†’ Speech gains a custom endpoint field for any OpenAI-compatible TTS server â€” `http://localhost:8000/v1` for a local model, so no cloud is needed at all. When it is set, requests go there instead of the provider, no provider key is required, and your model and voice names pass through as-is; only a blank model or voice is filled with the canonical `tts-1`/`alloy` pair, because strict local servers reject empty fields instead of defaulting them. Cloud behaviour without the endpoint is untouched, and the engine choice is now Auto (provider when usable, built-in voices otherwise), provider, or built-in. Pinned by a 12-assertion loopback mock TTS regression test.*
 
-*Training mode gains a half-rate pacing switch, on by default and locals-exempt: cloud agents drill at ~50% request rate so the drill exercises patience as well as tools, while local models always run full rate — there is no quota to protect. The drill's opening line, the Start toast and the dumbbell title all read the switch, so nothing still says 50% when pacing is off.*
+*Training mode gains a half-rate pacing switch, on by default and locals-exempt: cloud agents drill at ~50% request rate so the drill exercises patience as well as tools, while local models always run full rate â€” there is no quota to protect. The drill's opening line, the Start toast and the dumbbell title all read the switch, so nothing still says 50% when pacing is off.*
 
-*The dialect memo moves under Config → Harness / Dialect with seven tuning switches beside it. Negative memo (on) stops re-teaching a shape after repeated parse failures and eventually evicts a stale memo; the cold-start hint (on) names another agent's dialect without applying it; telemetry (on) counts hits, misses and remembers. Durable lock, real-success only, drill-verdict gate and clone inherit default off — each makes learning stricter or copies state, so they wait for an explicit opt-in. The real-success gate lives in both the Training popup and the Harness section; the memo list still groups per-agent entries apart from shared provider slots.*
+*The dialect memo moves under Config â†’ Harness / Dialect with seven tuning switches beside it. Negative memo (on) stops re-teaching a shape after repeated parse failures and eventually evicts a stale memo; the cold-start hint (on) names another agent's dialect without applying it; telemetry (on) counts hits, misses and remembers. Durable lock, real-success only, drill-verdict gate and clone inherit default off â€” each makes learning stricter or copies state, so they wait for an explicit opt-in. The real-success gate lives in both the Training popup and the Harness section; the memo list still groups per-agent entries apart from shared provider slots.*
 
-*The Training popup also arms Hyper Brute Force (off by default): a failed drill step is swept through all four shapes in order — plain JSON, JSON object, native tags, Claude XML — until one runs, and the winner must then run cleanly 3 times in a row before it is saved to the memo. A first execution failure gets one free same-shape retry (usually a typo, not the shape); a step that exhausts all four falls back to the normal retry. Best with local models — on cloud keys every sweep attempt is a billed call.*
+*The Training popup also arms Hyper Brute Force (off by default): a failed drill step is swept through all four shapes in order â€” plain JSON, JSON object, native tags, Claude XML â€” until one runs, and the winner must then run cleanly 3 times in a row before it is saved to the memo. A first execution failure gets one free same-shape retry (usually a typo, not the shape); a step that exhausts all four falls back to the normal retry. Best with local models â€” on cloud keys every sweep attempt is a billed call.*
 
-*Full suite green: JS 47 files, training 433 passed, dialectMemo 60 passed. `VERSION` 499 → 500, `APP_VERSION` 499 → 500, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*Full suite green: JS 47 files, training 433 passed, dialectMemo 60 passed. `VERSION` 499 â†’ 500, `APP_VERSION` 499 â†’ 500, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🧩 One agent's syntax stays its own, and training can demand a real success *(`VERSION` 498 → 499, cache-buster v498 → v499)*
+## ðŸ§© One agent's syntax stays its own, and training can demand a real success *(`VERSION` 498 â†’ 499, cache-buster v498 â†’ v499)*
 
-*The dialect memo is now strictly per agent. `learnedDialect` answers only the calling agent's own slot, `rememberDialect` with an agent id writes only that slot and never the shared provider+model one, and `forgetDialect` drops only the named slot — one agent's success can no longer rewrite another's starting dialect, and forgetting one agent never clears another's entry or the shared slot. Lookups without an agent still use the provider slot, and legacy shared entries stay listed until forgotten but are never consulted or rewritten by an agent turn.*
+*The dialect memo is now strictly per agent. `learnedDialect` answers only the calling agent's own slot, `rememberDialect` with an agent id writes only that slot and never the shared provider+model one, and `forgetDialect` drops only the named slot â€” one agent's success can no longer rewrite another's starting dialect, and forgetting one agent never clears another's entry or the shared slot. Lookups without an agent still use the provider slot, and legacy shared entries stay listed until forgotten but are never consulted or rewritten by an agent turn.*
 
-*Training adds an opt-in **Real-success only** checkbox in the Training popup (`settings.trainingMode.realSuccessOnly`, off by default). Off keeps today's behaviour: a dialect is remembered when every call parsed and ran ok. On, housekeeping alone (`think` / `todo_write`) never teaches a dialect — at least one non-housekeeping tool must have run ok, while errors, denials and pending states still block as before. Nothing old is deleted by flipping it.*
+*Training adds an opt-in **Real-success only** checkbox in the Training popup (`settings.trainingMode.realSuccessOnly`, off by default). Off keeps today's behaviour: a dialect is remembered when every call parsed and ran ok. On, housekeeping alone (`think` / `todo_write`) never teaches a dialect â€” at least one non-housekeeping tool must have run ok, while errors, denials and pending states still block as before. Nothing old is deleted by flipping it.*
 
-*Full suite green: JS 46 files / 1,694 assertions, PHP 39 files (5 skipped), docs 14/14. `VERSION` 498 → 499, `APP_VERSION` 498 → 499, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*Full suite green: JS 46 files / 1,694 assertions, PHP 39 files (5 skipped), docs 14/14. `VERSION` 498 â†’ 499, `APP_VERSION` 498 â†’ 499, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🧭 Edit opens the agent card again, and the memo says who earned it *(`VERSION` 497 → 498, cache-buster v497 → v498)*
+## ðŸ§­ Edit opens the agent card again, and the memo says who earned it *(`VERSION` 497 â†’ 498, cache-buster v497 â†’ v498)*
 
-*Clicking a card's Edit did nothing, and two module-graph faults were behind it. The provenance work left `?v=496` in the imports of `ui/js/components/agentEditor.js` and `ui/js/harness.js` while v497 had moved every other module to `?v=497`. The cache-buster is part of a module's URL, so `store.js?v=496` is a **different instance** of the store from the `store.js?v=497` the sidebar emits `agent:edit` on: `AgentEditor.init()` registered its listeners on a store nobody was talking to. The second fault was starker — v497's `sidebar.js` imports `listDialectMemos()` from `harness.js`, and the export never landed, so a freshly fetched sidebar failed to link at all. Both files are back on the release's own suffix and the export exists.*
+*Clicking a card's Edit did nothing, and two module-graph faults were behind it. The provenance work left `?v=496` in the imports of `ui/js/components/agentEditor.js` and `ui/js/harness.js` while v497 had moved every other module to `?v=497`. The cache-buster is part of a module's URL, so `store.js?v=496` is a **different instance** of the store from the `store.js?v=497` the sidebar emits `agent:edit` on: `AgentEditor.init()` registered its listeners on a store nobody was talking to. The second fault was starker â€” v497's `sidebar.js` imports `listDialectMemos()` from `harness.js`, and the export never landed, so a freshly fetched sidebar failed to link at all. Both files are back on the release's own suffix and the export exists.*
 
-*That export is `listDialectMemos()`: every stored memo as `{key, agentId, provider, model, dialect, kind}`, `kind: 'agent'` when an agent earned its own entry and `'shared'` for a provider+model slot any agent on that model inherits. It deliberately ignores the Labs switch — a switched-off memo is still stored and still forgettable — and Config → Labs builds its grouped list, per-row **Forget** and **Forget all** from it, with keys for deleted agents still visible rather than silently vanishing.*
+*That export is `listDialectMemos()`: every stored memo as `{key, agentId, provider, model, dialect, kind}`, `kind: 'agent'` when an agent earned its own entry and `'shared'` for a provider+model slot any agent on that model inherits. It deliberately ignores the Labs switch â€” a switched-off memo is still stored and still forgettable â€” and Config â†’ Labs builds its grouped list, per-row **Forget** and **Forget all** from it, with keys for deleted agents still visible rather than silently vanishing.*
 
-*The editor's learned-syntax line now says which of the two it is showing. `memoProvenance()` answers `'agent'`, `'shared'` or `''`, and the hint prints "earned it itself — filed under its id, so provider/model renames do not move it" or "inherited from the shared provider slot — another agent on this model earned it", so an operator can tell their own agent's learning apart from hand-me-down syntax before pressing Forget.*
+*The editor's learned-syntax line now says which of the two it is showing. `memoProvenance()` answers `'agent'`, `'shared'` or `''`, and the hint prints "earned it itself â€” filed under its id, so provider/model renames do not move it" or "inherited from the shared provider slot â€” another agent on this model earned it", so an operator can tell their own agent's learning apart from hand-me-down syntax before pressing Forget.*
 
-*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files (5 skipped), docs 14/14. `VERSION` 497 → 498, `APP_VERSION` 497 → 498, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files (5 skipped), docs 14/14. `VERSION` 497 â†’ 498, `APP_VERSION` 497 â†’ 498, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🖥️ The IDE door unfolds pasted envelopes too, ending the ide_write retry loop *(`VERSION` 496 → 497, cache-buster v496 → v497)*
+## ðŸ–¥ï¸ The IDE door unfolds pasted envelopes too, ending the ide_write retry loop *(`VERSION` 496 â†’ 497, cache-buster v496 â†’ v497)*
 
-*The same pasted-envelope class that stalled `edit_file` before v496 reached the IDE door: the slots the model understood landed top-level (`path`) while the rest hid under `"arg"`, so `ide_write` saw the path but no `content` and refused every identical retry at IDE drill step 3. `aliasToolArgs` now normalises all four IDE tools — `ide_open`/`ide_read` through a shared `normaliseIdeArg`, `ide_edit` through the same `normaliseEditArg` as `edit_file` — folding the envelope flat, foreign path/content spellings and stringified arguments before anything touches the path. The sandbox door's `ideArg` parses stringified arguments and unfolds as a second line of defense, `drill-run.mjs` normalises with the app's own aliasing (native frames arrive raw, past the parser), and the `ide_write`/`ide_edit` refusals name the received keys plus the flat shape instead of repeating one line.*
+*The same pasted-envelope class that stalled `edit_file` before v496 reached the IDE door: the slots the model understood landed top-level (`path`) while the rest hid under `"arg"`, so `ide_write` saw the path but no `content` and refused every identical retry at IDE drill step 3. `aliasToolArgs` now normalises all four IDE tools â€” `ide_open`/`ide_read` through a shared `normaliseIdeArg`, `ide_edit` through the same `normaliseEditArg` as `edit_file` â€” folding the envelope flat, foreign path/content spellings and stringified arguments before anything touches the path. The sandbox door's `ideArg` parses stringified arguments and unfolds as a second line of defense, `drill-run.mjs` normalises with the app's own aliasing (native frames arrive raw, past the parser), and the `ide_write`/`ide_edit` refusals name the received keys plus the flat shape instead of repeating one line.*
 
-*IDE drill step 3 teaches the flat shape the way Hard step 8 does — send `{"path":...,"content":"..."}` flat, not nested under a second `"arg"` — and the same-error hint names the IDE write call on a step-3 loop. Regression tests pin the envelope, foreign spellings, stringified args and split-level slots for every IDE tool.*
+*IDE drill step 3 teaches the flat shape the way Hard step 8 does â€” send `{"path":...,"content":"..."}` flat, not nested under a second `"arg"` â€” and the same-error hint names the IDE write call on a step-3 loop. Regression tests pin the envelope, foreign spellings, stringified args and split-level slots for every IDE tool.*
 
-*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files. `VERSION` 496 → 497, `APP_VERSION` 496 → 497, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*Full suite green: JS 46 files / 1,689 assertions, PHP 39 files. `VERSION` 496 â†’ 497, `APP_VERSION` 496 â†’ 497, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🔧 Pasted tool envelopes unfold instead of failing, and the drill names the flat shape *(`VERSION` 495 → 496, cache-buster v495 → v496)*
+## ðŸ”§ Pasted tool envelopes unfold instead of failing, and the drill names the flat shape *(`VERSION` 495 â†’ 496, cache-buster v495 â†’ v496)*
 
-*A model taught the `{"tool","arg"}` dialect sometimes pastes the whole envelope into the argument itself: the slots it understood land top-level (`path`) while the rest hides under `"arg"`. `edit_file` then saw the path but no `old_string` and refused every identical retry. A shared `unfoldNestedArg` helper now folds the envelope flat on both the markup and native paths — explicit top-level slots win on conflict and nothing silently drops — `fromToolObject` merges split-level slots (`"path"` beside `"arg"` instead of inside it), `read_file` unfolds before keeping its range, and `write_file` unfolds before folding its foreign spellings (and now drops the consumed aliases instead of passing them through).*
+*A model taught the `{"tool","arg"}` dialect sometimes pastes the whole envelope into the argument itself: the slots it understood land top-level (`path`) while the rest hides under `"arg"`. `edit_file` then saw the path but no `old_string` and refused every identical retry. A shared `unfoldNestedArg` helper now folds the envelope flat on both the markup and native paths â€” explicit top-level slots win on conflict and nothing silently drops â€” `fromToolObject` merges split-level slots (`"path"` beside `"arg"` instead of inside it), `read_file` unfolds before keeping its range, and `write_file` unfolds before folding its foreign spellings (and now drops the consumed aliases instead of passing them through).*
 
-*The Hard drill teaches the shape once: step 8 now says to send the arguments flat — `{"path":...,"old_string":...,"new_string":...}` — not nested under a second `"arg"`. And when the SAME error answers one step three times, which usually means a shape problem even when the call keeps changing, the drill names the flat shape with the step's exact call. That hint defaults on and switches off in the Training dialog (`Same-error shape hint`); the identical-call guard underneath is untouched, so switching it off loses nothing that existed before. Mobile carries the unfold and the drill text (local-only, uncommitted); its repeat-guard machinery predates the desktop's, so the same-error hint is desktop-only until that is backported.*
+*The Hard drill teaches the shape once: step 8 now says to send the arguments flat â€” `{"path":...,"old_string":...,"new_string":...}` â€” not nested under a second `"arg"`. And when the SAME error answers one step three times, which usually means a shape problem even when the call keeps changing, the drill names the flat shape with the step's exact call. That hint defaults on and switches off in the Training dialog (`Same-error shape hint`); the identical-call guard underneath is untouched, so switching it off loses nothing that existed before. Mobile carries the unfold and the drill text (local-only, uncommitted); its repeat-guard machinery predates the desktop's, so the same-error hint is desktop-only until that is backported.*
 
-*Full suite green: JS 46 files / 1,680 assertions, mobile JS 44 files / 1,481 assertions. `VERSION` 495 → 496, `APP_VERSION` 495 → 496, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*Full suite green: JS 46 files / 1,680 assertions, mobile JS 44 files / 1,481 assertions. `VERSION` 495 â†’ 496, `APP_VERSION` 495 â†’ 496, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🔁 Both clients gate the drill plan the same way, through one shared scrub *(`VERSION` 494 → 495, cache-buster v494 → v495)*
+## ðŸ” Both clients gate the drill plan the same way, through one shared scrub *(`VERSION` 494 â†’ 495, cache-buster v494 â†’ v495)*
 
-*The desktop hid the previous pass's completed todo list until step 2 wrote the current one (`todoPlanIsCurrent`), and rewrote an old `training-*-pN.txt` path copied into the new plan to the pass in progress. Mobile had the same stale-path trap — the pass-4 write of pass 3's file that the pre-tool refusal caught — but neither the gate nor the shared helper, with the same scrub duplicated in each chat client.*
+*The desktop hid the previous pass's completed todo list until step 2 wrote the current one (`todoPlanIsCurrent`), and rewrote an old `training-*-pN.txt` path copied into the new plan to the pass in progress. Mobile had the same stale-path trap â€” the pass-4 write of pass 3's file that the pre-tool refusal caught â€” but neither the gate nor the shared helper, with the same scrub duplicated in each chat client.*
 
-*`todoPlanIsCurrent` is now ported verbatim to `mobile/ui/js/training.js`, and both training modules export one `scrubDrillFile(text, agent, difficulty)` that rewrites this run's drill-file family to `trainingFileNow`. Both `todosBlockFor` implementations are gate first, then build the block, then one helper call — no inline regex left in either chat client. The self-test tool's last-6 slug rule (`training-lftest-p1.txt`) had drifted from `tests/php/drillSelftest.test.php`, which still expected the old 48-character names; the four expected paths now match the tool, and the check is green again.*
+*`todoPlanIsCurrent` is now ported verbatim to `mobile/ui/js/training.js`, and both training modules export one `scrubDrillFile(text, agent, difficulty)` that rewrites this run's drill-file family to `trainingFileNow`. Both `todosBlockFor` implementations are gate first, then build the block, then one helper call â€” no inline regex left in either chat client. The self-test tool's last-6 slug rule (`training-lftest-p1.txt`) had drifted from `tests/php/drillSelftest.test.php`, which still expected the old 48-character names; the four expected paths now match the tool, and the check is green again.*
 
-*Full suite green. `VERSION` 494 → 495, `APP_VERSION` 494 → 495, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*Full suite green. `VERSION` 494 â†’ 495, `APP_VERSION` 494 â†’ 495, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🧩 A todo list that lost its commas no longer stalls Easy step 2 *(`VERSION` 493 → 494, cache-buster v493 → v494)*
+## ðŸ§© A todo list that lost its commas no longer stalls Easy step 2 *(`VERSION` 493 â†’ 494, cache-buster v493 â†’ v494)*
 
 *`todo_write` could read a JSON-encoded array only when `JSON.parse` could read the whole string. A small model at Easy step 2 sent the right quoted items but dropped the commas between several of them (`"4. now "5. write_file"`), so the parser answered `todo_write needs a list` and the drill never left step 2 even though every step was present.*
 
 *The parser now recovers the quoted items in order when the separators are missing. It splits on the quote delimiter rather than matching complete quoted pairs, because the missing-comma boundary made a pair regex swallow the comma fragments as items. Valid arrays, `items[]`, a bare JSON array and an explicit empty list keep their existing behavior; all recovered items start pending.*
 
-*The exact malformed list from the run now returns all 12 items, and a regression test pins it beside the existing malformed-JSON recovery. Full suite green. `VERSION` 493 → 494, `APP_VERSION` 493 → 494, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*The exact malformed list from the run now returns all 12 items, and a regression test pins it beside the existing malformed-JSON recovery. Full suite green. `VERSION` 493 â†’ 494, `APP_VERSION` 493 â†’ 494, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🧹 A fresh pass starts with its own plan, and Easy's append step carries the exact edit *(`VERSION` 492 → 493, cache-buster v492 → v493)*
+## ðŸ§¹ A fresh pass starts with its own plan, and Easy's append step carries the exact edit *(`VERSION` 492 â†’ 493, cache-buster v492 â†’ v493)*
 
 *`todosBlockFor` replayed the plan saved in `ui.todosByAgent` into every system prompt. At the start of a drill pass that plan belongs to the previous pass and every item is checked, so the model saw the new pass as already done before step 1; step 2 then had to rebuild it. `todoPlanIsCurrent` hides the plan until step 2's `todo_write` has passed and hides a completed pass's plan again. Non-training chats are unchanged, and the plan is still shown for the current pass after step 2.*
 
@@ -96,296 +100,296 @@ reads and compares alongside that cache-buster — see the first entry below.
 
 *Easy step 7 now carries the anchored-edit card it always meant, and the training file write path repairs the literal two-character backslash-n a small model sends instead of a newline. The step check accepts the repaired shape, so the edit writes a real second line instead of the characters `\n`. The headless `drill-run.mjs` now maps `--pass N` to the right pass file when grading (starting at pass 2 used to grade against pass 1) and appends the same `drillFailureNotice` correction the app gives; a live Nemo Easy run reached a clean 12/12 pass.*
 
-*Tests cover the old-todo gate, the slash/absolute wrong-pass guard, the anchored Easy card and the repaired escape. Full suite green. `VERSION` 492 → 493, `APP_VERSION` 492 → 493, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
+*Tests cover the old-todo gate, the slash/absolute wrong-pass guard, the anchored Easy card and the repaired escape. Full suite green. `VERSION` 492 â†’ 493, `APP_VERSION` 492 â†’ 493, every `?v=` under `ui/**`, both `index.html` files and `ide/index.php`.*
 
-## 🧠 The drill remembers the previous pass again, and the todo card stops being a JSON exam *(`VERSION` 491 → 492, cache-buster v491 → v492)*
+## ðŸ§  The drill remembers the previous pass again, and the todo card stops being a JSON exam *(`VERSION` 491 â†’ 492, cache-buster v491 â†’ v492)*
 
 *The per-pass history cutoff was an over-correction: it did stop a model copying last pass's file, but it also stopped it copying the shape that had just worked, so every pass re-derived `think`/`echo`/`todo_write` from the prompt. The previous pass is back in context, and `_historyFor` rewrites this agent's old drill-file paths to the pass in progress before replaying them. The stale-path false positive stays blocked; the memory is useful instead of misleading.*
 
 *The dialect memo is harness-wide again: `rememberDialect` writes both the agent slot and the provider+model slot, and `learnedDialect` checks the agent first, then the provider. A new agent on a model that already executed a syntax inherits it; an agent with its own answer still wins. Forget clears both, so the button still means "go back to the heuristic."*
 
-*The step-2 todo card is now a plain array (`{"tool":"todo_write","arg":["step 1","step 2"]}`). The parser recovers `content`/`status` from the malformed string a live 4B run kept sending instead of rejecting it forever, and an empty "todo list cleared" no longer satisfies the easy todo step — that was the old false positive. Drill filenames keep a six-character agent tail (`training-ecyu71-p3.txt`), and the read-only path fallback from v491 still accepts a leading slash. Tests cover the recovered todo, the empty-list refusal, the shorter filenames and the provider fallback. Full suite: JS 46 files / 1,642 assertions, PHP 39/39 (5 skipped), docs 14/14, version 16/16.*
+*The step-2 todo card is now a plain array (`{"tool":"todo_write","arg":["step 1","step 2"]}`). The parser recovers `content`/`status` from the malformed string a live 4B run kept sending instead of rejecting it forever, and an empty "todo list cleared" no longer satisfies the easy todo step â€” that was the old false positive. Drill filenames keep a six-character agent tail (`training-ecyu71-p3.txt`), and the read-only path fallback from v491 still accepts a leading slash. Tests cover the recovered todo, the empty-list refusal, the shorter filenames and the provider fallback. Full suite: JS 46 files / 1,642 assertions, PHP 39/39 (5 skipped), docs 14/14, version 16/16.*
 
-## 🔎 A read-only inspection is a drill scratchpad, so Easy step 7 can see the file *(`VERSION` 490 → 491, cache-buster v490 → v491)*
+## ðŸ”Ž A read-only inspection is a drill scratchpad, so Easy step 7 can see the file *(`VERSION` 490 â†’ 491, cache-buster v490 â†’ v491)*
 
 *Easy step 7 asks for an anchored `edit_file` and deliberately carries no exact-call card: it is the diagnostic for a model that appends blindly. The gate then refused every `read_file` at that step, so a model could not inspect the exact text it had to match. The Nemo run guessed `"training\n"` against a file containing `training`, failed three times, and was told to retry without being allowed to look.*
 
 *Read-only inspection (`read_file`, `list_dir`, `glob_files`, `grep_code`, `ide_read`, `browser_read`, `window_list`) is now a scratchpad at any point. It runs, but it never advances the drill, never counts as off-step, and never counts as a failure. The Easy step tells the model to read first and warns that the line may not end with a newline; it still has no exact call, so the diagnostic remains. A model that reads and still cannot anchor the edit still fails step 7.*
 
-*The shared Continue line and every non-Easy drill block state the same rule. Pinned by new JS assertions for the gate, the neutral verdict and the Easy block; the previous off-step test now uses a non-inspection call. Full suite: JS 46 files / 1,637 assertions, PHP 39/39 (5 skipped), docs 14/14, version 16/16. `VERSION` 490 → 491, `APP_VERSION` 490 → 491, every `?v=` under `ui/**`, `ide/index.php`, and both `index.html` files.*
+*The shared Continue line and every non-Easy drill block state the same rule. Pinned by new JS assertions for the gate, the neutral verdict and the Easy block; the previous off-step test now uses a non-inspection call. Full suite: JS 46 files / 1,637 assertions, PHP 39/39 (5 skipped), docs 14/14, version 16/16. `VERSION` 490 â†’ 491, `APP_VERSION` 490 â†’ 491, every `?v=` under `ui/**`, `ide/index.php`, and both `index.html` files.*
 
-## ♻️ A training pass starts clean, and a small model's near miss stops becoming a loop *(`VERSION` 489 → 490, cache-buster v489 → v490)*
+## â™»ï¸ A training pass starts clean, and a small model's near miss stops becoming a loop *(`VERSION` 489 â†’ 490, cache-buster v489 â†’ v490)*
 
 *Training mode now keeps the retry rule the operator described: a step repeats until it passes, and a pass with any retry starts again from step 1. The v488 repeat guard paused an agent after eight identical failures and skipped it on the next Continue; that was the wrong behavior for brute-force learning, so the guard now only raises its hint and names the exact call, never pauses or skips. The step stays open until its arguments pass.*
 
 *The second pass used to be worse than the first because it inherited the first pass's failed tool transcript. `_scheduleDrillResume` now records the conversation boundary when the pass counter advances, and `_historyFor` only feeds the model this pass's messages; the operator still sees the whole run and its per-pass report. The drill block and the learned syntax lead the new pass, so the model is not rebuilding its todo list from the old file path.*
 
-*The IDE write guard now covers `ide_write` and `ide_edit`. Before this, a pass could write the previous pass's file successfully, and only the step check noticed afterward — the model saw "Wrote …" and kept repeating it. Wrong-pass IDE writes are now refused before they touch evidence, with the current pass's file named in the error.*
+*The IDE write guard now covers `ide_write` and `ide_edit`. Before this, a pass could write the previous pass's file successfully, and only the step check noticed afterward â€” the model saw "Wrote â€¦" and kept repeating it. Wrong-pass IDE writes are now refused before they touch evidence, with the current pass's file named in the error.*
 
-*Two parser/feedback gaps from the live Nemo run are closed. `todo_write` accepts a JSON-encoded array (or an object containing one) in addition to a live array, so a small model copying the example no longer fails step 8 on a clean pass. When the right tool runs successfully but its arguments fail the drill check, the call is marked as a failed attempt and the model immediately receives the step number and the exact next call instead of a success-looking "Opened …" message.*
+*Two parser/feedback gaps from the live Nemo run are closed. `todo_write` accepts a JSON-encoded array (or an object containing one) in addition to a live array, so a small model copying the example no longer fails step 8 on a clean pass. When the right tool runs successfully but its arguments fail the drill check, the call is marked as a failed attempt and the model immediately receives the step number and the exact next call instead of a success-looking "Opened â€¦" message.*
 
-*Covered by new JS assertions for the IDE previous-pass refusal, both JSON-string todo shapes, the non-pausing repeat guard and the immediate failure correction; the existing full suite remains green. `VERSION` 489 → 490, `APP_VERSION` 489 → 490, every `?v=` under `ui/**` and both `index.html` files.*
+*Covered by new JS assertions for the IDE previous-pass refusal, both JSON-string todo shapes, the non-pausing repeat guard and the immediate failure correction; the existing full suite remains green. `VERSION` 489 â†’ 490, `APP_VERSION` 489 â†’ 490, every `?v=` under `ui/**` and both `index.html` files.*
 
-## 🧠 Auto Scroll now follows the Thinking panel and both Reasoning boxes *(`VERSION` 488 → 489, cache-buster v488 → v489)*
+## ðŸ§  Auto Scroll now follows the Thinking panel and both Reasoning boxes *(`VERSION` 488 â†’ 489, cache-buster v488 â†’ v489)*
 
-*The Config → Interface Auto Scroll switch followed only the chat transcript. It now also applies to the model's thought surfaces, on the same opt-out rule: the Thinking overlay, the live Reasoning box while tokens stream, and the finished Reasoning block after the live one is replaced.*
+*The Config â†’ Interface Auto Scroll switch followed only the chat transcript. It now also applies to the model's thought surfaces, on the same opt-out rule: the Thinking overlay, the live Reasoning box while tokens stream, and the finished Reasoning block after the live one is replaced.*
 
 *The Thinking overlay keeps its newest-first order, so following means staying at the top. The Reasoning box is a separate `max-height` / `overflow-y` container; while streaming, `_paintReasoning` moves it to the newest token, and the finished renderer keeps that follow when Auto Scroll is on. With the switch off, each surface restores or leaves the reader's position instead of yanking a long trace to one end. The decision reuses `scrollFollowWanted` from `utils.js`, the same predicate the transcript uses, so only an explicit `false` disables the follow and the three surfaces cannot drift apart.*
 
 *No new assertions: this is DOM scroll wiring, and `tests/js/scrollFollow.test.mjs` already pins the toggle semantics. Full suite: JS 46 files / 1,625 assertions, PHP 39 files / 39 passed (5 skipped), docs 14/14, version 16/16.*
 
-## 🎯 Every drill step except Easy's diagnostic append quotes the exact call, advertises only the drill's tools, forces the awaited native tool, breaks identical retry loops, and reports first-try accuracy *(`VERSION` 487 → 488, cache-buster v487 → v488)*
+## ðŸŽ¯ Every drill step except Easy's diagnostic append quotes the exact call, advertises only the drill's tools, forces the awaited native tool, breaks identical retry loops, and reports first-try accuracy *(`VERSION` 487 â†’ 488, cache-buster v487 â†’ v488)*
 
 *The drill block named only the tool the next step wanted; the model had to infer the envelope. Nano-OMNI's valid `todo_write` list failed 74 times because the wrapper was wrong. Every built-in task that is meant to pass now carries one `example` beside its wording, and `trainingTaskExample` fills the agent's own pass file or drill page into it. `trainingBlockFor` prints that example as an `Exact call:` in the position line, and `drillStepRefusal` prints the same call as `Next call:` when it refuses an off-step tool. The table is the one `drillVerdict` already walks, so the example and the grade cannot name different shapes. Easy's legacy append step deliberately has no example and keeps its old shape: it is the diagnostic of a model that anchors an edit, not a call to copy. Near-miss repair is untouched and still green (43/43 `toolAliases`, 54/54 `toolCalls`).*
 
-*While training, the advertised set is the drill's own. `trainingToolScope` reads the active task table (plus the display/browser/IDE tools those rows name), and `chat.js` uses it for the native schemas, the prompt tool list and `toolScope`. Advanced goes from fifty-odd choices to seven; the operator's deny list still wins and `runTool` still refuses anything outside the scope. Native models are forced to the awaited tool — OpenAI-compatible `{type:'function',function:{name}}`, Anthropic `{type:'tool',name}`, Google `{mode:'ANY',allowedFunctionNames:[name]}`. The choice is sent only while training and only when the step is known; a 400/422 on it is retried once with automatic choice, and at step 0 the existing native-to-prompt fallback still runs, so a provider that accepts schemas but not a forced choice is not broken by the drill.*
+*While training, the advertised set is the drill's own. `trainingToolScope` reads the active task table (plus the display/browser/IDE tools those rows name), and `chat.js` uses it for the native schemas, the prompt tool list and `toolScope`. Advanced goes from fifty-odd choices to seven; the operator's deny list still wins and `runTool` still refuses anything outside the scope. Native models are forced to the awaited tool â€” OpenAI-compatible `{type:'function',function:{name}}`, Anthropic `{type:'tool',name}`, Google `{mode:'ANY',allowedFunctionNames:[name]}`. The choice is sent only while training and only when the step is known; a 400/422 on it is retried once with automatic choice, and at step 0 the existing native-to-prompt fallback still runs, so a provider that accepts schemas but not a forced choice is not broken by the drill.*
 
 *A repeat guard keys a stable `tool + sorted-argument` signature per agent and step. The third identical failure replaces the generic retry text with the exact expected call and the error; the eighth marks the agent `stuck at step X after N tries`, paints that row in the strip and skips the agent on the next Continue. If every active agent is stuck, the scheduler stops the run instead of issuing a Continue that would immediately bail out. A successful step clears the signature, and the pass log now stores each completed pass's own `totalSteps` and `failureCounts`; `trainingAccuracy` reports first-try pass rate (a step with any failed attempt is not first-try) and the most-failed step in the summary.*
 
-*Pinned by new assertions in `tests/js/training.test.mjs` (exact-call text, scope, signature order, hint/pause text, accuracy, per-pass tally) and the expanded `tests/js/nativeTools.test.mjs` (forced-choice mapping and auto fallback). Full suite: JS 46 files / 1,625 assertions, PHP 39 files / 39 passed (5 skipped), docs 14/14. A malformed-JSON failure remains model-side: Deep-Q8's `{"step1,...` cannot be repaired by a parser guess; lower the drill temperature to 0.2–0.3 or use a model with reliable native function calling, and use the local runner's structured-output/grammar setting where it has one.*
+*Pinned by new assertions in `tests/js/training.test.mjs` (exact-call text, scope, signature order, hint/pause text, accuracy, per-pass tally) and the expanded `tests/js/nativeTools.test.mjs` (forced-choice mapping and auto fallback). Full suite: JS 46 files / 1,625 assertions, PHP 39 files / 39 passed (5 skipped), docs 14/14. A malformed-JSON failure remains model-side: Deep-Q8's `{"step1,...` cannot be repaired by a parser guess; lower the drill temperature to 0.2â€“0.3 or use a model with reliable native function calling, and use the local runner's structured-output/grammar setting where it has one.*
 
-## 🔧 A tool call's top-level arguments reach the tool *(`VERSION` 486 → 487, cache-buster v486 → v487)*
+## ðŸ”§ A tool call's top-level arguments reach the tool *(`VERSION` 486 â†’ 487, cache-buster v486 â†’ v487)*
 
-*A live Advanced run showed 74 identical failures at step 2 for Nano-OMNI. The model was not regressing: every retry sent a valid `{"tool":"todo_write","todos":[...]}` list, but the parser read only `arg`/`args`/`arguments`/`parameters`/`input`/`text`, so arguments at the top level arrived as `undefined`. `todo_write` then answered "needs todos" for the list the model had just sent, and the drill counted each identical retry as a new failure. The parser now treats every key outside the call envelope as the argument — top-level `todos`, `path`/`content` and `thought` calls reach their tool — which also fixes ordinary chat. Pinned in `tests/js/toolCalls.test.mjs` with a parse-and-run round trip. A finished pass that was not clean is now labelled "1 pass done" in the strip, so it cannot read as a win while the run continues.*
+*A live Advanced run showed 74 identical failures at step 2 for Nano-OMNI. The model was not regressing: every retry sent a valid `{"tool":"todo_write","todos":[...]}` list, but the parser read only `arg`/`args`/`arguments`/`parameters`/`input`/`text`, so arguments at the top level arrived as `undefined`. `todo_write` then answered "needs todos" for the list the model had just sent, and the drill counted each identical retry as a new failure. The parser now treats every key outside the call envelope as the argument â€” top-level `todos`, `path`/`content` and `thought` calls reach their tool â€” which also fixes ordinary chat. Pinned in `tests/js/toolCalls.test.mjs` with a parse-and-run round trip. A finished pass that was not clean is now labelled "1 pass done" in the strip, so it cannot read as a win while the run continues.*
 
 *JS 46 files / 1,591 assertions, PHP 39/39 (5 skipped), docs 14/14.*
 
-## 🧠 A mid-drill `think` is a scratchpad, and an agent can forget its learned dialect *(`VERSION` 485 → 486, cache-buster v485 → v486)*
+## ðŸ§  A mid-drill `think` is a scratchpad, and an agent can forget its learned dialect *(`VERSION` 485 â†’ 486, cache-buster v485 â†’ v486)*
 
-*`think` is now allowed at any point in a drill. At step 1 it is the step itself and advances the pass; mid-pass it advances nothing, resets nothing, and is not counted as off-step, so a model can use the scratchpad its instructions promise without losing the steps it already passed. The verdict no longer treats a think as a restart at all — a pass starts again only after the previous one completes — and the per-agent block, the shared "Continue" text and the Easy rules all say so plainly.*
+*`think` is now allowed at any point in a drill. At step 1 it is the step itself and advances the pass; mid-pass it advances nothing, resets nothing, and is not counted as off-step, so a model can use the scratchpad its instructions promise without losing the steps it already passed. The verdict no longer treats a think as a restart at all â€” a pass starts again only after the previous one completes â€” and the per-agent block, the shared "Continue" text and the Easy rules all say so plainly.*
 
-*Config → Agents → Edit now shows what syntax the agent has learned and carries a **Forget learned dialect** button. It drops this agent's memo for its saved provider and model: the next turn starts from the provider heuristic, native tool calling is available again, and the agent has to earn a memo. Forgetting is deliberately not gated by the Labs switch, so an operator who turned the memo off can still clear what an earlier session learned, and `forgetDialect()` now returns the dialect it removed so the toast can say whether anything was dropped. The hint says the action is immediate even if the dialog is cancelled, and that the memo is keyed by the saved model — editing the model box is not the same as forgetting. `tests/js/training.test.mjs`, `drillUntilClean.test.mjs`, `drillVerdict.test.mjs` and `dialectMemo.test.mjs` pin the scratchpad rule and the un-gated forget. JS 46 files / 1,584 assertions, PHP 39/39 (5 skipped), docs 14/14.*
+*Config â†’ Agents â†’ Edit now shows what syntax the agent has learned and carries a **Forget learned dialect** button. It drops this agent's memo for its saved provider and model: the next turn starts from the provider heuristic, native tool calling is available again, and the agent has to earn a memo. Forgetting is deliberately not gated by the Labs switch, so an operator who turned the memo off can still clear what an earlier session learned, and `forgetDialect()` now returns the dialect it removed so the toast can say whether anything was dropped. The hint says the action is immediate even if the dialog is cancelled, and that the memo is keyed by the saved model â€” editing the model box is not the same as forgetting. `tests/js/training.test.mjs`, `drillUntilClean.test.mjs`, `drillVerdict.test.mjs` and `dialectMemo.test.mjs` pin the scratchpad rule and the un-gated forget. JS 46 files / 1,584 assertions, PHP 39/39 (5 skipped), docs 14/14.*
 
-## 🎯 The dialect memo is per agent, a drill runs until one pass is 100% with 0 retries, a call outside the next step is refused, and a stalled todo loop is closed *(`VERSION` 482 → 485, cache-buster v482 → v485)*
+## ðŸŽ¯ The dialect memo is per agent, a drill runs until one pass is 100% with 0 retries, a call outside the next step is refused, and a stalled todo loop is closed *(`VERSION` 482 â†’ 485, cache-buster v482 â†’ v485)*
 
-*The learned dialect was filed under `provider::model`. One success was therefore universal: every agent on that model was taught a syntax it had never run, and the memo a copied agent inherited described a different tool set and a different prompt. It is now keyed by the agent and the model it proved itself on — `agent-a::openai::model-x` — so a success teaches that agent only, another agent on the same model still starts from the heuristic, and changing the agent's model invalidates the memo instead of applying an old answer to a new model. A call with no agent id has no slot at all: there is deliberately no shared fallback, because that is the leak the key closes. A turn that ends with `declare_goal_complete` now marks its trailing, never-run calls `skipped` instead of `error`, so an autonomous turn can teach a dialect too. The Labs switch and an explicitly pinned dialect still win, and the settings sync still unions the map rather than replacing it.*
+*The learned dialect was filed under `provider::model`. One success was therefore universal: every agent on that model was taught a syntax it had never run, and the memo a copied agent inherited described a different tool set and a different prompt. It is now keyed by the agent and the model it proved itself on â€” `agent-a::openai::model-x` â€” so a success teaches that agent only, another agent on the same model still starts from the heuristic, and changing the agent's model invalidates the memo instead of applying an old answer to a new model. A call with no agent id has no slot at all: there is deliberately no shared fallback, because that is the leak the key closes. A turn that ends with `declare_goal_complete` now marks its trailing, never-run calls `skipped` instead of `error`, so an autonomous turn can teach a dialect too. The Labs switch and an explicitly pinned dialect still win, and the settings sync still unions the map rather than replacing it.*
 
-*Training mode's stopping rule now defaults to **one 100% clean pass**. The dialog reads "Stop after 1 clean pass", and `trainingCleanTarget()` is the one place the rule is decided: unset and a saved 0 both mean 1 — 0 was the old default, so leaving it alone would silently opt an existing install out of the rule — and 99 is the ceiling. Because the clean-pass target is the only thing that ends a run, whole passes repeat until one finishes with every step correct, zero failed attempts and zero retries — a corrected step is not clean, and a clean pass has zero retries by construction.*
+*Training mode's stopping rule now defaults to **one 100% clean pass**. The dialog reads "Stop after 1 clean pass", and `trainingCleanTarget()` is the one place the rule is decided: unset and a saved 0 both mean 1 â€” 0 was the old default, so leaving it alone would silently opt an existing install out of the rule â€” and 99 is the ceiling. Because the clean-pass target is the only thing that ends a run, whole passes repeat until one finishes with every step correct, zero failed attempts and zero retries â€” a corrected step is not clean, and a clean pass has zero retries by construction.*
 
 *No step can be skipped into the score. The verdict advances only on the exact call a step asks for: a wrong tool is refused before it runs and never advances (an error from one counts as a failed attempt at the step), the right tool with wrong arguments is a failed attempt at the current step, a call the app skipped proves nothing, and a later step's call while the current one is still owed is off-step. `tests/js/drillUntilClean.test.mjs` builds a real 17-step Hard pass and proves each case: a wrong write leaves the drill at step 4, the corrected write passes step 5, a wrong echo fails step 3 until repeated correctly, a corrected pass is not 100%, and a two-pass run stops at its first clean pass with `cleanPassTarget: 1`.*
 
-*The drill now enforces its order, not just grades it. Before a tool runs, `drillStepRefusal` compares it with the step the app recorded: a redo of an earlier step is refused with the position and the call it is waiting for, a jump to a later step is refused the same way, and a tool outside the drill is refused too. A refused call is an ordinary error the model sees, and the verdict now counts an error on the wrong tool as a failed attempt at the step it was waiting for. That is the gap the last live Advanced run exposed: the agent had completed steps 1-6, then re-ran steps 2-6 instead of calling step 7, the strip sat on "6/8 · waiting for show_file (last call: show_url)", and the two empty-content write errors were off-step calls the drill never counted.*
+*The drill now enforces its order, not just grades it. Before a tool runs, `drillStepRefusal` compares it with the step the app recorded: a redo of an earlier step is refused with the position and the call it is waiting for, a jump to a later step is refused the same way, and a tool outside the drill is refused too. A refused call is an ordinary error the model sees, and the verdict now counts an error on the wrong tool as a failed attempt at the step it was waiting for. That is the gap the last live Advanced run exposed: the agent had completed steps 1-6, then re-ran steps 2-6 instead of calling step 7, the strip sat on "6/8 Â· waiting for show_file (last call: show_url)", and the two empty-content write errors were off-step calls the drill never counted.*
 
-*The live counter now starts the drill over when the drill does. A pass that begins again at step 1 is a new attempt: the numerator resets, the per-attempt failure count clears, and the abandoned attempt's failed calls are merged into the run's totals — a restart cannot erase a failure or turn an unfinished pass into a clean one. Only a completed pass with zero failed attempts increments the clean-pass count and can end the run. A mid-pass `think` is a scratchpad and changes nothing.*
+*The live counter now starts the drill over when the drill does. A pass that begins again at step 1 is a new attempt: the numerator resets, the per-attempt failure count clears, and the abandoned attempt's failed calls are merged into the run's totals â€” a restart cannot erase a failure or turn an unfinished pass into a clean one. Only a completed pass with zero failed attempts increments the clean-pass count and can end the run. A mid-pass `think` is a scratchpad and changes nothing.*
 
-*A second live Advanced run showed the drill stuck on the same step, and the cause was not syntax. `storage/sent.json` recorded the model emitting the taught JSON exactly — `{"tool":"fetch_url","arg":"http://drill.local/advanced.html"}` — while step 1 (`think`) was answered with the prose “Step 1 (think): I will fetch…”. The model then called `todo_write` over and over and every call was accepted: the gate exempted `todo_write` unconditionally, and the tool read only `todos[].content`, so an array of strings (or `items`, or `steps`) became an empty list and answered “todo list cleared” — a success for a call that did nothing. The drill sat at 1/8 with no failure to retry. Now a todo update is allowed only after a step has passed (or when it is the step itself), a `think` call mid-pass is a scratchpad that resets nothing, `todo_write` accepts a plain array of strings and `items`/`steps`/`desc`, and a list with no usable content is an error instead of a silent clear. Every drill block also states that step 1 is a real `{"tool":"think"}` call, not a sentence, and each drill’s first step says so in its own words. `tests/js/training.test.mjs` pins the gate at 0/8 and after a completed pass, the mid-pass `think` scratchpad rule, and the todo-tool shapes.*
+*A second live Advanced run showed the drill stuck on the same step, and the cause was not syntax. `storage/sent.json` recorded the model emitting the taught JSON exactly â€” `{"tool":"fetch_url","arg":"http://drill.local/advanced.html"}` â€” while step 1 (`think`) was answered with the prose â€œStep 1 (think): I will fetchâ€¦â€. The model then called `todo_write` over and over and every call was accepted: the gate exempted `todo_write` unconditionally, and the tool read only `todos[].content`, so an array of strings (or `items`, or `steps`) became an empty list and answered â€œtodo list clearedâ€ â€” a success for a call that did nothing. The drill sat at 1/8 with no failure to retry. Now a todo update is allowed only after a step has passed (or when it is the step itself), a `think` call mid-pass is a scratchpad that resets nothing, `todo_write` accepts a plain array of strings and `items`/`steps`/`desc`, and a list with no usable content is an error instead of a silent clear. Every drill block also states that step 1 is a real `{"tool":"think"}` call, not a sentence, and each drillâ€™s first step says so in its own words. `tests/js/training.test.mjs` pins the gate at 0/8 and after a completed pass, the mid-pass `think` scratchpad rule, and the todo-tool shapes.*
 
 *`tests/js/dialectMemo.test.mjs` pins the per-agent memo: A's success is invisible to B on the same model, both can hold different dialects, a model change makes that agent learn again, a pinned dialect and the Labs switch win, forget drops one agent, and a sync from an older device keeps every learned key. JS 46 files / 1573 assertions, PHP 39/39 (5 skipped), docs 14/14.*
 
-## 🧱 A read-only `storage/` is refused at boot with the chown line, not a silent hang *(`VERSION` 481 → 482, cache-buster v481 → v482)*
+## ðŸ§± A read-only `storage/` is refused at boot with the chown line, not a silent hang *(`VERSION` 481 â†’ 482, cache-buster v481 â†’ v482)*
 
-*A copy on a web server reported "the agent just hangs there". It was not the agent: `storage/` belonged to root, so every save was dropped — settings snapped back, sessions and state were never written, and a turn could end with nothing recorded. Nothing in the app ever said so, because nothing checked. The fix on that box was one command; the fix here is that the app now refuses to run without it.*
+*A copy on a web server reported "the agent just hangs there". It was not the agent: `storage/` belonged to root, so every save was dropped â€” settings snapped back, sessions and state were never written, and a turn could end with nothing recorded. Nothing in the app ever said so, because nothing checked. The fix on that box was one command; the fix here is that the app now refuses to run without it.*
 
-*`Src\Storage` probes `storage/` for real — a uniquely named file is written and removed, because `is_writable()` lies on cloud-synced folders — and `autoload.php` runs that check before a request does any work. A broken copy now answers **500 immediately** instead of looking busy: JSON for the API and IDE (`error` names the state, `detail` **is** the command), plain text for a page. The command is exact — `sudo chown -R www-data:www-data /var/www/app/storage`, with the user PHP is actually running as, read from `posix_geteuid()` and falling back to `USER`/`APACHE_RUN_USER`, and a path with a space is quoted rather than half-quoted. A missing folder gets `sudo mkdir -p` first; a folder that works but whose `config.json` cannot be written gets the same line, because that is the same silent failure with a working folder around it.*
+*`Src\Storage` probes `storage/` for real â€” a uniquely named file is written and removed, because `is_writable()` lies on cloud-synced folders â€” and `autoload.php` runs that check before a request does any work. A broken copy now answers **500 immediately** instead of looking busy: JSON for the API and IDE (`error` names the state, `detail` **is** the command), plain text for a page. The command is exact â€” `sudo chown -R www-data:www-data /var/www/app/storage`, with the user PHP is actually running as, read from `posix_geteuid()` and falling back to `USER`/`APACHE_RUN_USER`, and a path with a space is quoted rather than half-quoted. A missing folder gets `sudo mkdir -p` first; a folder that works but whose `config.json` cannot be written gets the same line, because that is the same silent failure with a working folder around it.*
 
-*CLI and `install-update.php` are exempt: the suite and the launchers run as the owner and report their own way, and an installer that refuses to run until permissions are fixed cannot be the thing that fixes them. Windows gets no invented chown — it names the folder and the account to give Modify rights to.*
+*CLI and `install-update.php` are exempt: the suite and the launchers run as the owner and report their own way, and an installer that refuses to run until permissions are fixed cannot be the thing that fixes them. Windows gets no invented chown â€” it names the folder and the account to give Modify rights to.*
 
-*`tests/php/storageGuard.test.php` pins the probe leaving nothing behind, a healthy storage never being refused, the exact chown string (asserted on every host through `chownLine()`, so the POSIX line is read on the Windows checkout it was written on), the missing/unwritable/config cases, the JSON-versus-text split, the CLI no-op — and boots `php -S` twice: a clone with an unusable `storage/` answers 500 with the line, a clone with a healthy one answers 200.*
+*`tests/php/storageGuard.test.php` pins the probe leaving nothing behind, a healthy storage never being refused, the exact chown string (asserted on every host through `chownLine()`, so the POSIX line is read on the Windows checkout it was written on), the missing/unwritable/config cases, the JSON-versus-text split, the CLI no-op â€” and boots `php -S` twice: a clone with an unusable `storage/` answers 500 with the line, a clone with a healthy one answers 200.*
 
-## 🔓 Shell access stops jailing an agent outside the app, and a fresh copy can reach its drill's exec step *(`VERSION` 480 → 481, cache-buster v480 → v481)*
+## ðŸ”“ Shell access stops jailing an agent outside the app, and a fresh copy can reach its drill's exec step *(`VERSION` 480 â†’ 481, cache-buster v480 â†’ v481)*
 
 *A second copy on a web server reported it plainly: "fails training, fails to exec". Both came from one setting, and one path that was never this app's.*
 
-*The setting: `sandbox.exec_enabled` is off unless it is written, and that copy's `storage/config.json` held nothing but the sandbox token — so every `exec` was answered with "Shell access is disabled", and the drill's `exec ["echo","training"]` step (Hard 14, Easy 11) failed every pass it sat in. A missing `training/` folder was never the cause: the drill's first `write_file` creates it. The answer is Config → Shell access, and it is on in that copy now — no repair to run, nothing to reinstall.*
+*The setting: `sandbox.exec_enabled` is off unless it is written, and that copy's `storage/config.json` held nothing but the sandbox token â€” so every `exec` was answered with "Shell access is disabled", and the drill's `exec ["echo","training"]` step (Hard 14, Easy 11) failed every pass it sat in. A missing `training/` folder was never the cause: the drill's first `write_file` creates it. The answer is Config â†’ Shell access, and it is on in that copy now â€” no repair to run, nothing to reinstall.*
 
-*The jail: with exec on, the default read/write roots widen to `/var/www` so a fresh install can grep the site. On Windows `/var/www` resolves to `C:\var\www`, an unrelated folder, so the default stopped being the app dir and every command refused with `exec cwd: path is outside the allowed directories` — the other half of "fails to exec". The widening now happens only when this app actually lives under `/var/www`; every other host keeps the app dir, which always contains the sandbox. `tests/php/sandbox.test.php` pins the invariant rather than the host — with exec on, the app dir is still inside the default jail — so it means the same thing on a Windows checkout and on the server.*
+*The jail: with exec on, the default read/write roots widen to `/var/www` so a fresh install can grep the site. On Windows `/var/www` resolves to `C:\var\www`, an unrelated folder, so the default stopped being the app dir and every command refused with `exec cwd: path is outside the allowed directories` â€” the other half of "fails to exec". The widening now happens only when this app actually lives under `/var/www`; every other host keeps the app dir, which always contains the sandbox. `tests/php/sandbox.test.php` pins the invariant rather than the host â€” with exec on, the app dir is still inside the default jail â€” so it means the same thing on a Windows checkout and on the server.*
 
-## 🩹 Start's archive cannot hang it, and a moved jail lands in the jail *(`VERSION` 479 → 480, cache-buster v479 → v480)*
+## ðŸ©¹ Start's archive cannot hang it, and a moved jail lands in the jail *(`VERSION` 479 â†’ 480, cache-buster v479 â†’ v480)*
 
 *Both came out of running v479 rather than reading it, and both are one piece of reasoning taken too literally.*
 
-*The jail: `relocatedScope()` searched a stale scope's path tails **longest first**, so a scope ending in the same folder name as an allowed root resolved to `<root>/sandbox` — and that duplicate exists on this machine, because a model writing `sandbox/...` into the sandbox creates it — so every write landed one level too deep. A live probe through this app's own old OneDrive jail reported `…/Autonomous-master/sandbox/sandbox/training`, which is why a finished drill's pass files were sitting in `sandbox/sandbox/training/` while the report named `training/`. A scope whose last segment matches a root's own folder name now resolves to that root, checked **before** the tail search, and tails are tried **shortest-first**, so a duplicate can never win the race. `tests/php/sandbox.test.php` pins both halves with the duplicate folder present.*
+*The jail: `relocatedScope()` searched a stale scope's path tails **longest first**, so a scope ending in the same folder name as an allowed root resolved to `<root>/sandbox` â€” and that duplicate exists on this machine, because a model writing `sandbox/...` into the sandbox creates it â€” so every write landed one level too deep. A live probe through this app's own old OneDrive jail reported `â€¦/Autonomous-master/sandbox/sandbox/training`, which is why a finished drill's pass files were sitting in `sandbox/sandbox/training/` while the report named `training/`. A scope whose last segment matches a root's own folder name now resolves to that root, checked **before** the tail search, and tails are tried **shortest-first**, so a duplicate can never win the race. `tests/php/sandbox.test.php` pins both halves with the duplicate folder present.*
 
-*Start: `_startTraining` awaits `_archiveTrainingFolder()` before `_openTrainingSession()`, and it is that second call that aborts a turn still running. On a server that answers one request at a time — a copy started with `php -S` — the archive requests queue behind the streaming turn, so Start never reaches the kickoff: no typing, no error, no toast, a Start that looks exactly like an agent thinking forever. v479 had lengthened that chain by adding the IDE half. Both halves now carry `AbortSignal.timeout(4000)`, and a timeout lands in the case the code already had for a failure — logged and ignored, with the previous folder left where it is and the drill started.*
+*Start: `_startTraining` awaits `_archiveTrainingFolder()` before `_openTrainingSession()`, and it is that second call that aborts a turn still running. On a server that answers one request at a time â€” a copy started with `php -S` â€” the archive requests queue behind the streaming turn, so Start never reaches the kickoff: no typing, no error, no toast, a Start that looks exactly like an agent thinking forever. v479 had lengthened that chain by adding the IDE half. Both halves now carry `AbortSignal.timeout(4000)`, and a timeout lands in the case the code already had for a failure â€” logged and ignored, with the previous folder left where it is and the drill started.*
 
-## 🗂️ A stale file jail is repaired, and the IDE drill's files are archived *(`VERSION` 478 → 479, cache-buster v478 → v479)*
+## ðŸ—‚ï¸ A stale file jail is repaired, and the IDE drill's files are archived *(`VERSION` 478 â†’ 479, cache-buster v478 â†’ v479)*
 
 *Two follow-ups to v478, and both are the same problem: a file jail that outlives the folder it names.*
 
-*`repairStaleJails(status)` runs once at boot on the answer from `/sandbox/status`. A per-agent `sandboxRoot` that is not inside one of the server's allowed roots is **cleared**, so the agent follows the global working directory instead of asking for a path the server will refuse; a global working directory outside every root is moved to the first writable one. v478's server-side leniency (`Sandbox::relocatedScope`) keeps the tools working in the meantime, but the setting itself was still being read by the brain-lab editor, the system prompt and the pass report — all of them describing a folder nobody has. The decision is store-only, so the test can call it directly; `app.js` persists the two slots it touched and stateSync carries the repair to every device. A status with no roots repairs **nothing**: blanking every path on a broken answer is worse than leaving a stale one in place. `tests/js/staleJail.test.mjs` pins all of it, including the sibling-path case (`C:/data/out` is a root, `C:/data/output-not-inside` is not).*
+*`repairStaleJails(status)` runs once at boot on the answer from `/sandbox/status`. A per-agent `sandboxRoot` that is not inside one of the server's allowed roots is **cleared**, so the agent follows the global working directory instead of asking for a path the server will refuse; a global working directory outside every root is moved to the first writable one. v478's server-side leniency (`Sandbox::relocatedScope`) keeps the tools working in the meantime, but the setting itself was still being read by the brain-lab editor, the system prompt and the pass report â€” all of them describing a folder nobody has. The decision is store-only, so the test can call it directly; `app.js` persists the two slots it touched and stateSync carries the repair to every device. A status with no roots repairs **nothing**: blanking every path on a broken answer is worse than leaving a stale one in place. `tests/js/staleJail.test.mjs` pins all of it, including the sibling-path case (`C:/data/out` is a root, `C:/data/output-not-inside` is not).*
 
-*The **IDE drill's files are archived now**. That drill writes `training/ide-<agent>-pN.txt` into the app's own tree, because it writes through the editor's door — and the sandbox jail cannot reach there, so Start's one-shot archive of `sandbox/training` never saw those files. A stopped IDE run therefore left `…-p1.txt` where the next run's pass 1 would land. `SrcWorkspace::archiveTrainingFolder()` moves the folder to `training-runs/<yyyymmdd-hhmmss>/training` exactly as the sandbox archive does — one rename, nothing deleted, an occupied destination refused rather than merged — and is exposed as `POST ide/api.php?action=archiveTraining`, the writer that already owns that tree. `_archiveTrainingFolder()` runs both halves and logs-and-continues if either fails. `.gitignore` covers `training-runs/` beside `training/`. `tests/php/workspace.test.php` pins the move, the bytes, the quiet empty case and the refusal.*
+*The **IDE drill's files are archived now**. That drill writes `training/ide-<agent>-pN.txt` into the app's own tree, because it writes through the editor's door â€” and the sandbox jail cannot reach there, so Start's one-shot archive of `sandbox/training` never saw those files. A stopped IDE run therefore left `â€¦-p1.txt` where the next run's pass 1 would land. `SrcWorkspace::archiveTrainingFolder()` moves the folder to `training-runs/<yyyymmdd-hhmmss>/training` exactly as the sandbox archive does â€” one rename, nothing deleted, an occupied destination refused rather than merged â€” and is exposed as `POST ide/api.php?action=archiveTraining`, the writer that already owns that tree. `_archiveTrainingFolder()` runs both halves and logs-and-continues if either fails. `.gitignore` covers `training-runs/` beside `training/`. `tests/php/workspace.test.php` pins the move, the bytes, the quiet empty case and the refusal.*
 
-## 🧱 The floor is drawn again, and a moved app stops breaking every file tool *(`VERSION` 477 → 478, cache-buster v477 → v478)*
+## ðŸ§± The floor is drawn again, and a moved app stops breaking every file tool *(`VERSION` 477 â†’ 478, cache-buster v477 â†’ v478)*
 
-*Both of these arrived looking like one bug — training mode "refusing to write over files" — and neither was caused by stopping a drill.*
+*Both of these arrived looking like one bug â€” training mode "refusing to write over files" â€” and neither was caused by stopping a drill.*
 
-*The floor: `.d26-floor` is a DOM layer inside `.topology-container` (moving it there is what stopped the screen-blended grid painting over the node card), and the 3D map appends its own root — `.t3d-root`, `inset: 0`, `background: #04070c` — to that same container **after** the floor already exists. Both are positioned, the floor sat at `z-index: 0`, so the map's opaque background painted over the whole grid and the floor was invisible whenever the map was in 3D. It survived only in the order where the floor happened to be appended last, which is why it could look fine one load and be gone the next. `z-index: 1` puts it above the map and still below the node card (`.t3d-popup`, z-index 20) — the order this layer was always meant to have.*
+*The floor: `.d26-floor` is a DOM layer inside `.topology-container` (moving it there is what stopped the screen-blended grid painting over the node card), and the 3D map appends its own root â€” `.t3d-root`, `inset: 0`, `background: #04070c` â€” to that same container **after** the floor already exists. Both are positioned, the floor sat at `z-index: 0`, so the map's opaque background painted over the whole grid and the floor was invisible whenever the map was in 3D. It survived only in the order where the floor happened to be appended last, which is why it could look fine one load and be gone the next. `z-index: 1` puts it above the map and still below the node card (`.t3d-popup`, z-index 20) â€” the order this layer was always meant to have.*
 
-*The writes: an agent keeps its own file jail (`sandboxRoot`), and this copy moved from `…/OneDrive/Desktop/Re-Release/…` to `…/Desktop/Autonomous-Project/…`. Every file call then carried the OLD path as its scope, and `Sandbox::scopeRoots()` threw `sandbox directory does not exist: …` for `write_file`, `read_file`, `list_dir` and everything else that touches disk — one stale setting, every tool, on every step, which is exactly what a drill is. `relocatedScope()` reconstructs a missing scope's trailing path inside an allowed root (an agent jailed one level into the sandbox stays one level in), falls back to the allowlist when nothing by that name exists under any root, and leaves the one refusal that matters alone: a scope that EXISTS outside the roots is still refused, so this reconstructs a path and never widens one. Nothing was deleted — the stopped run's `training/ide-…-p1.txt` is still there, and overwriting a pass file was never the thing being refused. `tests/php/sandbox.test.php` pins all three outcomes: a moved scope writes inside the folder it named, a scope whose folder is gone still writes through the allowlist, and a real scope outside the roots is still refused.*
+*The writes: an agent keeps its own file jail (`sandboxRoot`), and this copy moved from `â€¦/OneDrive/Desktop/Re-Release/â€¦` to `â€¦/Desktop/Autonomous-Project/â€¦`. Every file call then carried the OLD path as its scope, and `Sandbox::scopeRoots()` threw `sandbox directory does not exist: â€¦` for `write_file`, `read_file`, `list_dir` and everything else that touches disk â€” one stale setting, every tool, on every step, which is exactly what a drill is. `relocatedScope()` reconstructs a missing scope's trailing path inside an allowed root (an agent jailed one level into the sandbox stays one level in), falls back to the allowlist when nothing by that name exists under any root, and leaves the one refusal that matters alone: a scope that EXISTS outside the roots is still refused, so this reconstructs a path and never widens one. Nothing was deleted â€” the stopped run's `training/ide-â€¦-p1.txt` is still there, and overwriting a pass file was never the thing being refused. `tests/php/sandbox.test.php` pins all three outcomes: a moved scope writes inside the folder it named, a scope whose folder is gone still writes through the allowlist, and a real scope outside the roots is still refused.*
 
-## 🔗 One write path: the IDE and the agents share a revision log *(`VERSION` 475 → 477, cache-buster v474 → v477)*
+## ðŸ”— One write path: the IDE and the agents share a revision log *(`VERSION` 475 â†’ 477, cache-buster v474 â†’ v477)*
 
-*The built-in IDE and the agents wrote files through two different doors. The IDE saved through `ide/api.php`; an agent wrote through `Sandbox::writeFile`. Neither knew about the other, so an agent's edit landed on disk while the editor kept its old buffer, and a human's save could land on top of a file an agent had just rewritten — with nothing, anywhere, saying either had happened. That is the whole reason "agents and the user use the IDE together" could not be built on top of it.*
+*The built-in IDE and the agents wrote files through two different doors. The IDE saved through `ide/api.php`; an agent wrote through `Sandbox::writeFile`. Neither knew about the other, so an agent's edit landed on disk while the editor kept its old buffer, and a human's save could land on top of a file an agent had just rewritten â€” with nothing, anywhere, saying either had happened. That is the whole reason "agents and the user use the IDE together" could not be built on top of it.*
 
-*`SrcWorkspace` is now the one writer. Every mutation goes through it — the IDE's save, and the agent's `write_file`, `str_replace`, `insert` and `apply_patch` — and each one appends `{rev, path, op, actor, at, bytes, hash, prev}` to `storage/ide/revs.jsonl` under a single tree-wide counter, keeping both the old and the new text content-addressed in `storage/ide/blobs/`. `ide/api.php?action=revs&since=N` returns what happened after a revision, and the IDE polls it every 1.5s while visible. Polling, not a socket: this app runs under `php -S` too, and that server is single-threaded — a held-open stream would block the request the agent is waiting on, which is the one thing a shared editor cannot do. The log sits in `storage/`, which every serving mode refuses to serve and `Workspace::resolve` refuses to reach, so it is readable only through the endpoint. The IDE's answer to a change is decided by a pure function (`ide/js/changes.js`, tested in `tests/js/ideChanges.test.mjs`): a clean buffer reloads with its caret intact, a dirty buffer is a conflict and is never touched — the amber strip offers *Load theirs · Keep mine*, and the human wins until they say otherwise. Unopened files and binary tabs are ignored, and the IDE's own saves are recognised so they do not come back as "changed on disk". The chat's file-writing tool calls carry an **Open in IDE** chip, which shows the IDE screen and posts `ide:open` over the same-origin handshake that already carried the token. Code in the chat is numbered line for line: fenced blocks get a sticky gutter outside the highlighted `<code>` (Prism rewrites that element, so a gutter inside it would be eaten), and the wrapping Arguments/Result boxes get a row per line with the number in the margin. `tests/php/workspace.test.php` pins the revisions, the snapshots and the path rules; the version pins now cover `ide/**` and caught `<html data-build="143">`, which nothing had touched since 143 while every Prism vendor script the app injected was fetched from that cache key. JS 43 files / 1,453 assertions, PHP 38 files / 38 passed (3 skipped), docs 14/14.*
+*`SrcWorkspace` is now the one writer. Every mutation goes through it â€” the IDE's save, and the agent's `write_file`, `str_replace`, `insert` and `apply_patch` â€” and each one appends `{rev, path, op, actor, at, bytes, hash, prev}` to `storage/ide/revs.jsonl` under a single tree-wide counter, keeping both the old and the new text content-addressed in `storage/ide/blobs/`. `ide/api.php?action=revs&since=N` returns what happened after a revision, and the IDE polls it every 1.5s while visible. Polling, not a socket: this app runs under `php -S` too, and that server is single-threaded â€” a held-open stream would block the request the agent is waiting on, which is the one thing a shared editor cannot do. The log sits in `storage/`, which every serving mode refuses to serve and `Workspace::resolve` refuses to reach, so it is readable only through the endpoint. The IDE's answer to a change is decided by a pure function (`ide/js/changes.js`, tested in `tests/js/ideChanges.test.mjs`): a clean buffer reloads with its caret intact, a dirty buffer is a conflict and is never touched â€” the amber strip offers *Load theirs Â· Keep mine*, and the human wins until they say otherwise. Unopened files and binary tabs are ignored, and the IDE's own saves are recognised so they do not come back as "changed on disk". The chat's file-writing tool calls carry an **Open in IDE** chip, which shows the IDE screen and posts `ide:open` over the same-origin handshake that already carried the token. Code in the chat is numbered line for line: fenced blocks get a sticky gutter outside the highlighted `<code>` (Prism rewrites that element, so a gutter inside it would be eaten), and the wrapping Arguments/Result boxes get a row per line with the number in the margin. `tests/php/workspace.test.php` pins the revisions, the snapshots and the path rules; the version pins now cover `ide/**` and caught `<html data-build="143">`, which nothing had touched since 143 while every Prism vendor script the app injected was fetched from that cache key. JS 43 files / 1,453 assertions, PHP 38 files / 38 passed (3 skipped), docs 14/14.*
 
-An **IDE drill** is the seventh mode: eight steps that make an agent write through the editor's own door instead of the sandbox tools. `ide_write` creates `training/ide-<agent>-pN.txt`, `ide_open` puts it in the operator's IDE screen, `ide_read` reads it back through `ide/api.php`, `ide_edit` changes it by exact replacement (an empty or ambiguous anchor is refused, so a bare append cannot pass), and a second `ide_read` proves the change landed. The four tools are new — `ide_open`, `ide_read`, `ide_write`, `ide_edit` — and ride along only while that drill is armed, the same way the browser tools ride along while the browser is on: in the prompt dialect and as native schemas, because every advertised tool costs prompt tokens on every request. `ide/api.php?action=edit` is new too, and it replaces through `Workspace::write`, so an agent's edit is a revision the operator's open tab reloads rather than a second silent write path — the exact failure the write path was built to end. `DRILL_CHECKS_IDE` grades the marker, the anchored edit and the read-back; each pass keeps its own file family (`training/ide-…-pN.txt`), so no drill can grade another one's bytes. `drillPassFile` reads `ide_write` as well as `write_file` now: it only recognised the sandbox tool, so an IDE pass was filed under the counter's *next* file while the report claimed that was the one it wrote. `tests/js/training.test.mjs` pins the eight steps, the label, the mode selection, the file family, both negatives (wrong content, empty anchor) and the block's rule that names `write_file` as the wrong tool.
+An **IDE drill** is the seventh mode: eight steps that make an agent write through the editor's own door instead of the sandbox tools. `ide_write` creates `training/ide-<agent>-pN.txt`, `ide_open` puts it in the operator's IDE screen, `ide_read` reads it back through `ide/api.php`, `ide_edit` changes it by exact replacement (an empty or ambiguous anchor is refused, so a bare append cannot pass), and a second `ide_read` proves the change landed. The four tools are new â€” `ide_open`, `ide_read`, `ide_write`, `ide_edit` â€” and ride along only while that drill is armed, the same way the browser tools ride along while the browser is on: in the prompt dialect and as native schemas, because every advertised tool costs prompt tokens on every request. `ide/api.php?action=edit` is new too, and it replaces through `Workspace::write`, so an agent's edit is a revision the operator's open tab reloads rather than a second silent write path â€” the exact failure the write path was built to end. `DRILL_CHECKS_IDE` grades the marker, the anchored edit and the read-back; each pass keeps its own file family (`training/ide-â€¦-pN.txt`), so no drill can grade another one's bytes. `drillPassFile` reads `ide_write` as well as `write_file` now: it only recognised the sandbox tool, so an IDE pass was filed under the counter's *next* file while the report claimed that was the one it wrote. `tests/js/training.test.mjs` pins the eight steps, the label, the mode selection, the file family, both negatives (wrong content, empty anchor) and the block's rule that names `write_file` as the wrong tool.
 
-**`drill-run.mjs` drives any drill against a real model from a terminal**, and grades it with the app's own code. The runner arms the drill in the app's store, so the prompt block, the task table, the checks and the per-pass file naming all come from `ui/js/training.js` — there is no second definition of "passed", which is what makes a score in a terminal mean the same thing as a score on the Training screen. `--mode` takes the dialog's own ids (easy, hard, advanced, frontier, browser, ide, custom), and the tool list is derived from the steps themselves, so an IDE pass offers `ide_*` while an Advanced pass offers `fetch_url`, `write_file`, `read_file`, `show_url`, `show_file`; `ide_*` still goes through `ide/api.php` — the shared write path, revisions and all — and every other tool runs through the app's own `TOOL_REGISTRY` with the same root and scope the chat hands it. `--target N` chains passes and stops on the app's own clean-pass target, `--keep` leaves the files, and a run ends with a per-pass table (pass number, the file that pass actually wrote, clean or the step it failed at) plus a transcript under `storage/drills/`.
+**`drill-run.mjs` drives any drill against a real model from a terminal**, and grades it with the app's own code. The runner arms the drill in the app's store, so the prompt block, the task table, the checks and the per-pass file naming all come from `ui/js/training.js` â€” there is no second definition of "passed", which is what makes a score in a terminal mean the same thing as a score on the Training screen. `--mode` takes the dialog's own ids (easy, hard, advanced, frontier, browser, ide, custom), and the tool list is derived from the steps themselves, so an IDE pass offers `ide_*` while an Advanced pass offers `fetch_url`, `write_file`, `read_file`, `show_url`, `show_file`; `ide_*` still goes through `ide/api.php` â€” the shared write path, revisions and all â€” and every other tool runs through the app's own `TOOL_REGISTRY` with the same root and scope the chat hands it. `--target N` chains passes and stops on the app's own clean-pass target, `--keep` leaves the files, and a run ends with a per-pass table (pass number, the file that pass actually wrote, clean or the step it failed at) plus a transcript under `storage/drills/`.
 
-Three defects surfaced the moment a second drill type ran headless. A `write_file` that asks for approval built its dialog out of a DOM that does not exist in Node and threw from a timer, which killed the process mid-pass with a stack trace and no verdict — the runner now sets the app's own auto-approve setting, the same switch an operator has in Config, and an uncaught error in app code is named instead of dumped. Native call arguments reached string-argument tools as objects, so `fetch_url` did `String({url})` and the server answered `cannot resolve host object Object`; arguments are now flattened by each tool's own `arg` declaration, one-key JSON templates like `show_url`'s included, while multi-key shapes such as `write_file` stay objects. And `--mode nope` silently ran the 17-step Hard drill, because `trainingTasksFor` answers an unknown difficulty with the default table, so the mode is checked against the dialog's list before anything else and exits 2 naming all seven.
+Three defects surfaced the moment a second drill type ran headless. A `write_file` that asks for approval built its dialog out of a DOM that does not exist in Node and threw from a timer, which killed the process mid-pass with a stack trace and no verdict â€” the runner now sets the app's own auto-approve setting, the same switch an operator has in Config, and an uncaught error in app code is named instead of dumped. Native call arguments reached string-argument tools as objects, so `fetch_url` did `String({url})` and the server answered `cannot resolve host object Object`; arguments are now flattened by each tool's own `arg` declaration, one-key JSON templates like `show_url`'s included, while multi-key shapes such as `write_file` stay objects. And `--mode nope` silently ran the 17-step Hard drill, because `trainingTasksFor` answers an unknown difficulty with the default table, so the mode is checked against the dialog's list before anything else and exits 2 naming all seven.
 
-`--base` is optional: the runner probes `/ide/api.php?action=info` — Apache under `/router` on 8080 first, then the `php -S` ports and the roots — and accepts only a JSON body that names the folder and carries the read/write limits, which is specific enough that another server on the port cannot answer for the app. An explicit `--base` is checked the same way, because a wrong port used to surface as `error: fetch failed` inside step 3 of a pass rather than as a sentence up front. `--timeout` (default 180 s, `AbortSignal.timeout`) exists for the same reason: `fetch` has no timeout of its own, and a provider that stopped answering hung a run with nothing to show.
+`--base` is optional: the runner probes `/ide/api.php?action=info` â€” Apache under `/router` on 8080 first, then the `php -S` ports and the roots â€” and accepts only a JSON body that names the folder and carries the read/write limits, which is specific enough that another server on the port cannot answer for the app. An explicit `--base` is checked the same way, because a wrong port used to surface as `error: fetch failed` inside step 3 of a pass rather than as a sentence up front. `--timeout` (default 180 s, `AbortSignal.timeout`) exists for the same reason: `fetch` has no timeout of its own, and a provider that stopped answering hung a run with nothing to show.
 
-## 🪟 The bump stays together, the Browser pane stops lying, and the node card stops leaking *(`VERSION` 470 → 475, cache-buster v470 → v474)*
+## ðŸªŸ The bump stays together, the Browser pane stops lying, and the node card stops leaking *(`VERSION` 470 â†’ 475, cache-buster v470 â†’ v474)*
 
-*The built-in Browser showed “Browser not running — Press Launch above — or let an agent start it with the browser_* tools” over a page that was running. Nothing in the JS was wrong; the CSS was. The panel is `.bs-empty { display: flex }`, and an author `display` outranks the user agent's `[hidden] { display: none }`, so the attribute the JS set had no effect until the pane was opened — and after that, never. It is guarded now (`.bs-empty[hidden] { display: none }`) and `_paintStatus` computes `empty.hidden` from the pane's real state before its early returns, so a pane that is running cannot wear the empty panel at all. The pane itself was clipping past the bottom on phones: it is a `100dvh` flex column with safe-area padding now, the chrome no longer stacks the stage out of view, the sleeping-CRT veil is switched off over a live browser, the loader has a 7-second watchdog rather than a spinner forever, and the mobile sheet keeps its 62dvh. New: a **full-screen** button in the bar — `requestFullscreen` where it is allowed, a `bs-immersive` class where it is not (iOS Safari), Escape peeling one layer at a time (immersive, then full screen, then the pane), and closing the pane exits full screen instead of leaving a black screen behind it.*
+*The built-in Browser showed â€œBrowser not running â€” Press Launch above â€” or let an agent start it with the browser_* toolsâ€ over a page that was running. Nothing in the JS was wrong; the CSS was. The panel is `.bs-empty { display: flex }`, and an author `display` outranks the user agent's `[hidden] { display: none }`, so the attribute the JS set had no effect until the pane was opened â€” and after that, never. It is guarded now (`.bs-empty[hidden] { display: none }`) and `_paintStatus` computes `empty.hidden` from the pane's real state before its early returns, so a pane that is running cannot wear the empty panel at all. The pane itself was clipping past the bottom on phones: it is a `100dvh` flex column with safe-area padding now, the chrome no longer stacks the stage out of view, the sleeping-CRT veil is switched off over a live browser, the loader has a 7-second watchdog rather than a spinner forever, and the mobile sheet keeps its 62dvh. New: a **full-screen** button in the bar â€” `requestFullscreen` where it is allowed, a `bs-immersive` class where it is not (iOS Safari), Escape peeling one layer at a time (immersive, then full screen, then the pane), and closing the pane exits full screen instead of leaving a black screen behind it.*
 
-*Auditing the same trap across every stylesheet and every `hidden` assignment found one more live instance — `.notif-badge { display: flex }` put an empty red dot on the bell at zero notifications — and nothing else beyond the two injected Desktop 2026 chat controls, which are hidden by JS and revealed by that CSS on purpose. `tests/php/hidden.test.php` now fails if a rule that sets a `display` names an element the JS hides unless a `[hidden] { display: none }` guard exists for it; it reads the markup too, because `.bs-empty` is toggled as `empty.hidden` a hundred lines from the tag that made it, and bridges an id to the classes on the same tag. Exemptions are named with a reason. The 3D node card was a different bug that looked like translucency: the floating floor (`150vmax`, `mix-blend-mode: screen`, opacity 0.2) is a sibling of `.topology-container`, which sets `isolation: isolate`, so it painted **over** the map's whole subtree — the card included, which is why its background measured an opaque `rgb(7,11,19)` throughout. The floor is injected inside the map's stacking context now (above the canvas, below the card at z-index 20) and the Desktop 2026 card states `background-color: #05080d; background-image: none`, so neither a glass rule nor a future floor can bleed the map through it. Verified in the running app: the paint stack at the card's centre lists the card above the floor, the floor still renders, and the badge computes `display: none` at zero.*
+*Auditing the same trap across every stylesheet and every `hidden` assignment found one more live instance â€” `.notif-badge { display: flex }` put an empty red dot on the bell at zero notifications â€” and nothing else beyond the two injected Desktop 2026 chat controls, which are hidden by JS and revealed by that CSS on purpose. `tests/php/hidden.test.php` now fails if a rule that sets a `display` names an element the JS hides unless a `[hidden] { display: none }` guard exists for it; it reads the markup too, because `.bs-empty` is toggled as `empty.hidden` a hundred lines from the tag that made it, and bridges an id to the classes on the same tag. Exemptions are named with a reason. The 3D node card was a different bug that looked like translucency: the floating floor (`150vmax`, `mix-blend-mode: screen`, opacity 0.2) is a sibling of `.topology-container`, which sets `isolation: isolate`, so it painted **over** the map's whole subtree â€” the card included, which is why its background measured an opaque `rgb(7,11,19)` throughout. The floor is injected inside the map's stacking context now (above the canvas, below the card at z-index 20) and the Desktop 2026 card states `background-color: #05080d; background-image: none`, so neither a glass rule nor a future floor can bleed the map through it. Verified in the running app: the paint stack at the card's centre lists the card above the floor, the floor still renders, and the badge computes `display: none` at zero.*
 
-*Two audit files came out of that, and the second one found a number nobody was maintaining. `tests/php/hidden.test.php` (see above) refuses a CSS rule that displays an element the JS hides. `tests/php/version.test.php` refuses a release whose numbers disagree: it reads `VERSION` and `APP_VERSION` through `Update::versionPairIn` rather than its own regex, so it cannot agree with itself while disagreeing with the running copy, then checks both `<span id="appVersion">` badges, both `<html data-build="…">` attributes, every other page under `ui/` that carries a build number, and every `?v=` under `ui/**` and both `index.html` files (computed ones, `?v=` + APP_VERSION and the `` ?v=${…} `` template, are skipped because there is no number in the file to disagree), and fails if `VERSION` falls behind `APP_VERSION`. Running it the first time is how `<html data-build="143">` surfaced: `langs.js` appends that attribute to the Prism vendor scripts it injects at runtime, so every Prism file had been fetched as `?v=143` through four releases, and a Prism update would have been served from cache. It reads 474 now, the attribute is the **fourth** place `RELEASING.md` names (the `?v=` sed never touched it, and neither did the grep that was supposed to prove nothing was left), and the checklist's verification line now checks both. `VERSION` moves 470 → 475 with the cache-buster staying at 474: every browser file this release ships is already at 474, and the release number exists precisely so a test-and-docs release is still visible to the update check. JS 42 files / 1,413 assertions, PHP 37 files / 37 passed (3 skipped), docs 14/14.*
+*Two audit files came out of that, and the second one found a number nobody was maintaining. `tests/php/hidden.test.php` (see above) refuses a CSS rule that displays an element the JS hides. `tests/php/version.test.php` refuses a release whose numbers disagree: it reads `VERSION` and `APP_VERSION` through `Update::versionPairIn` rather than its own regex, so it cannot agree with itself while disagreeing with the running copy, then checks both `<span id="appVersion">` badges, both `<html data-build="â€¦">` attributes, every other page under `ui/` that carries a build number, and every `?v=` under `ui/**` and both `index.html` files (computed ones, `?v=` + APP_VERSION and the `` ?v=${â€¦} `` template, are skipped because there is no number in the file to disagree), and fails if `VERSION` falls behind `APP_VERSION`. Running it the first time is how `<html data-build="143">` surfaced: `langs.js` appends that attribute to the Prism vendor scripts it injects at runtime, so every Prism file had been fetched as `?v=143` through four releases, and a Prism update would have been served from cache. It reads 474 now, the attribute is the **fourth** place `RELEASING.md` names (the `?v=` sed never touched it, and neither did the grep that was supposed to prove nothing was left), and the checklist's verification line now checks both. `VERSION` moves 470 â†’ 475 with the cache-buster staying at 474: every browser file this release ships is already at 474, and the release number exists precisely so a test-and-docs release is still visible to the update check. JS 42 files / 1,413 assertions, PHP 37 files / 37 passed (3 skipped), docs 14/14.*
 
-## 📌 The pass file is the first thing the drill says *(`VERSION` 469 → 470, cache-buster v469 → v470)*
+## ðŸ“Œ The pass file is the first thing the drill says *(`VERSION` 469 â†’ 470, cache-buster v469 â†’ v470)*
 
-*A model kept rebuilding its todo list from the previous pass and copying the old path along with it, so pass 2 wrote pass 1's file — and the drill's own reminder named the right file only at the END of the message, behind the block and the steps, where a model following its remembered plan never looked. The file now leads. `trainingBlockFor` opens with `YOUR FILE FOR THIS PASS: training/…-p2.txt — every file step reads and writes exactly that path. A path from an earlier pass, or one copied out of your own todo list, is the WRONG file.` before the step list, and the per-turn reminder before Continue opens with the path instead of appending it. Desktop, browser and custom drills get no file line, because they are not file drills. Tests pin it: the block leads with the pass file, the leading path follows the pass counter into pass 2, the previous pass's file is not offered up front, and a Frontier block carries no file line at all. JS 42 files / 1,413 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14.*
+*A model kept rebuilding its todo list from the previous pass and copying the old path along with it, so pass 2 wrote pass 1's file â€” and the drill's own reminder named the right file only at the END of the message, behind the block and the steps, where a model following its remembered plan never looked. The file now leads. `trainingBlockFor` opens with `YOUR FILE FOR THIS PASS: training/â€¦-p2.txt â€” every file step reads and writes exactly that path. A path from an earlier pass, or one copied out of your own todo list, is the WRONG file.` before the step list, and the per-turn reminder before Continue opens with the path instead of appending it. Desktop, browser and custom drills get no file line, because they are not file drills. Tests pin it: the block leads with the pass file, the leading path follows the pass counter into pass 2, the previous pass's file is not offered up front, and a Frontier block carries no file line at all. JS 42 files / 1,413 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14.*
 
-## 📁 Each pass writes its own file, and cannot borrow the last one *(`VERSION` 467 → 469, cache-buster v467 → v469)*
+## ðŸ“ Each pass writes its own file, and cannot borrow the last one *(`VERSION` 467 â†’ 469, cache-buster v467 â†’ v469)*
 
-*A drill grades the pass it is in, but until now it graded the file NAME loosely: the write step accepted any pass's file. A second pass that rebuilt its todo list from the first — path and all — wrote `…-p1.txt` again, overwrote pass 1's evidence, and still counted as clean. v467 made the report tell the truth about that; this release stops it happening, in two steps.*
+*A drill grades the pass it is in, but until now it graded the file NAME loosely: the write step accepted any pass's file. A second pass that rebuilt its todo list from the first â€” path and all â€” wrote `â€¦-p1.txt` again, overwrote pass 1's evidence, and still counted as clean. v467 made the report tell the truth about that; this release stops it happening, in two steps.*
 
-*First, grading follows the pass counter. `trainingFileCheckFor` maps a pass number to that pass's file while the history is walked, so a call in pass 2 must name the pass-2 file. `trainingFileMatchFor` — the matcher that accepted any generation — is gone, and a multi-pass history still grades correctly, because pass 1 is judged against p1 and pass 2 against p2 rather than the whole history against the newest name.*
+*First, grading follows the pass counter. `trainingFileCheckFor` maps a pass number to that pass's file while the history is walked, so a call in pass 2 must name the pass-2 file. `trainingFileMatchFor` â€” the matcher that accepted any generation â€” is gone, and a multi-pass history still grades correctly, because pass 1 is judged against p1 and pass 2 against p2 rather than the whole history against the newest name.*
 
-*Second, and the part that actually protects the evidence, the write is refused **before the tool runs**. Grading alone catches a wrong-pass write only after it has overwritten the file the guard exists to keep. `drillWriteRefusal()` runs in the tool loop for `write_file`, `edit_file` and `append_file` during training: a path inside this run's own drill family that is not the current pass's file comes back as an ordinary tool error naming the right file, so the model corrects itself in the next step and no file is touched. Reading an earlier pass's file stays allowed — that is how an operator inspects evidence — and anything outside the run's drill files is untouched. Verified in the suite: a write back to the previous pass's file is refused and names the right one, the pass's own file is not refused, `read_file` is not refused, another agent's file and ordinary project paths are ignored, `edit_file` and a bare path argument are guarded too. JS 42 files / 1,409 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14.*
+*Second, and the part that actually protects the evidence, the write is refused **before the tool runs**. Grading alone catches a wrong-pass write only after it has overwritten the file the guard exists to keep. `drillWriteRefusal()` runs in the tool loop for `write_file`, `edit_file` and `append_file` during training: a path inside this run's own drill family that is not the current pass's file comes back as an ordinary tool error naming the right file, so the model corrects itself in the next step and no file is touched. Reading an earlier pass's file stays allowed â€” that is how an operator inspects evidence â€” and anything outside the run's drill files is untouched. Verified in the suite: a write back to the previous pass's file is refused and names the right one, the pass's own file is not refused, `read_file` is not refused, another agent's file and ordinary project paths are ignored, `edit_file` and a bare path argument are guarded too. JS 42 files / 1,409 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14.*
 
-## 🧮 The report names the file each pass actually wrote *(`VERSION` 466 → 467, cache-buster v463 → v466)*
+## ðŸ§® The report names the file each pass actually wrote *(`VERSION` 466 â†’ 467, cache-buster v463 â†’ v466)*
 
-*A live Advanced run finished 8/8 clean, and its report then said `2 passes · 0 failed attempts · 2 clean`, listing pass 2 against `training/advanced-agent-mvkmf8u5-7sk7qc-p2.txt`. No pass wrote that file. The tally was right: pass 2 had really run. It rebuilt its todo list from pass 1's — path and all — so it wrote `…-p1.txt` a second time, overwriting the first pass's evidence, and it was graded clean because the write step matches any pass file (it has to: a history spanning several passes would otherwise re-judge pass 1 against pass 2's name). What lied was the name in the report. `_publishDrill` filed each pass under `trainingFileNow()`, the file the counter had already advanced to, so a pass that wrote `p1` was reported against `p2`. `drillPassFile()` now reads the last `write_file` path out of the run's own records and the report files each pass under the file it wrote — the same file twice, honestly, rather than a file nobody touched. Drills with no write step (Frontier, Browser, Custom) keep the expected-path fallback. Regression tests pin it: a pass that wrote p1 is filed under p1, a second pass that rewrote p1 is still filed under p1, a pass that wrote p2 is filed under p2, and a `show_file` cannot name a pass's file because it is not a write.*
+*A live Advanced run finished 8/8 clean, and its report then said `2 passes Â· 0 failed attempts Â· 2 clean`, listing pass 2 against `training/advanced-agent-mvkmf8u5-7sk7qc-p2.txt`. No pass wrote that file. The tally was right: pass 2 had really run. It rebuilt its todo list from pass 1's â€” path and all â€” so it wrote `â€¦-p1.txt` a second time, overwriting the first pass's evidence, and it was graded clean because the write step matches any pass file (it has to: a history spanning several passes would otherwise re-judge pass 1 against pass 2's name). What lied was the name in the report. `_publishDrill` filed each pass under `trainingFileNow()`, the file the counter had already advanced to, so a pass that wrote `p1` was reported against `p2`. `drillPassFile()` now reads the last `write_file` path out of the run's own records and the report files each pass under the file it wrote â€” the same file twice, honestly, rather than a file nobody touched. Drills with no write step (Frontier, Browser, Custom) keep the expected-path fallback. Regression tests pin it: a pass that wrote p1 is filed under p1, a second pass that rewrote p1 is still filed under p1, a pass that wrote p2 is filed under p2, and a `show_file` cannot name a pass's file because it is not a write.*
 
-*The same report had a second, smaller fault that only showed once the file names were right: it counted `2 passes` and listed **one** line. The verdict signal that stops a run at its clean-pass target also builds the final report, and it fired before the finishing pass had been written to the log — so the modal tallied the pass and then listed the passes from a log that did not yet contain it. `_publishDrill` now announces the verdict last, after the pass is logged and the counter has moved, and the report lists every pass it counts. JS 42 files / 1,400 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 466 → 467, `APP_VERSION` 463 → 467 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*The same report had a second, smaller fault that only showed once the file names were right: it counted `2 passes` and listed **one** line. The verdict signal that stops a run at its clean-pass target also builds the final report, and it fired before the finishing pass had been written to the log â€” so the modal tallied the pass and then listed the passes from a log that did not yet contain it. `_publishDrill` now announces the verdict last, after the pass is logged and the counter has moved, and the report lists every pass it counts. JS 42 files / 1,400 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 466 â†’ 467, `APP_VERSION` 463 â†’ 467 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 📄 The Advanced drill owns its page, and the fixtures are audited *(`VERSION` 465 → 466, cache-buster v462 → v463)*
+## ðŸ“„ The Advanced drill owns its page, and the fixtures are audited *(`VERSION` 465 â†’ 466, cache-buster v462 â†’ v463)*
 
-*v465 taught the Advanced checks to follow example.com's new wording. This one removes the dependency instead of tracking it. Step 3 now fetches `http://drill.local/advanced.html`, which `Sandbox::drillFixture()` serves from `ui/drill/advanced.html` on disk: no DNS, no socket, so it always answers — and it has to be this way, because fetching this app's own origin would deadlock under the single-threaded PHP server while it is answering the request that asked for it. `assertPublicUrl` is untouched; `drill.local` is a name this method answers itself, only for a flat `*.html` name in `ui/drill/`, and `127.0.0.1`, `localhost` and LAN addresses are still refused. The page carries `DRILL-PAGE-v1`, the marker the write step and the read-back grade, so the only way to break the drill now is editing this repo — and `tests/php/drillPage.test.php` fails if the page and `ui/js/training.js` ever disagree about the marker, the URL, or the promise that no Advanced step names a public site. The same test refuses traversal (`drill.local/../storage/config.json`), non-HTML names and unknown pages instead of returning an empty result.*
+*v465 taught the Advanced checks to follow example.com's new wording. This one removes the dependency instead of tracking it. Step 3 now fetches `http://drill.local/advanced.html`, which `Sandbox::drillFixture()` serves from `ui/drill/advanced.html` on disk: no DNS, no socket, so it always answers â€” and it has to be this way, because fetching this app's own origin would deadlock under the single-threaded PHP server while it is answering the request that asked for it. `assertPublicUrl` is untouched; `drill.local` is a name this method answers itself, only for a flat `*.html` name in `ui/drill/`, and `127.0.0.1`, `localhost` and LAN addresses are still refused. The page carries `DRILL-PAGE-v1`, the marker the write step and the read-back grade, so the only way to break the drill now is editing this repo â€” and `tests/php/drillPage.test.php` fails if the page and `ui/js/training.js` ever disagree about the marker, the URL, or the promise that no Advanced step names a public site. The same test refuses traversal (`drill.local/../storage/config.json`), non-HTML names and unknown pages instead of returning an empty result.*
 
-*The rest of the drills got the same audit. Frontier's typing step pinned PHP's exact sentence to the letter; it now accepts any read-back that is not reported as unverified, which is still the distinction that step is about, and the Frontier test still pins the wording it is given. Hard and Easy grade the drill's own path (`"content"\s*:\s*"training`), the strings the drill itself teaches, and `training` appearing in the API's structural `path` field — not prose, so a copy edit cannot break them. The Browser drill grades the text of `ui/drill/browser.html` and what that page's own JS prints, both owned here and both pinned by the Browser test. So Advanced was the only drill grading wording nobody here controls, and it no longer does. JS 42 files / 1,395 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 465 → 466, `APP_VERSION` 462 → 463 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*The rest of the drills got the same audit. Frontier's typing step pinned PHP's exact sentence to the letter; it now accepts any read-back that is not reported as unverified, which is still the distinction that step is about, and the Frontier test still pins the wording it is given. Hard and Easy grade the drill's own path (`"content"\s*:\s*"training`), the strings the drill itself teaches, and `training` appearing in the API's structural `path` field â€” not prose, so a copy edit cannot break them. The Browser drill grades the text of `ui/drill/browser.html` and what that page's own JS prints, both owned here and both pinned by the Browser test. So Advanced was the only drill grading wording nobody here controls, and it no longer does. JS 42 files / 1,395 assertions, PHP 35 files / 35 passed (3 skipped), docs 14/14. `VERSION` 465 â†’ 466, `APP_VERSION` 462 â†’ 463 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🧭 The Advanced drill grades the page example.com actually serves *(`VERSION` 464 → 465, cache-buster v461 → v462)*
+## ðŸ§­ The Advanced drill grades the page example.com actually serves *(`VERSION` 464 â†’ 465, cache-buster v461 â†’ v462)*
 
-*`3/8 · 4 failed at step 4`, four times over, on a write that had already succeeded: `write_file` returned `wrote 156 bytes` and the strip counted it as a failed attempt, so the model rewrote the same correct file until it gave up. The saved text was right. example.com now answers with "This domain is for use in documentation examples…" and keeps "Example Domain" only in its **title**, which the fetch's own header line carries and the page text does not. Step 4 required that literal phrase in the saved content, and steps 5–7 required it in the read-back and in both display results, so the back half of the eight-step drill was unpassable against the live page. The checks now follow the page instead of one phrase of a page the drill does not control: `ADVANCED_TEXT` accepts any wording it has served (`example domain`, `documentation examples`, `example.com`), step 3 asks only for the URL plus a real `HTTP 200`, and step 4 grades the saved CONTENT — at least 40 characters of the page's own text — rather than a phrase match on the arguments. A stub save (`content: "saved"`) still fails, so the step grades the save and not merely the write. Step 5's label no longer promises "Example Domain"; it asks for the page text the step actually fetched. This is the v457–v463 class in miniature: the drill grades an artefact, so the artefact's fixture must be something the machine can still produce. Covered by two new assertions — the live page text grades clean through all eight steps, and a placeholder save still fails step 4: JS 42 files / 1,394 assertions, PHP 34/34 (3 skipped), docs 14/14. `VERSION` 464 → 465, `APP_VERSION` 461 → 462 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*`3/8 Â· 4 failed at step 4`, four times over, on a write that had already succeeded: `write_file` returned `wrote 156 bytes` and the strip counted it as a failed attempt, so the model rewrote the same correct file until it gave up. The saved text was right. example.com now answers with "This domain is for use in documentation examplesâ€¦" and keeps "Example Domain" only in its **title**, which the fetch's own header line carries and the page text does not. Step 4 required that literal phrase in the saved content, and steps 5â€“7 required it in the read-back and in both display results, so the back half of the eight-step drill was unpassable against the live page. The checks now follow the page instead of one phrase of a page the drill does not control: `ADVANCED_TEXT` accepts any wording it has served (`example domain`, `documentation examples`, `example.com`), step 3 asks only for the URL plus a real `HTTP 200`, and step 4 grades the saved CONTENT â€” at least 40 characters of the page's own text â€” rather than a phrase match on the arguments. A stub save (`content: "saved"`) still fails, so the step grades the save and not merely the write. Step 5's label no longer promises "Example Domain"; it asks for the page text the step actually fetched. This is the v457â€“v463 class in miniature: the drill grades an artefact, so the artefact's fixture must be something the machine can still produce. Covered by two new assertions â€” the live page text grades clean through all eight steps, and a placeholder save still fails step 4: JS 42 files / 1,394 assertions, PHP 34/34 (3 skipped), docs 14/14. `VERSION` 464 â†’ 465, `APP_VERSION` 461 â†’ 462 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## ⌨️ The two-pass drill check from a terminal, and the report quotes the error a pass hit *(`VERSION` 463 → 464, cache-buster v460 → v461)*
+## âŒ¨ï¸ The two-pass drill check from a terminal, and the report quotes the error a pass hit *(`VERSION` 463 â†’ 464, cache-buster v460 â†’ v461)*
 
-*`php tools/drill-selftest.php` runs the same two-pass check as Config → Permissions without a browser or a server: it writes `training/training-<agent>-p1.txt`, runs the drill's two anchored edits on it, does the same for `-p2.txt`, reads both back, and exits 1 — not 0 — when a pass fails or the sandbox refuses. `--root` narrows the writes to one folder inside the allowlist and is refused loudly outside it, `--agent` renames the probe, `--quiet` prints only `RESULT: PASS`/`FAIL` for a script, and `--help` documents all of it. It also checks the two things the button only implies: the passes resolved to DIFFERENT files, and pass 1's file was not rewritten while pass 2 ran (size and mtime, re-statted). Nothing is deleted. `tests/php/drillSelftest.test.php` spawns the real script in a real PHP process, 18 assertions: both runs, the files' bytes, the verbose report naming pass 1, the narrowed root writing inside `--root` and not the wider root, a root outside the allowlist failing with nothing written, and usage errors (exit 2) told apart from a failed check (exit 1). The report half grew with it. `drillVerdict` now returns `failureReason` and `failureStep` — the FIRST error of the judged pass, which for a pass that never completed is the one being watched, since a pass in progress has no finished pass to quote — and each pass row prints it: `pass 2 · training/…-p2.txt · 2 failed attempts · first at step 8: "str_replace: old string not found."`, whitespace-flattened and clipped at 120 characters. A step number alone said where it broke; the text says what the model kept running into, which is the difference between a bad model and a badly worded step. JS 42 files / 1,392 assertions, PHP 34/34 (3 skipped), docs 14/14. `VERSION` 463 → 464, `APP_VERSION` 460 → 461 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*`php tools/drill-selftest.php` runs the same two-pass check as Config â†’ Permissions without a browser or a server: it writes `training/training-<agent>-p1.txt`, runs the drill's two anchored edits on it, does the same for `-p2.txt`, reads both back, and exits 1 â€” not 0 â€” when a pass fails or the sandbox refuses. `--root` narrows the writes to one folder inside the allowlist and is refused loudly outside it, `--agent` renames the probe, `--quiet` prints only `RESULT: PASS`/`FAIL` for a script, and `--help` documents all of it. It also checks the two things the button only implies: the passes resolved to DIFFERENT files, and pass 1's file was not rewritten while pass 2 ran (size and mtime, re-statted). Nothing is deleted. `tests/php/drillSelftest.test.php` spawns the real script in a real PHP process, 18 assertions: both runs, the files' bytes, the verbose report naming pass 1, the narrowed root writing inside `--root` and not the wider root, a root outside the allowlist failing with nothing written, and usage errors (exit 2) told apart from a failed check (exit 1). The report half grew with it. `drillVerdict` now returns `failureReason` and `failureStep` â€” the FIRST error of the judged pass, which for a pass that never completed is the one being watched, since a pass in progress has no finished pass to quote â€” and each pass row prints it: `pass 2 Â· training/â€¦-p2.txt Â· 2 failed attempts Â· first at step 8: "str_replace: old string not found."`, whitespace-flattened and clipped at 120 characters. A step number alone said where it broke; the text says what the model kept running into, which is the difference between a bad model and a badly worded step. JS 42 files / 1,392 assertions, PHP 34/34 (3 skipped), docs 14/14. `VERSION` 463 â†’ 464, `APP_VERSION` 460 â†’ 461 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🧪 A two-pass self-test, and the run report names the file every pass wrote *(`VERSION` 462 → 463, cache-buster v459 → v460)*
+## ðŸ§ª A two-pass self-test, and the run report names the file every pass wrote *(`VERSION` 462 â†’ 463, cache-buster v459 â†’ v460)*
 
-*The per-pass file is only useful if its failure mode can be seen without watching a whole drill. **Config → Permissions** gains **RUN TWO-PASS SELF-TEST**: it writes `training/training-agent-drill-selftest-p1.txt`, runs the drill's two anchored edits on it, then does the same for `-p2.txt`, and reads both files back from the server to compare the bytes. The writes go through the same `TOOL_REGISTRY` entries an agent calls, so the real tool path is what gets exercised — but it needs no model and no approval, and it proves the file question, not a model's behaviour. A fixed probe agent id means it cannot touch a real drill file or the pass counter, and nothing is deleted: both files stay as the proof you can open. The report gets the other half of that idea. Every completed pass is recorded with the file it actually wrote (`trainingPassLog`, in-memory like the verdicts and cleared by Start), and the Training report prints one line per pass — `pass 2 · training/training-agent-x-p2.txt · clean` — above the failure breakdown, capped at the last 12 so a long unattended run cannot push the summary off the screen. `formatPassLine` is pure, so the printing and its test cannot drift. Opened after every pass, the report is now the place to verify a pass by opening its file instead of trusting a counter. Covered by new assertions for the pass line (clean, singular and plural failures, empty entry, unusable pass number) and for the two paths the self-test writes: JS 42 files / 1,385 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 462 → 463, `APP_VERSION` 459 → 460 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*The per-pass file is only useful if its failure mode can be seen without watching a whole drill. **Config â†’ Permissions** gains **RUN TWO-PASS SELF-TEST**: it writes `training/training-agent-drill-selftest-p1.txt`, runs the drill's two anchored edits on it, then does the same for `-p2.txt`, and reads both files back from the server to compare the bytes. The writes go through the same `TOOL_REGISTRY` entries an agent calls, so the real tool path is what gets exercised â€” but it needs no model and no approval, and it proves the file question, not a model's behaviour. A fixed probe agent id means it cannot touch a real drill file or the pass counter, and nothing is deleted: both files stay as the proof you can open. The report gets the other half of that idea. Every completed pass is recorded with the file it actually wrote (`trainingPassLog`, in-memory like the verdicts and cleared by Start), and the Training report prints one line per pass â€” `pass 2 Â· training/training-agent-x-p2.txt Â· clean` â€” above the failure breakdown, capped at the last 12 so a long unattended run cannot push the summary off the screen. `formatPassLine` is pure, so the printing and its test cannot drift. Opened after every pass, the report is now the place to verify a pass by opening its file instead of trusting a counter. Covered by new assertions for the pass line (clean, singular and plural failures, empty entry, unusable pass number) and for the two paths the self-test writes: JS 42 files / 1,385 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 462 â†’ 463, `APP_VERSION` 459 â†’ 460 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🗂️ Every training pass writes its own file, so a second pass never starts on the first pass's bytes *(`VERSION` 461 → 462, cache-buster v458 → v459)*
+## ðŸ—‚ï¸ Every training pass writes its own file, so a second pass never starts on the first pass's bytes *(`VERSION` 461 â†’ 462, cache-buster v458 â†’ v459)*
 
-*Training mode named its drill file per agent (v457) but not per PASS, so a second pass opened the file the first pass had finished. Its write step then asked for a file that already existed — and a model following "read the file first so you edit rather than overwrite blindly" answered by switching to a tool that refuses to create one (`apply_patch: add failed, already exists`), while its two anchored edits were aimed at text the earlier pass had already changed (`old string not found`). The retry-until-it-passes rule turned either into a loop that spent an evening without the model ever learning the paper was used. The name now carries the pass — `training/training-<agent>-p2.txt`. `settings.trainingMode.pass` starts at 1 on Start and is bumped exactly once per completed pass in `_publishDrill`, after the pass report has read the path that pass wrote, so the TRAINING MODE block, the filled step labels, the kickoff and the steered reminder all name a file nothing has written. The three-character suffix is deliberate: models have to copy the path out of their prompt, and the app fills it in, so no extra call is asked of the agent — Easy mode is not made harder. Nothing is deleted and nothing moves mid-run: when Start is pressed with files in `training/`, the folder is renamed ONCE to `training-runs/<yyyymmdd-hhmmss>/training`, which keeps both runs' evidence without racing the automatic Continue or a Windows file handle a display step may still hold (a failed rename is logged, and the counter alone keeps the run unique). Grading follows the same rule: `drillVerdict` takes a path or a matcher, and chat passes `trainingFileMatchFor(agent, difficulty)`, so a history spanning several passes is judged against the file each call named instead of re-judging pass 1 against pass 2's path. Covered by new JS assertions (pass-1/pass-2 shapes, store-driven block and step-label agreement, matcher refusals, a two-pass verdict replay) and a PHP sequence that writes p1, runs both anchored edits, writes p2, runs them again, and then shows the doubled line a reused file produces: JS 42 files / 1,378 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 461 → 462, `APP_VERSION` 458 → 459 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*Training mode named its drill file per agent (v457) but not per PASS, so a second pass opened the file the first pass had finished. Its write step then asked for a file that already existed â€” and a model following "read the file first so you edit rather than overwrite blindly" answered by switching to a tool that refuses to create one (`apply_patch: add failed, already exists`), while its two anchored edits were aimed at text the earlier pass had already changed (`old string not found`). The retry-until-it-passes rule turned either into a loop that spent an evening without the model ever learning the paper was used. The name now carries the pass â€” `training/training-<agent>-p2.txt`. `settings.trainingMode.pass` starts at 1 on Start and is bumped exactly once per completed pass in `_publishDrill`, after the pass report has read the path that pass wrote, so the TRAINING MODE block, the filled step labels, the kickoff and the steered reminder all name a file nothing has written. The three-character suffix is deliberate: models have to copy the path out of their prompt, and the app fills it in, so no extra call is asked of the agent â€” Easy mode is not made harder. Nothing is deleted and nothing moves mid-run: when Start is pressed with files in `training/`, the folder is renamed ONCE to `training-runs/<yyyymmdd-hhmmss>/training`, which keeps both runs' evidence without racing the automatic Continue or a Windows file handle a display step may still hold (a failed rename is logged, and the counter alone keeps the run unique). Grading follows the same rule: `drillVerdict` takes a path or a matcher, and chat passes `trainingFileMatchFor(agent, difficulty)`, so a history spanning several passes is judged against the file each call named instead of re-judging pass 1 against pass 2's path. Covered by new JS assertions (pass-1/pass-2 shapes, store-driven block and step-label agreement, matcher refusals, a two-pass verdict replay) and a PHP sequence that writes p1, runs both anchored edits, writes p2, runs them again, and then shows the doubled line a reused file produces: JS 42 files / 1,378 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 461 â†’ 462, `APP_VERSION` 458 â†’ 459 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🌐 The Browser drill opens a window you can actually watch, and window_type proves the text landed *(`VERSION` 460 → 461, cache-buster v457 → v458)*
+## ðŸŒ The Browser drill opens a window you can actually watch, and window_type proves the text landed *(`VERSION` 460 â†’ 461, cache-buster v457 â†’ v458)*
 
-*`browser_open` used to launch a headless browser and report success, so a clean Browser drill could run entirely out of sight. Visible is now the default: `browser_open` omits `--headless`, the API and PHP defaults follow it, the native schema advertises an optional `headless` field, and the result names **visible window** or **headless — no window to watch**. Asking for visible while a headless instance is running restarts it after the old debug port closes; asking for headless reuses the existing headless process. The Browser drill’s step 3 now requires the visible-window result and turns a headless open into a failed step with a **Retry browser_open** hint, while the Browser screen’s headless checkbox follows the mode that is actually running. The desktop half got the same evidence rule: `window_open` now brings the named program to the front, and `window_type` reads the window back through Windows UI Automation, returning whether the typed text is present; the Frontier drill’s step 5 requires that read-back and the strip says which call to retry when it is unverified. Verified live with NEMOTRON-3-ULTRA: Browser 9/9, one clean pass, zero failed attempts, in an unobstructed Edge window; the earlier headless run was not counted. The head-to-head teaser is now in the README and the Pages site. JS 42 files / 1,360 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 460 → 461, `APP_VERSION` 457 → 458 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*`browser_open` used to launch a headless browser and report success, so a clean Browser drill could run entirely out of sight. Visible is now the default: `browser_open` omits `--headless`, the API and PHP defaults follow it, the native schema advertises an optional `headless` field, and the result names **visible window** or **headless â€” no window to watch**. Asking for visible while a headless instance is running restarts it after the old debug port closes; asking for headless reuses the existing headless process. The Browser drillâ€™s step 3 now requires the visible-window result and turns a headless open into a failed step with a **Retry browser_open** hint, while the Browser screenâ€™s headless checkbox follows the mode that is actually running. The desktop half got the same evidence rule: `window_open` now brings the named program to the front, and `window_type` reads the window back through Windows UI Automation, returning whether the typed text is present; the Frontier drillâ€™s step 5 requires that read-back and the strip says which call to retry when it is unverified. Verified live with NEMOTRON-3-ULTRA: Browser 9/9, one clean pass, zero failed attempts, in an unobstructed Edge window; the earlier headless run was not counted. The head-to-head teaser is now in the README and the Pages site. JS 42 files / 1,360 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 460 â†’ 461, `APP_VERSION` 457 â†’ 458 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🧰 Read/edit calls keep their arguments, and the Hard drill names its tools *(`VERSION` 459 → 460, cache-buster v448 → v449)*
+## ðŸ§° Read/edit calls keep their arguments, and the Hard drill names its tools *(`VERSION` 459 â†’ 460, cache-buster v448 â†’ v449)*
 
-*Foreign read and edit calls used to lose the arguments that make them work. `read_file` and `show_file` now accept the path spellings Claude, Cursor and OpenAI-compatible tools use (`file_path`, `filepath`, `filename`, `target_file`, `file`), keep a separate `range`, and turn `offset`/`limit` into the sandbox's `start-end` range. `Edit` resolves to `edit_file` — never `write_file` — and `edit_file` accepts `file_path` plus `old_str`/`old_text`/`new_str`/`new_text`. Native `read_file` now advertises the separate `range` field, and `nativeToolArgs` keeps it; stringified JSON arguments are parsed before path normalization, which is the shape a native or relay call can send. The Hard drill now names the exact tool in every read and edit step (`read_file`, never `show_file`; `edit_file`, never `write_file` or `str_replace_editor`), while Easy intentionally keeps its original diagnostic wording. Verified live with `nemotron-lightning`: two Hard passes, each 17/17 clean with 0 failed attempts and 0 retries; a native ranged read returned line 1; and the stringified read/edit path ran through the live tool registry. JS 41 files / 1,229 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 459 → 460, `APP_VERSION` 448 → 449 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*Foreign read and edit calls used to lose the arguments that make them work. `read_file` and `show_file` now accept the path spellings Claude, Cursor and OpenAI-compatible tools use (`file_path`, `filepath`, `filename`, `target_file`, `file`), keep a separate `range`, and turn `offset`/`limit` into the sandbox's `start-end` range. `Edit` resolves to `edit_file` â€” never `write_file` â€” and `edit_file` accepts `file_path` plus `old_str`/`old_text`/`new_str`/`new_text`. Native `read_file` now advertises the separate `range` field, and `nativeToolArgs` keeps it; stringified JSON arguments are parsed before path normalization, which is the shape a native or relay call can send. The Hard drill now names the exact tool in every read and edit step (`read_file`, never `show_file`; `edit_file`, never `write_file` or `str_replace_editor`), while Easy intentionally keeps its original diagnostic wording. Verified live with `nemotron-lightning`: two Hard passes, each 17/17 clean with 0 failed attempts and 0 retries; a native ranged read returned line 1; and the stringified read/edit path ran through the live tool registry. JS 41 files / 1,229 assertions, PHP 33/33 (3 skipped), docs 14/14. `VERSION` 459 â†’ 460, `APP_VERSION` 448 â†’ 449 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🎚️ Easy and Hard drills, and every Start begins clean *(`VERSION` 459, cache-buster v445 → v446)*
+## ðŸŽšï¸ Easy and Hard drills, and every Start begins clean *(`VERSION` 459, cache-buster v445 â†’ v446)*
 
-*Training mode now opens in a fresh session before the kickoff, and its popup carries an **Easy / Hard** selector. Easy is the original 12-step sequence from `53b05a9`, including the old “Append a second line” step 7 and the old rules (no anchored-edit contract); Hard is the current 17-step drill with the ranged read, anchored edits and display tools. Both keep per-agent files and the Continue loop; Easy’s terminal “and stop” became “this completes the 12-step pass,” because the harness now owns the ending. The choice is persisted as `settings.trainingMode.difficulty` (default Hard), is locked while a run is active, and drives the step list, prompt block, kickoff, verdict total and strip (`easy drill`), so a 12-step run reads `12/12`, never `12/17`. Each Start creates `Training drill — <date/time>`, aborts an in-flight turn directly (without setting the one-shot STOP flag), switches to the empty session, then dispatches the kickoff; if session creation fails it falls back to the current one. Verified live with `nemotron-lightning`: Easy completed a clean 12/12 pass in ~62s; Hard completed a clean 17/17 pass in ~176s after four Continue resumes and visible uncertainty at step 16, with zero failed tool calls in either mode. Both wrote the same 37-byte `training` / `drill 2 passed (exact match)` file. This comparison isolates the drill, not the harness: this model reasoned around the old append wording, so the difference showed up as time and resume count rather than a failure step. JS 41 files / 1,214 assertions, PHP 33/33, docs 14/14. `VERSION` 458 → 459, `APP_VERSION` 445 → 446 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*Training mode now opens in a fresh session before the kickoff, and its popup carries an **Easy / Hard** selector. Easy is the original 12-step sequence from `53b05a9`, including the old â€œAppend a second lineâ€ step 7 and the old rules (no anchored-edit contract); Hard is the current 17-step drill with the ranged read, anchored edits and display tools. Both keep per-agent files and the Continue loop; Easyâ€™s terminal â€œand stopâ€ became â€œthis completes the 12-step pass,â€ because the harness now owns the ending. The choice is persisted as `settings.trainingMode.difficulty` (default Hard), is locked while a run is active, and drives the step list, prompt block, kickoff, verdict total and strip (`easy drill`), so a 12-step run reads `12/12`, never `12/17`. Each Start creates `Training drill â€” <date/time>`, aborts an in-flight turn directly (without setting the one-shot STOP flag), switches to the empty session, then dispatches the kickoff; if session creation fails it falls back to the current one. Verified live with `nemotron-lightning`: Easy completed a clean 12/12 pass in ~62s; Hard completed a clean 17/17 pass in ~176s after four Continue resumes and visible uncertainty at step 16, with zero failed tool calls in either mode. Both wrote the same 37-byte `training` / `drill 2 passed (exact match)` file. This comparison isolates the drill, not the harness: this model reasoned around the old append wording, so the difference showed up as time and resume count rather than a failure step. JS 41 files / 1,214 assertions, PHP 33/33, docs 14/14. `VERSION` 458 â†’ 459, `APP_VERSION` 445 â†’ 446 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🧭 Two agents drill side by side, each in its own lane *(`VERSION` 458, cache-buster v443 → v444)*
+## ðŸ§­ Two agents drill side by side, each in its own lane *(`VERSION` 458, cache-buster v443 â†’ v444)*
 
-*The v457 fix was put through a live two-agent run, which found two things the unit tests could not. The kickoff text still showed the literal `training/training-<agent>.txt`, so both models stopped to work out what `<agent>` meant instead of using the exact path in their own prompt block; the shared kickoff now says "your drill file" and leaves the path to the TRAINING MODE block. The automatic `Continue` also listed every agent's position, and the second model read the first model's "pass complete (17/17)" as its own and tried to start at step 17; each agent's recorded position now lives in its own block, and `Continue` is generic. The block also marks older transcripts that mention `training/training.txt` as obsolete, because a resumed context copied the old path. Verified live in a fresh session with two Groq agents: both passed steps 5–9 concurrently, ending `training/training-agent-…-ucy5su.txt` and `training/training-agent-drill-probe.txt` at the same 37-byte `training\ndrill 2 passed (exact match)` content, written five seconds apart, while the old shared file stayed untouched; both read 14–15/17 with zero failed attempts when the check ended. The PHP drill sequence now replays the reported three-line collision against real bytes and pins both the shared file's ambiguity and the per-agent files' success. JS 41 files / 1,178 assertions, PHP 33/33 (sandbox 155), docs 14/14. `VERSION` 457 → 458, `APP_VERSION` 443 → 444 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*The v457 fix was put through a live two-agent run, which found two things the unit tests could not. The kickoff text still showed the literal `training/training-<agent>.txt`, so both models stopped to work out what `<agent>` meant instead of using the exact path in their own prompt block; the shared kickoff now says "your drill file" and leaves the path to the TRAINING MODE block. The automatic `Continue` also listed every agent's position, and the second model read the first model's "pass complete (17/17)" as its own and tried to start at step 17; each agent's recorded position now lives in its own block, and `Continue` is generic. The block also marks older transcripts that mention `training/training.txt` as obsolete, because a resumed context copied the old path. Verified live in a fresh session with two Groq agents: both passed steps 5â€“9 concurrently, ending `training/training-agent-â€¦-ucy5su.txt` and `training/training-agent-drill-probe.txt` at the same 37-byte `training\ndrill 2 passed (exact match)` content, written five seconds apart, while the old shared file stayed untouched; both read 14â€“15/17 with zero failed attempts when the check ended. The PHP drill sequence now replays the reported three-line collision against real bytes and pins both the shared file's ambiguity and the per-agent files' success. JS 41 files / 1,178 assertions, PHP 33/33 (sandbox 155), docs 14/14. `VERSION` 457 â†’ 458, `APP_VERSION` 443 â†’ 444 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🧪 Every agent drills in its own file, so parallel passes cannot collide *(`VERSION` 457, cache-buster v442 → v443)*
+## ðŸ§ª Every agent drills in its own file, so parallel passes cannot collide *(`VERSION` 457, cache-buster v442 â†’ v443)*
 
-*Training mode drills every active agent in the same sandbox, and all of them wrote `training/training.txt`. Two passes therefore shared one piece of drill state: an agent that resumed at step 7 read another agent's completed output as its own step 6 result, its step 8 appended a second `drill 2 passed` line, and its step 9 — `old_string: "drill 2 passed"` — then matched both that line and the prefix of the `(exact match)` line another pass had written, so every retry failed with `str_replace: old string appears 2 times`. The file ended at three lines / 52 bytes while the model had no way to make the call unique. Each agent now gets `training/training-<agent id>.txt`: the TRAINING MODE block names that exact path, the step labels are filled from it, and `drillVerdict(calls, file)` grades the pass against the same file, so another agent's work can neither satisfy a step nor corrupt one. A turn that was already in flight when Start was pressed gets the path appended to its steered kickoff, because its system prompt predates the block. `training/training.txt` remains the default for callers with no agent, and the operator-facing step list shows the generic `training/training-<agent>.txt`. The cache-buster bump exposed one test that had hardcoded `?v=442` and split the store into two instances; `contextWindow.test.mjs` now reads `APP_VERSION` like every other suite. Covered by new training and verdict assertions: JS 41 files / 1,173 assertions, PHP 33/33, docs 14/14. `VERSION` 456 → 457, `APP_VERSION` 442 → 443 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*Training mode drills every active agent in the same sandbox, and all of them wrote `training/training.txt`. Two passes therefore shared one piece of drill state: an agent that resumed at step 7 read another agent's completed output as its own step 6 result, its step 8 appended a second `drill 2 passed` line, and its step 9 â€” `old_string: "drill 2 passed"` â€” then matched both that line and the prefix of the `(exact match)` line another pass had written, so every retry failed with `str_replace: old string appears 2 times`. The file ended at three lines / 52 bytes while the model had no way to make the call unique. Each agent now gets `training/training-<agent id>.txt`: the TRAINING MODE block names that exact path, the step labels are filled from it, and `drillVerdict(calls, file)` grades the pass against the same file, so another agent's work can neither satisfy a step nor corrupt one. A turn that was already in flight when Start was pressed gets the path appended to its steered kickoff, because its system prompt predates the block. `training/training.txt` remains the default for callers with no agent, and the operator-facing step list shows the generic `training/training-<agent>.txt`. The cache-buster bump exposed one test that had hardcoded `?v=442` and split the store into two instances; `contextWindow.test.mjs` now reads `APP_VERSION` like every other suite. Covered by new training and verdict assertions: JS 41 files / 1,173 assertions, PHP 33/33, docs 14/14. `VERSION` 456 â†’ 457, `APP_VERSION` 442 â†’ 443 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🔇 echo no longer answers “[object Object]”, and step 3 says how to call it *(`VERSION` 456, cache-buster v441 → v442)*
+## ðŸ”‡ echo no longer answers â€œ[object Object]â€, and step 3 says how to call it *(`VERSION` 456, cache-buster v441 â†’ v442)*
 
-*A JSON-dialect echo call that wrapped its scalar — `{"tool":"echo","arg":{"text":"training"}}` — reached `TOOL_REGISTRY.echo.run` as an object, and `String(object)` produced `"[object Object]"`. The step 3 check requires the RESULT to contain `training`, so that call could never pass; the model saw a successful tool with an empty-looking answer and retried. Native function-calling calls were fine because `nativeToolArgs` unwraps `text`; the text path did not. The stricter verdict from v454 counts a right-tool call whose artifact fails the check as a failed attempt, which is how the defect surfaced as `2/17 · 12 failed at step 3` instead of a silent stall. `echo` now unwraps the first string/number among `text`, `message`, `value`, `content` and falls back to `JSON.stringify` for anything else, so it can never render `[object Object]`; `ARG_KEY_ALIASES` gained `echo: [text, message, value]` so a single-key object collapses at parse time the same way native calls do; and the drill’s step 3 now shows the exact bare-string call (`{"tool":"echo","arg":"training"}`) rather than leaving the shape to be inferred. Covered by alias tests for the parse and both echo fallbacks, plus a verdict regression that replays the reported call — parse, run, grade — and now reaches 3/17 with zero failures. The failure counting itself is unchanged on purpose: it did its job. JS 41 files / 1,164 assertions, PHP 33/33, docs 14/14. `VERSION` 455 → 456, `APP_VERSION` 441 → 442 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*A JSON-dialect echo call that wrapped its scalar â€” `{"tool":"echo","arg":{"text":"training"}}` â€” reached `TOOL_REGISTRY.echo.run` as an object, and `String(object)` produced `"[object Object]"`. The step 3 check requires the RESULT to contain `training`, so that call could never pass; the model saw a successful tool with an empty-looking answer and retried. Native function-calling calls were fine because `nativeToolArgs` unwraps `text`; the text path did not. The stricter verdict from v454 counts a right-tool call whose artifact fails the check as a failed attempt, which is how the defect surfaced as `2/17 Â· 12 failed at step 3` instead of a silent stall. `echo` now unwraps the first string/number among `text`, `message`, `value`, `content` and falls back to `JSON.stringify` for anything else, so it can never render `[object Object]`; `ARG_KEY_ALIASES` gained `echo: [text, message, value]` so a single-key object collapses at parse time the same way native calls do; and the drillâ€™s step 3 now shows the exact bare-string call (`{"tool":"echo","arg":"training"}`) rather than leaving the shape to be inferred. Covered by alias tests for the parse and both echo fallbacks, plus a verdict regression that replays the reported call â€” parse, run, grade â€” and now reaches 3/17 with zero failures. The failure counting itself is unchanged on purpose: it did its job. JS 41 files / 1,164 assertions, PHP 33/33, docs 14/14. `VERSION` 455 â†’ 456, `APP_VERSION` 441 â†’ 442 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🛑 A training run can end itself after N clean passes *(`VERSION` 455, cache-buster v440 → v441)*
+## ðŸ›‘ A training run can end itself after N clean passes *(`VERSION` 455, cache-buster v440 â†’ v441)*
 
-*The Training dialog gains **Stop after [ N ] clean passes** (`cleanPassTarget`, 0 = never, the default). A pass counts only when it completes all 17 steps with zero failed attempts, per Start run; the first agent to reach the target ends the mode for the whole fleet, because waiting for every agent would let one stuck model keep the rest billing. The limit is persisted as it is edited, so it can be changed mid-run, and setting it to a number the run has already reached stops training immediately instead of waiting for a verdict that may never arrive. The setting survives Stop and Start; Start resets the run, not the rule. The strip header names the rule only when one is set — `drill · stop at 2 clean passes` — and repaints when the target changes. No new timers or requests: the decision rides the existing `training:verdict` event, and the stop goes through the same path as the Stop button, including the toast. The dialog copy was corrected with it: “It never stops by itself” became “It only stops when you say so”, naming the clean-pass limit as the one exception. Verified by driving the real verdict event in a scratch profile with a seeded 2-clean-pass verdict at target 2: the mode switched itself off and the dialog showed the saved `2`; no model call was made. JS 41 files / 1,157 assertions, PHP 33/33, docs 14/14. `VERSION` 454 → 455, `APP_VERSION` 440 → 441 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*The Training dialog gains **Stop after [ N ] clean passes** (`cleanPassTarget`, 0 = never, the default). A pass counts only when it completes all 17 steps with zero failed attempts, per Start run; the first agent to reach the target ends the mode for the whole fleet, because waiting for every agent would let one stuck model keep the rest billing. The limit is persisted as it is edited, so it can be changed mid-run, and setting it to a number the run has already reached stops training immediately instead of waiting for a verdict that may never arrive. The setting survives Stop and Start; Start resets the run, not the rule. The strip header names the rule only when one is set â€” `drill Â· stop at 2 clean passes` â€” and repaints when the target changes. No new timers or requests: the decision rides the existing `training:verdict` event, and the stop goes through the same path as the Stop button, including the toast. The dialog copy was corrected with it: â€œIt never stops by itselfâ€ became â€œIt only stops when you say soâ€, naming the clean-pass limit as the one exception. Verified by driving the real verdict event in a scratch profile with a seeded 2-clean-pass verdict at target 2: the mode switched itself off and the dialog showed the saved `2`; no model call was made. JS 41 files / 1,157 assertions, PHP 33/33, docs 14/14. `VERSION` 454 â†’ 455, `APP_VERSION` 440 â†’ 441 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🧭 A resumed drill keeps its place — and the strip says what it is waiting for *(`VERSION` 454, cache-buster v438 → v439)*
+## ðŸ§­ A resumed drill keeps its place â€” and the strip says what it is waiting for *(`VERSION` 454, cache-buster v438 â†’ v439)*
 
-*The silent `Continue` that follows every finished turn now carries the app’s own record of the pass: `nemotron-lightning: 15/17 steps passed — next is step 16 (todo_write); do not restart.` A resumed turn is rebuilt from a short message window and its own todo list, and a model that lost track restarted the drill: the calls for steps 1–15 arrived again while the verdict waited at 16, so the strip sat on `15/17` with no explanation. The resume is still sent silently and drawn nowhere, and a completed pass still resumes into a fresh one. The strip also gained the visible sign of that state: calls for another tool are counted as **off-step**, the row turns amber and renders `15/17 · waiting for todo_write (last call: think)`, and the Training dialog shows the same line. Off-step is not a failure — the step was never attempted — and progress clears it. One real grading gap closed alongside it: the right tool with arguments the step cannot accept (a full read where the ranged read was asked for) is now a failed attempt instead of being silently ignored, so a model could no longer repeat a wrong call and be graded clean. Verified with a full live pass in a scratch browser profile: 17/17 with zero failed attempts, then a second pass whose duplicate `think` produced the amber waiting line on screen. JS 41 files / 1,146 assertions, PHP 33/33 (sandbox 151), docs 14/14. `VERSION` 453 → 454, `APP_VERSION` 438 → 439 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*The silent `Continue` that follows every finished turn now carries the appâ€™s own record of the pass: `nemotron-lightning: 15/17 steps passed â€” next is step 16 (todo_write); do not restart.` A resumed turn is rebuilt from a short message window and its own todo list, and a model that lost track restarted the drill: the calls for steps 1â€“15 arrived again while the verdict waited at 16, so the strip sat on `15/17` with no explanation. The resume is still sent silently and drawn nowhere, and a completed pass still resumes into a fresh one. The strip also gained the visible sign of that state: calls for another tool are counted as **off-step**, the row turns amber and renders `15/17 Â· waiting for todo_write (last call: think)`, and the Training dialog shows the same line. Off-step is not a failure â€” the step was never attempted â€” and progress clears it. One real grading gap closed alongside it: the right tool with arguments the step cannot accept (a full read where the ranged read was asked for) is now a failed attempt instead of being silently ignored, so a model could no longer repeat a wrong call and be graded clean. Verified with a full live pass in a scratch browser profile: 17/17 with zero failed attempts, then a second pass whose duplicate `think` produced the amber waiting line on screen. JS 41 files / 1,146 assertions, PHP 33/33 (sandbox 151), docs 14/14. `VERSION` 453 â†’ 454, `APP_VERSION` 438 â†’ 439 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🎚️ The drill’s scoreboard, live — and an append the tool can actually make *(`VERSION` 453, cache-buster v436 → v437)*
+## ðŸŽšï¸ The drillâ€™s scoreboard, live â€” and an append the tool can actually make *(`VERSION` 453, cache-buster v436 â†’ v437)*
 
-*Training mode publishes a verdict after every settled tool call, not only at turn end: a fixed strip between the chat header and the transcript shows one row per active agent — `12/17`, `1 failed at step 7`, `17/17 · clean · 3 passes` — red on a failure, green on a clean pass, hidden while training is off and cleared by Start. The Training dialog opens with the same rows at the top (`RUN SO FAR`), reading the same in-memory scoreboard, so the two can never disagree. The strip made a real drill defect visible and then fixed its cause: step 8 asked for a bare append, but `edit_file` is exact search-and-replace and refuses an empty `old_string`, and the verdict test had simulated `old_string: ""` — so the suite stayed green while models could not complete the step. The step now demonstrates the real call (replace `"training"` with `"training\ndrill 2 passed"`), its check requires both `old_string` and `new_string`, step 9 requires its `(exact match)` result, and a new PHP sequence test runs both edits against bytes on disk and asserts a refused miss leaves the file untouched. The dead `edit_file: 'write_file'` alias entry is removed: registered tool names win before aliases are consulted, so it never applied — and rerouting a failed search to `write_file` (default mode: overwrite) would have turned a typo into a wiped file. Verified by a live training pass in a scratch browser profile: steps 1–15, including both edits, passed with zero failed attempts. `VERSION` 452 → 453, `APP_VERSION` 436 → 437 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*Training mode publishes a verdict after every settled tool call, not only at turn end: a fixed strip between the chat header and the transcript shows one row per active agent â€” `12/17`, `1 failed at step 7`, `17/17 Â· clean Â· 3 passes` â€” red on a failure, green on a clean pass, hidden while training is off and cleared by Start. The Training dialog opens with the same rows at the top (`RUN SO FAR`), reading the same in-memory scoreboard, so the two can never disagree. The strip made a real drill defect visible and then fixed its cause: step 8 asked for a bare append, but `edit_file` is exact search-and-replace and refuses an empty `old_string`, and the verdict test had simulated `old_string: ""` â€” so the suite stayed green while models could not complete the step. The step now demonstrates the real call (replace `"training"` with `"training\ndrill 2 passed"`), its check requires both `old_string` and `new_string`, step 9 requires its `(exact match)` result, and a new PHP sequence test runs both edits against bytes on disk and asserts a refused miss leaves the file untouched. The dead `edit_file: 'write_file'` alias entry is removed: registered tool names win before aliases are consulted, so it never applied â€” and rerouting a failed search to `write_file` (default mode: overwrite) would have turned a typo into a wiped file. Verified by a live training pass in a scratch browser profile: steps 1â€“15, including both edits, passed with zero failed attempts. `VERSION` 452 â†’ 453, `APP_VERSION` 436 â†’ 437 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🔁 The drill stops only when you do: a clean-pass verdict, and models fetched from the agent card *(`VERSION` 452, cache-buster v433 → v434)*
+## ðŸ” The drill stops only when you do: a clean-pass verdict, and models fetched from the agent card *(`VERSION` 452, cache-buster v433 â†’ v434)*
 
-*Training mode is a closed loop now. Every finished turn — a display step, a short reply, a budget exhaustion, even a perfectly completed drill — is followed by a `Continue` dispatched through the normal turn path, so the model treats it as the operator speaking; nothing is drawn for it in the transcript, and the stored dialog carries `silent: true` so reopening a session does not replay it either. The six-resume budget and the `show_file` exception are gone: a finished drill starts another pass, and the only exits are switching training off, pressing STOP (that turn, not the mode), a draft in the composer, or deactivating every agent. A provider that keeps failing is retried with backoff (2s → 30s) instead of in a hot loop. The drill now grades itself from the tool records rather than the agent's own todo list: `drillVerdict()` walks the run's calls against the 17 steps in order and reports how far the current pass got, whether it completed, and whether it was clean — a failed attempt at any step counts, including one corrected with different arguments, while a call skipped because a display tool ended the turn is neither a pass nor a failure and a pending approval stalls the step. The tool box header carries `drill 12/17`, turns green with `clean` on a perfect pass, and one toast marks each completed pass; the per-agent log is bounded and resets when Start is pressed again. The agent card also gains **Fetch available models**: it reads the agent's endpoint/key overrides (else the provider's), writes the catalog to the provider record, and refreshes the model suggestions without touching the typed model. Covered by a new `drillVerdict` suite (36 assertions) and a rewritten training suite (81): JS 41 files / 1,128 assertions, PHP 33/33, docs 14/14. `VERSION` 451 → 452, `APP_VERSION` 433 → 434 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*Training mode is a closed loop now. Every finished turn â€” a display step, a short reply, a budget exhaustion, even a perfectly completed drill â€” is followed by a `Continue` dispatched through the normal turn path, so the model treats it as the operator speaking; nothing is drawn for it in the transcript, and the stored dialog carries `silent: true` so reopening a session does not replay it either. The six-resume budget and the `show_file` exception are gone: a finished drill starts another pass, and the only exits are switching training off, pressing STOP (that turn, not the mode), a draft in the composer, or deactivating every agent. A provider that keeps failing is retried with backoff (2s â†’ 30s) instead of in a hot loop. The drill now grades itself from the tool records rather than the agent's own todo list: `drillVerdict()` walks the run's calls against the 17 steps in order and reports how far the current pass got, whether it completed, and whether it was clean â€” a failed attempt at any step counts, including one corrected with different arguments, while a call skipped because a display tool ended the turn is neither a pass nor a failure and a pending approval stalls the step. The tool box header carries `drill 12/17`, turns green with `clean` on a perfect pass, and one toast marks each completed pass; the per-agent log is bounded and resets when Start is pressed again. The agent card also gains **Fetch available models**: it reads the agent's endpoint/key overrides (else the provider's), writes the catalog to the provider record, and refreshes the model suggestions without touching the typed model. Covered by a new `drillVerdict` suite (36 assertions) and a rewritten training suite (81): JS 41 files / 1,128 assertions, PHP 33/33, docs 14/14. `VERSION` 451 â†’ 452, `APP_VERSION` 433 â†’ 434 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 📺 Show, don't paste: display tools, a sandbox agents can read, and a drill that resumes *(`VERSION` 451, cache-buster v430 → v432)*
+## ðŸ“º Show, don't paste: display tools, a sandbox agents can read, and a drill that resumes *(`VERSION` 451, cache-buster v430 â†’ v432)*
 
-*`show_file` / `show_command` / `show_find` / `show_url` end the turn with their output in the transcript and none of it in the prompt: the server now hands a display read 400,000 characters (`Sandbox::MAX_DISPLAY_CHARS`) while a model's own `read_file` keeps 60,000, `max_chars` travels only when `ctx.display` is set, the read ceiling rose from 200 KB to 400 KB so a 220 KB log is not cut short, `fetch_url` is clamped the same way, and every read reports the budget it applied — a short result now says `truncated at 60000` instead of raising a mystery. `read_file` also honours the `{"path","range"}` spelling that used to be dropped silently. Around the tools the sandbox became legible: a refusal names the file that IS inside ("Did you mean \"test_read.txt\"?"), a read of the project folder reaches the same-named sandbox file, `list_dir` on a refused folder answers with the sandbox listing plus a warning, `list_dir` with no argument lists the roots, a directory handed to `read_file` / `show_file` is listed rather than called "not a file", and the environment block states that paths are relative to the sandbox and no longer advertises a configured root that is absent from this machine. `Harness::withTools()` restores empty JSON objects (a jq-style pass turned `{}` into `[]`, which made Ollama answer 400 on every turn with five zero-argument tools), and `ModelManager::relayStream()` appends the upstream body's own sentence to an error instead of a bare HTTP code. Learning stopped leaking in two places: a turn that ends by showing output can now remember its dialect (the steps a display call skipped were being counted as failures), and a state-sync adopt UNIONS `toolDialectMap` and `contextLimits` instead of replacing the settings slot wholesale — an older copy from another device used to erase the dialect and context windows this browser had learned. Training mode grew to 17 steps, practices `show_find` / `show_command` / `show_file`, resumes itself after a display step (budget 6, reset by Start), draws a resumed turn as a muted "drill" marker rather than a message from the operator, marks display-skipped calls `skipped` instead of `error`, and the tool-call header counts calls, failures and retries. Covered by nine new JS suites (`contextWindow`, `dialectRetry`, `displayBackfill`, `showTools`, `toolAliases`, `sandboxRecovery`, `toolCallSummary`, `settingsMerge`, `visibleRoots`) plus extended ones: JS 40 files / 1,094 assertions, PHP 33/33. `APP_VERSION` 430 → 432 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
+*`show_file` / `show_command` / `show_find` / `show_url` end the turn with their output in the transcript and none of it in the prompt: the server now hands a display read 400,000 characters (`Sandbox::MAX_DISPLAY_CHARS`) while a model's own `read_file` keeps 60,000, `max_chars` travels only when `ctx.display` is set, the read ceiling rose from 200 KB to 400 KB so a 220 KB log is not cut short, `fetch_url` is clamped the same way, and every read reports the budget it applied â€” a short result now says `truncated at 60000` instead of raising a mystery. `read_file` also honours the `{"path","range"}` spelling that used to be dropped silently. Around the tools the sandbox became legible: a refusal names the file that IS inside ("Did you mean \"test_read.txt\"?"), a read of the project folder reaches the same-named sandbox file, `list_dir` on a refused folder answers with the sandbox listing plus a warning, `list_dir` with no argument lists the roots, a directory handed to `read_file` / `show_file` is listed rather than called "not a file", and the environment block states that paths are relative to the sandbox and no longer advertises a configured root that is absent from this machine. `Harness::withTools()` restores empty JSON objects (a jq-style pass turned `{}` into `[]`, which made Ollama answer 400 on every turn with five zero-argument tools), and `ModelManager::relayStream()` appends the upstream body's own sentence to an error instead of a bare HTTP code. Learning stopped leaking in two places: a turn that ends by showing output can now remember its dialect (the steps a display call skipped were being counted as failures), and a state-sync adopt UNIONS `toolDialectMap` and `contextLimits` instead of replacing the settings slot wholesale â€” an older copy from another device used to erase the dialect and context windows this browser had learned. Training mode grew to 17 steps, practices `show_find` / `show_command` / `show_file`, resumes itself after a display step (budget 6, reset by Start), draws a resumed turn as a muted "drill" marker rather than a message from the operator, marks display-skipped calls `skipped` instead of `error`, and the tool-call header counts calls, failures and retries. Covered by nine new JS suites (`contextWindow`, `dialectRetry`, `displayBackfill`, `showTools`, `toolAliases`, `sandboxRecovery`, `toolCallSummary`, `settingsMerge`, `visibleRoots`) plus extended ones: JS 40 files / 1,094 assertions, PHP 33/33. `APP_VERSION` 430 â†’ 432 in `ui/js/store.js`, every `?v=` under `ui/**`, and both `index.html` files.*
 
-## 🩹 A fresh copy boots even when `storage/` is not writable *(`VERSION` 450, no cache-buster bump — no browser file changed)*
+## ðŸ©¹ A fresh copy boots even when `storage/` is not writable *(`VERSION` 450, no cache-buster bump â€” no browser file changed)*
 
-*`storage/config.json` is git-ignored, so no clone, zip or release archive contains it: every install starts without one and the first request writes it. That write was never checked. On a copy whose `storage/` the web server cannot write — files uploaded by root, or by a hosting account other than the one PHP runs as — it failed silently, the read that followed warned "`file_get_contents(storage/config.json): No such file or directory`", and the caller got `null` instead of a config. A working copy read as a broken install, and the settings that were saved never persisted. `Config::loadConfig()` now writes the default, checks that it landed, and answers with the same defaults in memory when it cannot — a read never becomes `null` because a file it was about to create is not there yet. A refused write also logs one line naming the folder and the account, since the next symptom (`saved settings keep reverting`) looks like a UI bug.*
+*`storage/config.json` is git-ignored, so no clone, zip or release archive contains it: every install starts without one and the first request writes it. That write was never checked. On a copy whose `storage/` the web server cannot write â€” files uploaded by root, or by a hosting account other than the one PHP runs as â€” it failed silently, the read that followed warned "`file_get_contents(storage/config.json): No such file or directory`", and the caller got `null` instead of a config. A working copy read as a broken install, and the settings that were saved never persisted. `Config::loadConfig()` now writes the default, checks that it landed, and answers with the same defaults in memory when it cannot â€” a read never becomes `null` because a file it was about to create is not there yet. A refused write also logs one line naming the folder and the account, since the next symptom (`saved settings keep reverting`) looks like a UI bug.*
 
-## 🩹 Updating no longer stops on `.github` *(`VERSION` 449, no cache-buster bump — no browser file changed)*
+## ðŸ©¹ Updating no longer stops on `.github` *(`VERSION` 449, no cache-buster bump â€” no browser file changed)*
 
-*The installer replaces app files and refuses before it starts if it cannot write to a folder the release touches. That list included `.github/workflows/`, which is CI, issue templates and dependabot — repository metadata the app never reads. On a copy deployed by root or by git, `.github` is owned by another account, so the web server's probe failed and the update stopped with "Cannot write to .github/workflows/" before a single app file moved. `.github` is now on the never-write list in both `Install` and `Update`, and `Install::writeTargets()` skips anything that list covers, so the preflight never probes it. The case that fix was originally written for — a release that ADDS a real app folder which does not exist yet — is unchanged and still guarded, with its test fixture moved from `.github/workflows` to `tools/newfolder`. Verified: a plan that touches both `.github/workflows/tests.yml` and `ui/js/store.js` now writes only `ui/js`.*
+*The installer replaces app files and refuses before it starts if it cannot write to a folder the release touches. That list included `.github/workflows/`, which is CI, issue templates and dependabot â€” repository metadata the app never reads. On a copy deployed by root or by git, `.github` is owned by another account, so the web server's probe failed and the update stopped with "Cannot write to .github/workflows/" before a single app file moved. `.github` is now on the never-write list in both `Install` and `Update`, and `Install::writeTargets()` skips anything that list covers, so the preflight never probes it. The case that fix was originally written for â€” a release that ADDS a real app folder which does not exist yet â€” is unchanged and still guarded, with its test fixture moved from `.github/workflows` to `tools/newfolder`. Verified: a plan that touches both `.github/workflows/tests.yml` and `ui/js/store.js` now writes only `ui/js`.*
 
-## 🩹 Opening Config no longer zeroes the saved rate-limit wait *(`VERSION` 448, cache-buster v429 → v430)*
+## ðŸ©¹ Opening Config no longer zeroes the saved rate-limit wait *(`VERSION` 448, cache-buster v429 â†’ v430)*
 
-*`_commitPendingCfgFields()` runs before `renderConfig()` builds the panel, so on the first open of Config none of the fields exist yet and `num()` answers `null` for every one of them. The other values kept that `null` — `put()` ignores it — but `rateLimitMaxWaitMs` was multiplied by 1000 first, and `null * 1000` is `0`, which is a real number `put()` stored. The panel then drew `Math.round(0 / 1000)`, so **Longest single wait (seconds)** read 0 on every visit, and a SAVE taken while it read 0 clamped to the input's 5-second minimum — which is how an install ends up with a 5000 ms floor nobody chose. The multiplication now happens only after the null check, so a field that is not on screen can no longer rewrite the saved value. Verified in a scratch copy: opening Config shows the saved number, 90 seconds saves as 90000, and it survives a reload and repeated reopens. `APP_VERSION` 429 → 430 in `ui/js/store.js`, every `?v=` under `ui/js/**`, and both `index.html` files, so a browser that already loaded the old sidebar fetches the fixed one.*
+*`_commitPendingCfgFields()` runs before `renderConfig()` builds the panel, so on the first open of Config none of the fields exist yet and `num()` answers `null` for every one of them. The other values kept that `null` â€” `put()` ignores it â€” but `rateLimitMaxWaitMs` was multiplied by 1000 first, and `null * 1000` is `0`, which is a real number `put()` stored. The panel then drew `Math.round(0 / 1000)`, so **Longest single wait (seconds)** read 0 on every visit, and a SAVE taken while it read 0 clamped to the input's 5-second minimum â€” which is how an install ends up with a 5000 ms floor nobody chose. The multiplication now happens only after the null check, so a field that is not on screen can no longer rewrite the saved value. Verified in a scratch copy: opening Config shows the saved number, 90 seconds saves as 90000, and it survives a reload and repeated reopens. `APP_VERSION` 429 â†’ 430 in `ui/js/store.js`, every `?v=` under `ui/js/**`, and both `index.html` files, so a browser that already loaded the old sidebar fetches the fixed one.*
 
-## 🌐 Tunnels leave the terminal: Config → Tunnels *(`VERSION` 447, cache-buster v428 → v429)*
+## ðŸŒ Tunnels leave the terminal: Config â†’ Tunnels *(`VERSION` 447, cache-buster v428 â†’ v429)*
 
-*A new `src/Tunnels.php` backend (`POST /sandbox/tunnels` — start/stop/status/save, operator-only, no agent tool) spawns ngrok and Cloudflare quick tunnels detached with their output captured to a log, waits up to ~25s for the daemon's own public-URL line, and kills a tunnel that never prints one rather than leaving a running daemon with an unknown address. Pids and URLs live in `storage/tunnels.json` (new `Config::runtimePath`, test-isolated like `ROUTER_CONFIG`); every status re-checks the pid is alive, so a dead daemon reads as down and a stale URL is never shown. The Config → Tunnels card renders install state per binary (configured path → `tools/bin/` → system PATH), the served port auto-detected, and the public URL with its friend RPC path to copy. Installers grow an opt-in step — `setup-xampp.bat -Tunnels` (winget) and `INSTALL_TUNNELS=1 ./start.sh` (into `tools/bin/`, no sudo) — because a public door is never installed unasked; `tunnel.bat` / `./tunnel.sh` stay for the terminal. Covered by `tests/php/tunnels.test.php` (32 assertions: URL parsing for both providers, validation, hostile-domain and hostile-port refusal, status with nothing running). `APP_VERSION` 428 → 429 in `ui/js/store.js`, every `?v=` under `ui/js/**`, and both `index.html` files.*
+*A new `src/Tunnels.php` backend (`POST /sandbox/tunnels` â€” start/stop/status/save, operator-only, no agent tool) spawns ngrok and Cloudflare quick tunnels detached with their output captured to a log, waits up to ~25s for the daemon's own public-URL line, and kills a tunnel that never prints one rather than leaving a running daemon with an unknown address. Pids and URLs live in `storage/tunnels.json` (new `Config::runtimePath`, test-isolated like `ROUTER_CONFIG`); every status re-checks the pid is alive, so a dead daemon reads as down and a stale URL is never shown. The Config â†’ Tunnels card renders install state per binary (configured path â†’ `tools/bin/` â†’ system PATH), the served port auto-detected, and the public URL with its friend RPC path to copy. Installers grow an opt-in step â€” `setup-xampp.bat -Tunnels` (winget) and `INSTALL_TUNNELS=1 ./start.sh` (into `tools/bin/`, no sudo) â€” because a public door is never installed unasked; `tunnel.bat` / `./tunnel.sh` stay for the terminal. Covered by `tests/php/tunnels.test.php` (32 assertions: URL parsing for both providers, validation, hostile-domain and hostile-port refusal, status with nothing running). `APP_VERSION` 428 â†’ 429 in `ui/js/store.js`, every `?v=` under `ui/js/**`, and both `index.html` files.*
 
-## 🤝 Mesh section opens with both ends pictured *(`VERSION` 446, docs-only — no cache-buster bump)*
+## ðŸ¤ Mesh section opens with both ends pictured *(`VERSION` 446, docs-only â€” no cache-buster bump)*
 
-*README's Mesh section now opens with the two new screenshots side by side: `screenshots/MCP-Server-Mesh.png` (Config → MCP Server — enable toggle, Mesh discovery, friend tokens with scope and mesh-forwarding flag) on the left and `screenshots/MCP-Client-Mesh.png` (the server's graph card — advertise toggle, Shared agents with Install / Use remotely, Discover mesh) on the right, with a caption naming each side. What's new swaps to this release; What's inside gains a Mesh row so the capability stays listed after this entry scrolls off. No browser file changed, so `APP_VERSION` stays at v428.*
+*README's Mesh section now opens with the two new screenshots side by side: `screenshots/MCP-Server-Mesh.png` (Config â†’ MCP Server â€” enable toggle, Mesh discovery, friend tokens with scope and mesh-forwarding flag) on the left and `screenshots/MCP-Client-Mesh.png` (the server's graph card â€” advertise toggle, Shared agents with Install / Use remotely, Discover mesh) on the right, with a caption naming each side. What's new swaps to this release; What's inside gains a Mesh row so the capability stays listed after this entry scrolls off. No browser file changed, so `APP_VERSION` stays at v428.*
 
-## 🩹 glob matched `training/*` against `training/training/*` *(`VERSION` 445, cache-buster v427 → v428)*
+## ðŸ©¹ glob matched `training/*` against `training/training/*` *(`VERSION` 445, cache-buster v427 â†’ v428)*
 
 *Two halves of the loop training mode hit live with `{"pattern":"training/*"}`. Server-side, `globFiles()` jailed the `training/` prefix and then matched the whole pattern beneath it, so the directory was searched twice and nothing ever matched. Client-side, the zero-match message printed the raw arguments object instead of the pattern string, hence `no files match "[object Object]"`. The search now runs the whole pattern from the root (escapes still dropped by the realpath filter), and the message echoes the pattern. Covered by `tests/php/sandbox.test.php` 22a/22b.*
 
-## ⚡ Training mode brief opens with the brute-force note *(`VERSION` 444, docs-only — no cache-buster bump)*
+## âš¡ Training mode brief opens with the brute-force note *(`VERSION` 444, docs-only â€” no cache-buster bump)*
 
-*The "Training mode — the full brief" list gains a first bullet at the user's words: brute-force the drill to speed up custom forming harnesses and dialect learning; best above the 1.5b-parameter mark, ~2–4 minutes the first pass, commonly 12 calls / 0 retries the second, with only the winning syntax kept. README-only, so `APP_VERSION` stays at v427.*
+*The "Training mode â€” the full brief" list gains a first bullet at the user's words: brute-force the drill to speed up custom forming harnesses and dialect learning; best above the 1.5b-parameter mark, ~2â€“4 minutes the first pass, commonly 12 calls / 0 retries the second, with only the winning syntax kept. README-only, so `APP_VERSION` stays at v427.*
 
-## 🩹 glob_files and grep_code accept the `pattern` they ask for *(`VERSION` 443, cache-buster v426 → v427)*
+## ðŸ©¹ glob_files and grep_code accept the `pattern` they ask for *(`VERSION` 443, cache-buster v426 â†’ v427)*
 
-*A model sending the documented `{"pattern":"training/*"}` got back "needs pattern as a plain string — retry the step with that shape", resent the identical call, and looped forever: `pathText()` only unwrapped fields named `path` or `arg`, never `pattern`, so correct args read as missing and the retry hint re-prescribed the same shape. It now unwraps `pattern` too. Covered by `tests/js/toolPath.test.mjs`.*
+*A model sending the documented `{"pattern":"training/*"}` got back "needs pattern as a plain string â€” retry the step with that shape", resent the identical call, and looped forever: `pathText()` only unwrapped fields named `path` or `arg`, never `pattern`, so correct args read as missing and the retry hint re-prescribed the same shape. It now unwraps `pattern` too. Covered by `tests/js/toolPath.test.mjs`.*
 
-## 📖 The harness guide folds away; prompt ticks breathe *(`VERSION` 442, cache-buster v425 → v426)*
+## ðŸ“– The harness guide folds away; prompt ticks breathe *(`VERSION` 442, cache-buster v425 â†’ v426)*
 
 *The v441 "Auto Forming Harnesses, Dialects & Training Mode" section now matches most other sections: title, screenshot and brief on show, the four subsections inside a collapsed drawer. The What's-new slot swaps to this release; the guide's What's-inside row stays, since it still describes where the feature lives.*
 
-*The only behaviour change is spacing: the prompt rail's per-prompt jump ticks (`.prompt-rail` in `ui/css/chat.css`) go from a 4px to an 8px gap, so neighbouring ticks are easier to tell apart and tap. `APP_VERSION` 425 → 426 in `ui/js/store.js`, every `?v=` under `ui/js/**`, and both `index.html` files.*
+*The only behaviour change is spacing: the prompt rail's per-prompt jump ticks (`.prompt-rail` in `ui/css/chat.css`) go from a 4px to an 8px gap, so neighbouring ticks are easier to tell apart and tap. `APP_VERSION` 425 â†’ 426 in `ui/js/store.js`, every `?v=` under `ui/js/**`, and both `index.html` files.*
 
-## 📖 Harnesses, dialects & training get their own guide *(`VERSION` 441, no cache-buster bump — no browser file changed)*
+## ðŸ“– Harnesses, dialects & training get their own guide *(`VERSION` 441, no cache-buster bump â€” no browser file changed)*
 
-*The auto-fit, the manual pins and the drill lived in three different sections — the new README section "Auto Forming Harnesses, Dialects & Training Mode" covers them end to end, with the training-mode screenshot above its intro and a link in Contents, so pinning a harness, forcing a dialect and running the fleet drill are all one page away.*
+*The auto-fit, the manual pins and the drill lived in three different sections â€” the new README section "Auto Forming Harnesses, Dialects & Training Mode" covers them end to end, with the training-mode screenshot above its intro and a link in Contents, so pinning a harness, forcing a dialect and running the fleet drill are all one page away.*
 
 *Nothing behaves differently: this release is docs only. The What's-new slot swaps to the guide (the v440 save/dialog fixes stay in this file), What's-inside gains a pointer row, and the docs guard keeps proving every Contents anchor lands.*
 
-## 🔇 Failed saves say why; nested paths stop looping the drill *(`VERSION` 440, cache-buster v424 → v425)*
+## ðŸ”‡ Failed saves say why; nested paths stop looping the drill *(`VERSION` 440, cache-buster v424 â†’ v425)*
 
 *Flipping the Programs switch when `storage/` is not writable used to snap back with a success toast and no explanation: the server answers 200 with `success: false`, and nothing checked it. The config saver now throws the server's reason, so the dialog says "storage/config.json could not be written" and the switch returns to the server's value instead of sitting ON while the server holds OFF. The same saver covers the shell toggles.*
 
-*A model sending a nested `{"path":{"path":"…"}}` used to become a file literally named `[object Object]` — `String()` on an object — and the server's "not a file" error told the model nothing it could correct, so training mode's retry rule looped on it. A new `pathText()` unwraps one nesting level and every file tool (`read_file`, `write_file`, `edit_file`, `list_dir`, `glob_files`, `grep_code`, `str_replace_editor`) answers anything still unusable with the shape to retry with; `write_file` also refuses object `content` instead of writing the literal into the file. Covered by `tests/js/toolPath.test.mjs`.*
+*A model sending a nested `{"path":{"path":"â€¦"}}` used to become a file literally named `[object Object]` â€” `String()` on an object â€” and the server's "not a file" error told the model nothing it could correct, so training mode's retry rule looped on it. A new `pathText()` unwraps one nesting level and every file tool (`read_file`, `write_file`, `edit_file`, `list_dir`, `glob_files`, `grep_code`, `str_replace_editor`) answers anything still unusable with the shape to retry with; `write_file` also refuses object `content` instead of writing the literal into the file. Covered by `tests/js/toolPath.test.mjs`.*
 
-## ▶️ Training Start dispatches the drill; failed restores report what landed *(`VERSION` 439, cache-buster v423 → v424)*
+## â–¶ï¸ Training Start dispatches the drill; failed restores report what landed *(`VERSION` 439, cache-buster v423 â†’ v424)*
 
-*Start used to only arm the mode — with no run in flight the fleet sat silent: no text, no map, no metrics. It now posts the drill into chat as a turn (fresh) or steers it into a running one, so everything behaves exactly as it does for a typed message. With no active agents it says so instead of arming.*
+*Start used to only arm the mode â€” with no run in flight the fleet sat silent: no text, no map, no metrics. It now posts the drill into chat as a turn (fresh) or steers it into a running one, so everything behaves exactly as it does for a typed message. With no active agents it says so instead of arming.*
 
-*A restore writes section by section, and a late write failure used to return a bare error while the earlier sections sat on disk — "failed" and "restored" at once. The error now carries the sections that landed, the dialog prints both halves, and the config section no longer claims "restored" when its save fails. Covered by a backup test that breaks the models write on purpose.*
+*A restore writes section by section, and a late write failure used to return a bare error while the earlier sections sat on disk â€” "failed" and "restored" at once. The error now carries the sections that landed, the dialog prints both halves, and the config section no longer claims "restored" when its save fails. Covered by a backup test that breaks the models write on purpose.*
 
-## 🏋️ Training mode: a paced tool drill for the whole fleet *(`VERSION` 438, cache-buster v422 → v423)*
+## ðŸ‹ï¸ Training mode: a paced tool drill for the whole fleet *(`VERSION` 438, cache-buster v422 â†’ v423)*
 
-*A dumbbell button in the Agents-tab header arms it: every active agent drops to ~50% request rate and works one simple drill — think, todo_write, echo, now, write/read/edit `training/training.txt`, list/glob/grep it, exec echo — retrying each failed step until it passes and logging what worked to the todo list.*
+*A dumbbell button in the Agents-tab header arms it: every active agent drops to ~50% request rate and works one simple drill â€” think, todo_write, echo, now, write/read/edit `training/training.txt`, list/glob/grep it, exec echo â€” retrying each failed step until it passes and logging what worked to the todo list.*
 
-**The button glows like the global pre-prompt** when armed, and its popup explains the mode with Start/Cancel (Stop + recap while armed). Model weights never change — “remember” means the todo record plus the run transcript.
+**The button glows like the global pre-prompt** when armed, and its popup explains the mode with Start/Cancel (Stop + recap while armed). Model weights never change â€” â€œrememberâ€ means the todo record plus the run transcript.
 
-**Covered by `tests/js/training.test.mjs`** (30 assertions: drill shape, armed/disarmed prompt block, governor halving), which reads `APP_VERSION` out of `store.js` instead of hardcoding the `?v=` — the commsLog lesson, applied before it could bite twice.
+**Covered by `tests/js/training.test.mjs`** (30 assertions: drill shape, armed/disarmed prompt block, governor halving), which reads `APP_VERSION` out of `store.js` instead of hardcoding the `?v=` â€” the commsLog lesson, applied before it could bite twice.
 
 
-## 📚 The changelog was hiding five releases *(`VERSION` 437, no browser file changed)*
+## ðŸ“š The changelog was hiding five releases *(`VERSION` 437, no browser file changed)*
 
 *`v405` through `v410` were committed inside the copyright comment at the top of this file. They rendered nowhere -- GitHub shows a comment as nothing -- and nothing failed, because the release check reads the top entry rather than the archives.*
 
@@ -393,7 +397,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The Updates section in the README says what the installer asks first** -- which folder each file lands in, why a folder a release *adds* is not a locked one, and the exact `mkdir`/`chown` lines the panel prints when a refusal is real.
 
-## 🐧 The panel says which folder, and how to make it *(`VERSION` 436, cache-buster v421 → v422)*
+## ðŸ§ The panel says which folder, and how to make it *(`VERSION` 436, cache-buster v421 â†’ v422)*
 
 *`v435` stopped refusing an install over a folder it could create itself. This is the other half: when a refusal is real, the operator should not have to work out the account, the ownership and the flags.*
 
@@ -401,7 +405,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The panel prints it before the installer line**, because the installer cannot run until the folder exists. On Windows the field is null and the panel shows what it always showed: there is no `sudo`, `mkdir -p` or `chown` there, and the account that owns the tree can already create a folder.
 
-## 🐧 The update that refused to create a folder *(`VERSION` 435, no browser file changed)*
+## ðŸ§ The update that refused to create a folder *(`VERSION` 435, no browser file changed)*
 
 *`v427` added `.github/workflows/tests.yml`, and from then on some copies could not install anything at all: "The web server cannot write to .github/workflows/". Running the installer as `root` said the same thing, which was the clue -- a permission error that survives `sudo` is not a permission error.*
 
@@ -411,7 +415,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **Already stuck on an older copy?** The fixed preflight only arrives with this release, so unblock the current one by hand: `sudo mkdir -p .github/workflows && sudo chown --reference=. .github/workflows`, then install again from the app or from the terminal. `--reference=.` copies the owner and group of the app folder itself, so no account has to be guessed.
 
-## 🔐 The push section works on someone else's machine *(`VERSION` 434, no browser file changed)*
+## ðŸ” The push section works on someone else's machine *(`VERSION` 434, no browser file changed)*
 
 *`RELEASING.md` gained the workflow-scope section in v432, and two details in it were true only on the machine that wrote it.*
 
@@ -419,7 +423,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The ignore advice described the state before v433.** The section told the reader to add the name to `.gitignore`; the tracked `.gitignore` has carried it since, so the text says so and keeps `.git/info/exclude` named as the second, per-clone line rather than the only one.
 
-## 🔐 The token name is ignored where it matters *(`VERSION` 433, no browser file changed)*
+## ðŸ” The token name is ignored where it matters *(`VERSION` 433, no browser file changed)*
 
 *`.git/info/exclude` protects exactly one clone. A fresh clone has never heard of `.gh-workflow-token`, so its first `git add -A` would have committed a token that can write to this repository -- and pushed it.*
 
@@ -427,7 +431,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **Verified in an actual clone.** The check clones the repo, creates `.gh-workflow-token` inside it, and confirms `git status --porcelain` stays empty while `git check-ignore -v` names the rule -- the same command the ignore file's own comment recommends, rather than trusting the pattern by reading it.
 
-## 📛 The push that only fails at the end *(`VERSION` 432, no browser file changed)*
+## ðŸ“› The push that only fails at the end *(`VERSION` 432, no browser file changed)*
 
 *A commit that touches `.github/workflows/` is refused by a credential without `workflow` scope -- and the refusal arrives after the objects are sent, naming the OAuth app while a working token sits unread in the repository.*
 
@@ -435,7 +439,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **Where the token lives, and how to check it without printing it.** `.gh-workflow-token` at the repository root -- one `ghp_` line with `repo` and `workflow`, ignored through `.git/info/exclude` and never committed, with the reason the trailing newline matters and two commands that report only the username and length. Ordinary releases never touch any of it.
 
-## 📛 The badge that answers before you clone *(`VERSION` 431, no browser file changed)*
+## ðŸ“› The badge that answers before you clone *(`VERSION` 431, no browser file changed)*
 
 *It took three releases to get the Linux runner green. A badge would have said so in five seconds.*
 
@@ -443,7 +447,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **What it covers.** The same three steps the job runs: both suites on Linux, both suites again in a fresh copy of the tree, and the serving refusals. Apache and IIS are not on the runner, so those files still print their skips -- a green badge is a machine-independent result, not a claim that every platform was exercised.
 
-## 🐧 A fresh copy carries its permissions *(`VERSION` 430, no browser file changed)*
+## ðŸ§ A fresh copy carries its permissions *(`VERSION` 430, no browser file changed)*
 
 *A clone honours the executable bit. `freshClone.php` builds its copy with `copy()`, which carries bytes only -- so the check that asks "would this work for someone who just cloned it?" was answering for a tree nobody would ever have.*
 
@@ -451,7 +455,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The runner's failure was the same fact twice** -- the mode in the index and the mode in the copy -- which is why correcting one only moved the red step one place to the right. Both are corrected.
 
-## 🐧 Green on a machine that is not this one *(`VERSION` 429, no browser file changed)*
+## ðŸ§ Green on a machine that is not this one *(`VERSION` 429, no browser file changed)*
 
 *The first CI run failed in three test files, and none of the failures was a broken feature: the suite had never run on a host that is not this one.*
 
@@ -461,7 +465,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The programs harness now asserts each refusal where it exists.** Its launch and pid-lookup sections detach a copy of `sleep` and find it again through the host's process table, which is built for this machine; the twin copy it opens is chmod'ed first, because a copied binary inherits bytes and not permissions (`0644` on POSIX, refused as "not executable"). The policy wording differs by platform -- an extension on Windows, the missing exec bit elsewhere -- so that assertion reads the message the host actually writes. Typing's own input refusals (no text, over the per-call limit, not running) sit behind the Windows check, so they are asserted on Windows and print a skip here; the bad-path refusal comes first and runs everywhere.
 
-## 🐧 The Linux runner's three refusals *(`VERSION` 428, no browser file changed)*
+## ðŸ§ The Linux runner's three refusals *(`VERSION` 428, no browser file changed)*
 
 *The first CI run failed in three files, and not one of them was a broken feature: the suite had never run on a host that is not this one.*
 
@@ -471,7 +475,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The programs harness stopped pretending.** Its launch and pid-lookup sections detach a copy of `sleep` and find it again through the host's process table; that path is built for this machine, so on other platforms the sections now print a skip instead of asserting a lookup they cannot diagnose. The twin-copy section also chmods the copy before opening it, which is the part that was genuinely broken: a copied binary inherits bytes, not permissions, so on POSIX it is `0644` and `open()` refuses it as "not executable on this host".
 
-## 🧪 The suites run on every push *(`VERSION` 427, no browser file changed)*
+## ðŸ§ª The suites run on every push *(`VERSION` 427, no browser file changed)*
 
 *The tests were something someone remembered to run, so a branch could sit green in a local folder and break the moment it left it.*
 
@@ -481,7 +485,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **Narrow by construction.** `permissions: contents: read`, one concurrency group per ref with `cancel-in-progress`, a 25-minute timeout, and Node pinned to 22. Nothing is published from CI; it only reads the tree and runs it.
 
-## 🎬 The tour link says where it came from *(`VERSION` 426, no browser file changed)*
+## ðŸŽ¬ The tour link says where it came from *(`VERSION` 426, no browser file changed)*
 
 *The diagram badge reported its README clicks and the video badge did not, so a click from the page and a click from anywhere else looked identical.*
 
@@ -489,7 +493,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **No app files changed.** This is a README edit with the release number moved, because a release the update check cannot see is a change the other copy never gets.
 
-## 🎬 A one-minute tour at the top of the README *(`VERSION` 425, no browser file changed)*
+## ðŸŽ¬ A one-minute tour at the top of the README *(`VERSION` 425, no browser file changed)*
 
 *A visitor met a thousand lines of README before seeing the app move; the header offered the architecture and nothing that runs.*
 
@@ -497,7 +501,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **No app files changed.** This is a README edit with the release number moved, because a release the update check cannot see is a change the other copy never gets.
 
-## 🧪 The suite proves the 503 without curl *(`VERSION` 424, no browser file changed)*
+## ðŸ§ª The suite proves the 503 without curl *(`VERSION` 424, no browser file changed)*
 
 *The 503 answers were verified by hand on a PHP whose php.ini had no curl -- a condition no suite can assume the machine it runs on is in.*
 
@@ -507,7 +511,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **It puts back what it uses.** `storage/updates/check.json` belongs to the operator, so the file reads it first and restores it afterwards -- including when it was not there at all. A copy that requires an access token SKIPs the HTTP half with the reason, because loopback is refused then and a 401 counted as a pass is the exact failure the file exists to prevent.
 
-## 🚦 Even the cached GET says 503 *(`VERSION` 423, no browser file changed)*
+## ðŸš¦ Even the cached GET says 503 *(`VERSION` 423, no browser file changed)*
 
 *A server without curl answered the load-time check with `200 OK` and a body that admitted it had failed.*
 
@@ -517,7 +521,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **A cached GET is untouched.** With `check.json` on disk the answer is still `200` and `cached: true`: the server had something true to say, so it says it, and a host with no network keeps working from its last check.
 
-## 🚦 A missing extension is a 503 *(`VERSION` 422, no browser file changed)*
+## ðŸš¦ A missing extension is a 503 *(`VERSION` 422, no browser file changed)*
 
 *The update routes answered `400 Bad Request` when PHP had no curl extension: a request that was perfectly well formed, blamed for the server's inability to act.*
 
@@ -527,17 +531,17 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **Why it matters.** A 400 tells a client its request is wrong and to stop asking; a 503 says the server cannot act right now. A proxy, a retry and the operator all read those differently, and the app's own UI reports the second as "this server cannot reach the internet".
 
-## ⌨️ A refused install hands you the command *(`VERSION` 421, cache-buster v419 → v421)*
+## âŒ¨ï¸ A refused install hands you the command *(`VERSION` 421, cache-buster v419 â†’ v421)*
 
 *The panel could say the web server cannot write `tools/` and still leave the operator to work out what to do about it.*
 
 **The command is part of the answer.** `Install::preflight()` now reports the folder that refused (`blocked`) and the exact line that finishes the job with the account that owns the files (`command`: `php install-update.php`). Both travel with the problems list, so the UI prints what the server decided on instead of inventing advice.
 
-**Config → Updates prints it.** When the install button is disabled for a permission problem, the hint keeps the reason and adds the command in monospace, ready to paste in the app folder. Nothing else about the flow changes: the terminal path runs the same refusals, and `--status`, `--finish` and `--rollback` are still the same script.
+**Config â†’ Updates prints it.** When the install button is disabled for a permission problem, the hint keeps the reason and adds the command in monospace, ready to paste in the app folder. Nothing else about the flow changes: the terminal path runs the same refusals, and `--status`, `--finish` and `--rollback` are still the same script.
 
 **A writable tree offers nothing.** `blocked` stays null unless a probe actually failed, so a normal install shows no terminal advice at all.
 
-## 🧰 An install stops before it starts *(`VERSION` 420, no browser file changed)*
+## ðŸ§° An install stops before it starts *(`VERSION` 420, no browser file changed)*
 
 *An install that got as far as `tools/check-guards.sh` stopped there, after the write probe at the app root had already passed. The folder that could not be written was discovered halfway through replacing the release.*
 
@@ -547,7 +551,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The cache is read before curl is required.** A GET to `/api/update/check` enforced the curl gate before asking `Update::check()`, so a PHP without curl refused a cached answer that was already on disk -- reporting that it could not reach the internet about a record it never opened. Only a forced POST needs curl now; a GET with no cache still gets the same message.
 
-## ⚠️ A half-finished check says so *(`VERSION` 419, cache-buster v418 → v419)*
+## âš ï¸ A half-finished check says so *(`VERSION` 419, cache-buster v418 â†’ v419)*
 
 *The release that went unseen for six versions failed silently: the VERSION probe threw, the store.js probe answered, and the answer was printed as "up to date". A partial check now says it is partial.*
 
@@ -557,9 +561,9 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **The cache keeps it.** `check.json` records `warnings` with the rest of the answer and a cached read passes them through -- otherwise the panel would return to a clean "up to date" for the rest of the hour, which is the same bug with a shorter memory. A hard failure still clears them, since its `error` already says what happened.
 
-**Config → Updates stops short of the claim.** With a warning and nothing newer, the line reads "Not fully checked — this copy is v419" plus the reason, the full text sitting in the tooltip; a real update still wins the line and carries the warning after it.
+**Config â†’ Updates stops short of the claim.** With a warning and nothing newer, the line reads "Not fully checked â€” this copy is v419" plus the reason, the full text sitting in the tooltip; a real update still wins the line and carries the warning after it.
 
-## 🏷️ The header names the release *(`VERSION` 418, cache-buster v410 → v418)*
+## ðŸ·ï¸ The header names the release *(`VERSION` 418, cache-buster v410 â†’ v418)*
 
 *Six releases went by with the header saying v410. It was not lying -- it was showing the wrong number.*
 
@@ -569,7 +573,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **One small request, never cached.** The route answers with `Cache-Control: no-store` and reads two files, so a reload after an update shows the new number instead of a remembered one.
 
-## 🧭 The updater can see a release again *(`VERSION` 417, no browser file changed)*
+## ðŸ§­ The updater can see a release again *(`VERSION` 417, no browser file changed)*
 
 *Every release since v410 bumped `VERSION` and touched no browser file, and the check that looks for one has been reading an empty answer the whole time. A copy on v410 was told "up to date" for six releases in a row.*
 
@@ -581,7 +585,7 @@ Three defects surfaced the moment a second drill type ran headless. A `write_fil
 
 **One line, where the floor belongs.** `fetch()` now takes its minimum size from the caller: the archive download keeps the 1024-byte floor that catches a truncated transfer, and a probe asks for one byte. A four-byte file is a complete file, not an empty one.
 
-## 🛡️ The refusal check, as a script *(`VERSION` 415, no browser file changed)*
+## ðŸ›¡ï¸ The refusal check, as a script *(`VERSION` 415, no browser file changed)*
 
 *The README carried the check as something to paste, which is fine for a sceptic and useless for CI: a proof that lives in a document runs exactly as often as somebody copies it. `tools/check-guards.sh` is the same set of requests, with an exit code.*
 
@@ -591,7 +595,7 @@ Four paths must answer `403`/`404` (`storage/config.json`, `storage/sessions`, `
 
 Verified both ways before it shipped: `--serve` on this tree prints five refusals and exits `0`; against a plain `php -S` with no router it prints three `OPEN` paths and exits `1`.
 
-## 🧪 A skeptic's one-command check *(`VERSION` 414, no browser file changed)*
+## ðŸ§ª A skeptic's one-command check *(`VERSION` 414, no browser file changed)*
 
 *A table that says "every path is refused" is still an assertion. The README now carries a short bash script that makes the same requests a stranger would and prints `OPEN` (and exits non-zero) if any of them answers instead of refusing.*
 
@@ -599,7 +603,7 @@ It checks the four paths that decide everything else -- `storage/config.json`, `
 
 The API status is described rather than graded, because the code is the posture: `401` with a token set and none supplied, `403` when the gate is off and the caller is another machine, `503` on a fresh copy with no token, and `200` from this machine while a copy has no token. That last one is local-only mode doing its job; grading it either way would teach the wrong lesson. With the tree in hand, `node tests/run.mjs` remains the other one-command proof.
 
-## 🔒 "Is it safe?", answered up front *(`VERSION` 413, no browser file changed)*
+## ðŸ”’ "Is it safe?", answered up front *(`VERSION` 413, no browser file changed)*
 
 *The security section is long, deliberate and, by the account of the people leaving reviews, unread. The assumptions arrived first and filled the space: that it phones home, ships with keys, hands the model a shell, or can read the token. Each of those is answered in one line inside the section nobody got to, which is the wrong place for the answer to a question asked before reading.*
 
@@ -607,17 +611,17 @@ The README now carries a short table under the on-ramp: eight assumptions beside
 
 Contents gained the entry, and *Start here* now lists sections in the order the page reads them, with Quick start first.
 
-## 🚀 Quick start on the first screen *(`VERSION` 412, no browser file changed)*
+## ðŸš€ Quick start on the first screen *(`VERSION` 412, no browser file changed)*
 
 *`VERSION` 411 put the on-ramp above the Security section, which fixed the ordering but not the distance: Contents, the feature table and the four Labs walkthroughs -- with six screenshots between them -- still stood in front of the first instruction. Measured on the rendered page that was several screens of images before anyone learned how to start the app, which is the one thing a README cannot afford to hide.*
 
 Quick start now sits directly under Contents, before *What's inside*. The Labs stay exactly where they were, immediately after the feature table; Security remains the section right after Quick start rather than being demoted to the end.
 
-## 📖 The README, audited *(`VERSION` 411, no browser file changed)*
+## ðŸ“– The README, audited *(`VERSION` 411, no browser file changed)*
 
 *2026-11-08. The document was read line by line against the code. The typos were the least of it: one section described the proxy as it worked before v408, the test figures came from a suite half this size, and Quick start had ended up 1,300 lines down the page, behind the whole feature tour.*
 
-**Quick start moved above the security section.** It had drifted to the very bottom, after the API table and Troubleshooting. It now sits just under the Labs walkthroughs and before Security, so the on-ramp is on the way in and the guardrails are one section further down rather than demoted to the end — which is where the reviewers who never reach them would still never reach them.
+**Quick start moved above the security section.** It had drifted to the very bottom, after the API table and Troubleshooting. It now sits just under the Labs walkthroughs and before Security, so the on-ramp is on the way in and the guardrails are one section further down rather than demoted to the end â€” which is where the reviewers who never reach them would still never reach them.
 
 **The Proxy section now matches the code.** It described loopback-only bypassing via `NO_PROXY` and a per-request proxy that still won; since v408 every private, link-local and `.local` endpoint is called directly, v409 stopped the browser sending a proxy at all, and v410 makes the tab name the hosts it skips. The section says all three, and that clearing writes both sides.
 
@@ -625,7 +629,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Smaller corrections.** The three refusal codes are stated once each (`401` with a token set, `503` before one exists, `403` for a LAN caller when the gate is off), Troubleshooting gained the 403 case, the IIS footnote no longer implies a `web.config` ships, `Resource Monitor` became `Resource Manager`, and its / veiled / actions lost their typos.
 
-## 💡 The Proxy tab says what it skips *(`VERSION` 410, cache-buster v409 → v410)*
+## ðŸ’¡ The Proxy tab says what it skips *(`VERSION` 410, cache-buster v409 â†’ v410)*
 
 *The Proxy tab could only say "active: 1.2.3.4:8080". Since v408 the relay calls local endpoints directly, so that line was true for the internet and false for the runner the operator was actually watching -- the one case where "is it proxied?" decides whether a model answers.
 
@@ -635,7 +639,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **What it prevents.** A proxied-looking tab invites exactly the wrong fix -- changing an endpoint that was never being proxied, or clearing a proxy that was never in the path. The note makes the real route visible, and stays silent when every provider is remote.
 
-## 🧭 One proxy setting, on the server *(`VERSION` 409, cache-buster v408 → v409)*
+## ðŸ§­ One proxy setting, on the server *(`VERSION` 409, cache-buster v408 â†’ v409)*
 
 *2026-11-08. The same install worked on the PC and failed on the phone. The endpoint and the server were identical; what differed was a proxy choice saved per device. Chat sent it with every call, and the relay let a supplied proxy win outright, so one browser could route around the server setting -- and, after v408, around the LAN bypass too, since the endpoint check ran after the spec was preferred.*
 
@@ -643,7 +647,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **What that fixes.** A stale per-device value can no longer outlive a clear on another device, and a phone cannot keep a dead proxy alive for its own calls. The Proxy tab still highlights the active row, so the setting is still visible; it is simply not duplicated per browser.
 
-## 🔌 A proxy is for leaving the network *(`VERSION` 408, cache-buster v407 → v408)*
+## ðŸ”Œ A proxy is for leaving the network *(`VERSION` 408, cache-buster v407 â†’ v408)*
 
 *2026-11-08. After activating a proxy in the Proxy tab, a local LM Studio stopped answering for every client -- and turning the proxy off changed nothing. Two faults, and only one of them was the proxy being dead.*
 
@@ -653,7 +657,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Why the model list looked alive while chat did not.** Reading a provider catalog and talking to a model are different requests, and the failure text for a proxied call is a curl error, which reads as a dead server. The endpoint also decides the catalog URL: `.../api/v1/chat` derives `.../api/v1/models`.
 
-## 📵 The door says why it is shut *(`VERSION` 407, cache-buster v406 → v407)*
+## ðŸ“µ The door says why it is shut *(`VERSION` 407, cache-buster v406 â†’ v407)*
 
 *2026-11-08. A phone stopped reaching the local LM Studio after an update; the desktop kept working. The cause was not the model. With `require_token` off, `/api/*` answers only loopback peers, and a phone is a LAN peer, so every call got `403 local requests only`. Proven by serving the app on `0.0.0.0`: `/api/state` is 200 over loopback and 403 over the LAN address.*
 
@@ -665,7 +669,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **What this does not change.** The gate itself: a copy with no token still refuses other machines, which is the point of it. Setting a token is what reopens the LAN, and the error now says so.
 
-## ⚡ The first real call repairs the binding *(`VERSION` 406, cache-buster v405 → v406)*
+## âš¡ The first real call repairs the binding *(`VERSION` 406, cache-buster v405 â†’ v406)*
 
 *2026-11-08. Binding happens once, at boot, inside a try/catch. When it throws partway every tool after the failure keeps the placeholder that throws "not bound", and the first agent to call one burned a model step to learn it should reload a page the operator was still using.*
 
@@ -679,19 +683,19 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Tests.** `sandboxBinding.test.mjs` now 28: with no client the call fails loudly and no attempt is invented; with one, the first `read_file` call binds, runs and reports bound to Config; a second automatic attempt declines.
 
-## ⏳ The button says which half is running *(`VERSION` 405, cache-buster v404 → v405)*
+## â³ The button says which half is running *(`VERSION` 405, cache-buster v404 â†’ v405)*
 
 *2026-11-08. The rebind button disabled itself on click and left its label alone. Binding is a synchronous walk over the registry, but the follow-up -- a `/sandbox/status` read that decides what the bubble may claim -- is a round trip, and for its duration the control looked broken rather than busy.*
 
-**Two labels, one click.** `offerRebind()` writes `BINDING…` before the attempt and `CHECKING…` once the page half is done, then keeps the button as the progress indicator instead of deleting it. A failed bind re-arms as `TRY AGAIN`; a second click during the check is ignored because the button stays disabled.
+**Two labels, one click.** `offerRebind()` writes `BINDINGâ€¦` before the attempt and `CHECKINGâ€¦` once the page half is done, then keeps the button as the progress indicator instead of deleting it. A failed bind re-arms as `TRY AGAIN`; a second click during the check is ignored because the button stays disabled.
 
 **The bubble waits for the answer.** It used to print `doneText` immediately and correct itself, repeating in miniature the false confidence the warning exists to remove. It is now written once: the verdict when there is one, `doneText` when not, and `doneText` if the follow-up throws or rejects -- so a broken status route leaves neither a spinner nor a blank bubble.
 
 **The agent editor's button follows the same labels**, then shows `TRY AGAIN` if anything is still unbound.
 
-**Tests.** `rebindButton.test.mjs` holds a follow-up promise open: the label reads `CHECKING…`, the warning is still readable, a second click changes nothing, and the released verdict settles the bubble.
+**Tests.** `rebindButton.test.mjs` holds a follow-up promise open: the label reads `CHECKINGâ€¦`, the warning is still readable, a second click changes nothing, and the released verdict settles the bubble.
 
-## 🔁 The button comes back with the warning *(`VERSION` 404, cache-buster v403 → v404)*
+## ðŸ” The button comes back with the warning *(`VERSION` 404, cache-buster v403 â†’ v404)*
 
 *2026-11-08. Clearing a stale warning only helps after the tools work. Before that, a reload replayed the sentence as an ordinary agent bubble -- and the `BIND FILE TOOLS` control that the live warning carries does not exist in stored text, so the transcript told the operator to press a button that was not on the screen.*
 
@@ -701,7 +705,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Tests.** `tests/js/staleFileToolWarning.test.mjs` gains the reload path: a warning serialised and parsed again still reads as one and is still removable.
 
-## 🧹 A fixed warning leaves the transcript *(`VERSION` 403, cache-buster v402 → v403)*
+## ðŸ§¹ A fixed warning leaves the transcript *(`VERSION` 403, cache-buster v402 â†’ v403)*
 
 *2026-11-08. The file-tool warning is added to the conversation before a turn, so a model that could not write cannot report the file as written. Nothing removed it. Once the tools were fixed, every stored session still said the writes were not landing -- false, and in the direction that makes an operator distrust work that did happen.*
 
@@ -713,7 +717,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Tests.** `tests/js/staleFileToolWarning.test.mjs` covers detection with and without the flag, the role and author guards, both halves removed in one pass, the corrected bubble, an already-clean conversation, and non-array arguments.
 
-## 🧾 The editor says what this agent can do *(`VERSION` 402, cache-buster v401 → v402)*
+## ðŸ§¾ The editor says what this agent can do *(`VERSION` 402, cache-buster v401 â†’ v402)*
 
 *2026-11-08. The agent editor is where the file tools are chosen for one agent, so it is the one panel where the state of those tools belongs -- and it had none. `_describeToolPermissions()` ran once at init, looking for `#toolHint` before any modal existed, so the explanation never appeared. When a hint did appear it was the static "None selected = plain replies."*
 
@@ -727,17 +731,17 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Tests.** `tests/js/agentToolState.test.mjs` covers the happy path, a root inside and outside the allowlist, an empty jail, unbound tools, both halves at once, a long unbound list, the unknown state, and garbage arguments.
 
-## 🏠 A rebind confirms the jail too *(`VERSION` 401, cache-buster v400 → v401)*
+## ðŸ  A rebind confirms the jail too *(`VERSION` 401, cache-buster v400 â†’ v401)*
 
 *2026-11-08. A successful rebind only proved the page had runners. The bubble then said "agents can read and write now" without asking whether the server had a directory -- the same false confidence the warning exists to remove, this time arriving from the fix.*
 
 **The follow-up.** `_confirmRebind()` runs after the button binds: it re-reads `sandbox/status`, stores the fresh result in the jail cache, and decides what the bubble should say. `offerRebind()` now accepts a promise from `onBound` and replaces the provisional confirmation with whatever it resolves to, so the correction happens in the bubble rather than in a toast nobody connects to it.
 
-**Three outcomes, all honest.** Jail live: `✓ File tools are bound — agents can read and write now`, and the dedupe key clears so a future failure warns again. Jail empty: the bubble becomes that warning (naming Working Project Directory), and the dedupe key holds it so the next turn does not stack a duplicate. Status unreachable: the bubble claims only the page half -- "the server's working directory could not be checked" -- and the cache is left cold so the next turn asks again.
+**Three outcomes, all honest.** Jail live: `âœ“ File tools are bound â€” agents can read and write now`, and the dedupe key clears so a future failure warns again. Jail empty: the bubble becomes that warning (naming Working Project Directory), and the dedupe key holds it so the next turn does not stack a duplicate. Status unreachable: the bubble claims only the page half -- "the server's working directory could not be checked" -- and the cache is left cold so the next turn asks again.
 
 **Tests.** `rebindButton.test.mjs` gains the deferred-verdict paths: a resolved promise replaces the confirmation, a rejected one leaves it intact, and a synchronous throw in `onBound` cannot undo it.
 
-## 🧪 The rebind button is exercised, not just described *(`VERSION` 400, cache-buster v399 → v400)*
+## ðŸ§ª The rebind button is exercised, not just described *(`VERSION` 400, cache-buster v399 â†’ v400)*
 
 *2026-11-08. The warning bubble's button was wired and unverified. The suite could test the sentence; nothing ran the control. A click path that only exists in a browser is a click path nobody has run, and the failure mode -- a button stuck disabled, or one that binds twice -- is exactly the kind that reads as "the app is broken".*
 
@@ -749,19 +753,19 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Also corrected.** The warning now says "Press BIND FILE TOOLS to retry in this page" instead of "Reload the page", so the sentence and the control agree (asserted in `fileToolWarning.test.mjs`).
 
-## 🔧 The warning carries its own fix *(`VERSION` 399, cache-buster v398 → v399)*
+## ðŸ”§ The warning carries its own fix *(`VERSION` 399, cache-buster v398 â†’ v399)*
 
 *2026-11-08. "Reload the page" asked the operator to throw away the turn they were in the middle of, and a warning that only describes a problem is a dead end. The bubble now holds the button that fixes the half it can.*
 
 **A button in the bubble.** `_showFileToolWarning()` appends **BIND FILE TOOLS** to the warning when the page is the problem, using the `.message-body` element `_addMessage()` now returns. One click runs `bindSandboxNow()`, the same attempt the boot retry and the Config button use.
 
-**It reports back in place.** Bound: the bubble becomes `✓ File tools are bound — agents can read and write now` and the button is gone; the dedupe key is cleared so a later failure warns again. Still broken: the button turns into **TRY AGAIN** and a toast names what is unbound.
+**It reports back in place.** Bound: the bubble becomes `âœ“ File tools are bound â€” agents can read and write now` and the button is gone; the dedupe key is cleared so a later failure warns again. Still broken: the button turns into **TRY AGAIN** and a toast names what is unbound.
 
 **No button for the other half.** An empty jail is a server setting, so a rebind cannot change it and no button is offered; the warning still points at Working Project Directory. Offering one there would promise what it cannot do.
 
 **Tests.** `tests/js/fileToolWarning.test.mjs` now asserts the fix names BIND FILE TOOLS and no longer says Reload the page.
 
-## 🚩 The warning covers autonomous turns too *(`VERSION` 398, cache-buster v397 → v398)*
+## ðŸš© The warning covers autonomous turns too *(`VERSION` 398, cache-buster v397 â†’ v398)*
 
 *2026-11-08. The file-tool warning only ran on turns typed into the composer. An always-on agent, or one asked directly from its card, could report a file it never wrote with the chat still silent -- the same false claim, through a door the check did not cover.*
 
@@ -771,7 +775,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Scope note.** The topology's inline ASK box deliberately never touches the transcript, so it is not wired: there is no reply in the chat to contradict.
 
-## 🔌 Rebind the file tools without a reload *(`VERSION` 397, cache-buster v396 → v397)*
+## ðŸ”Œ Rebind the file tools without a reload *(`VERSION` 397, cache-buster v396 â†’ v397)*
 
 *2026-11-08. When the page missed its binding, the Config panel could say so but not fix it: the boot loop had already spent its five attempts, and a full reload was the only cure -- which, if the cause was a route still starting, could miss it again.*
 
@@ -783,7 +787,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Tests.** `tests/js/sandboxBinding.test.mjs` gains the attempt's verdict, the report following it, and that a missing client does not throw the handler.
 
-## 🚩 A warning before the reply, not after *(`VERSION` 396, cache-buster v395 → v396)*
+## ðŸš© A warning before the reply, not after *(`VERSION` 396, cache-buster v395 â†’ v396)*
 
 *2026-11-08. A model with no working file tools still reports the file as written, and the warning that said otherwise arrived attached to that reply -- the one place it is already too late. The transcript had just claimed work the disk never saw.*
 
@@ -795,11 +799,11 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Tests.** New `tests/js/fileToolWarning.test.mjs`: clean state says nothing, an unbound page is named with its consequence and fix, an empty jail points at Working Project Directory, both are combined into one warning, and malformed input is ignored rather than trusted.
 
-## 🧩 The Config panel knows when the tools are bound *(`VERSION` 395, cache-buster v394 → v395)*
+## ðŸ§© The Config panel knows when the tools are bound *(`VERSION` 395, cache-buster v394 â†’ v395)*
 
 *2026-11-08. A bind failure was visible in the console, the boot badge and a toast -- and nowhere the operator was already looking. The Config card said where the jail pointed and nothing about whether the file tools could reach it, so an unbound tool read as the model being wrong about the filesystem rather than the page being half-bound.*
 
-**Two lines, one card.** Under Working Project Directory, the panel now shows `File tools: bound — agents can read and write in this tab`, or `File tools: NOT bound — read_file, write_file, ... still run their placeholders`, naming them and carrying the last bind error in the line and its tooltip.
+**Two lines, one card.** Under Working Project Directory, the panel now shows `File tools: bound â€” agents can read and write in this tab`, or `File tools: NOT bound â€” read_file, write_file, ... still run their placeholders`, naming them and carrying the last bind error in the line and its tooltip.
 
 **It follows the retries.** The boot loop backs off to 3.2 s, so an early read of Config would show a stale answer; the line re-checks once a second for that window and stops as soon as the tools are bound.
 
@@ -807,7 +811,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 **Tests.** `tests/js/sandboxBinding.test.mjs` covers the report naming the unbound tools, recording a failed attempt's reason without displacing the names, and clearing it after a success.
 
-## 🧱 The file tools get their folder back *(`VERSION` 394, cache-buster v393 → v394)*
+## ðŸ§± The file tools get their folder back *(`VERSION` 394, cache-buster v393 â†’ v394)*
 
 *2026-11-08. The sandbox route answered and refused every call: `GET /api/sandbox/status` returned 200 with `enabled: false` and no roots on an install that had never chosen a directory, while the refusal text promised "it defaults to this app's own folder".*
 
@@ -820,7 +824,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 **Tests.** `tests/php/sandbox.test.php`: 124 passed, 0 failed, including the programs-only block and the explicit-empty case.
 
 
-## 📎 The sandbox binds, or says so *(`VERSION` 393, cache-buster v392 → v393)*
+## ðŸ“Ž The sandbox binds, or says so *(`VERSION` 393, cache-buster v392 â†’ v393)*
 
 *2026-11-08. The file tools were never bound to the sandbox in that session, and nothing retried them. Binding ran once inside `safeInit`, whose whole job is to swallow the error, so a single failure left every file tool on its placeholder for the life of the page -- quietly.*
 
@@ -836,7 +840,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🚫 "Done" is not evidence *(`VERSION` 392, cache-buster v391 → v392)*
+## ðŸš« "Done" is not evidence *(`VERSION` 392, cache-buster v391 â†’ v392)*
 
 *2026-11-08. A reply said `write_file` had created the file and the disk was untouched. The tool that was meant to do it had never been bound to the sandbox, and when it was called it answered "sandbox tools are not bound yet" as ordinary output -- so `runTool` marked the call ok and the model read that sentence as confirmation.*
 
@@ -850,7 +854,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧾 "[called exec]" was never an answer *(`VERSION` 391, cache-buster v390 → v391)*
+## ðŸ§¾ "[called exec]" was never an answer *(`VERSION` 391, cache-buster v390 â†’ v391)*
 
 *2026-11-08. Ask a local agent to make a file and the reply was `[called exec]`. That string is the app's own stand-in -- the text it gave the model for a tool call made without words -- and the model learned to send it back as the answer, so the turn ended with a caption where the result belonged.*
 
@@ -866,21 +870,21 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧾 Every extra model call has a reason beside it *(`VERSION` 390, cache-buster v389 → v390)*
+## ðŸ§¾ Every extra model call has a reason beside it *(`VERSION` 390, cache-buster v389 â†’ v390)*
 
 *2026-11-08. A turn that made four model calls for one question looked identical in the run trace to one that made two: the narration nudge, the dialect retry after a near-miss and the empty-reply retry each spend a full request and left nothing behind to say why.*
 
-**Three notes, one shape.** `trace('note', ...)` now records each in-turn re-ask as it happens: `nudge — narration` (a reply said it would use a tool), `nudge — dialect` (a tool-looking reply parsed to nothing, retried in the alternate format) and `nudge — empty reply` (the upstream returned nothing and was asked again). Each carries the agent, the model, the step and a `detail`.
+**Three notes, one shape.** `trace('note', ...)` now records each in-turn re-ask as it happens: `nudge â€” narration` (a reply said it would use a tool), `nudge â€” dialect` (a tool-looking reply parsed to nothing, retried in the alternate format) and `nudge â€” empty reply` (the upstream returned nothing and was asked again). Each carries the agent, the model, the step and a `detail`.
 
 **The narration row carries the sentence.** The text the model wrote instead of a call goes into `detail`, cut at 120 characters -- the difference between "it described a tool" and "it ignored the tools entirely", which are the two cases the retry exists to separate. The dialect row names the format it switched to; the empty row keeps the upstream `finishReason` when there is one.
 
-**Readable in the Runs tab.** The table used `e.tool || e.kind` for everything that was not a model call; it now prefers `e.note`, and prints `detail` in the same sub-line it already used for errors. A turn therefore reads model, `nudge — narration  "I will use list_agents to see..."`, model -- the extra request with its cause attached.
+**Readable in the Runs tab.** The table used `e.tool || e.kind` for everything that was not a model call; it now prefers `e.note`, and prints `detail` in the same sub-line it already used for errors. A turn therefore reads model, `nudge â€” narration  "I will use list_agents to see..."`, model -- the extra request with its cause attached.
 
 **Docs.** README: the **What's new** entry for v390 (replacing v389, which stays in this file) and the *Metrics & Run trace* section now says a note is an in-turn re-ask.
 
 ---
 
-## 🔧 "I'll call the tool" is not a call *(`VERSION` 389, cache-buster v388 → v389)*
+## ðŸ”§ "I'll call the tool" is not a call *(`VERSION` 389, cache-buster v388 â†’ v389)*
 
 *2026-11-08. The commonest way a local model fails at tools is not syntax: it writes "I will use list_agents to see who is available" and stops. Nothing runs, that sentence becomes the answer, and the loop spends an extra model call nudging it to send the call it already described.*
 
@@ -898,7 +902,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧠 A model's musings are not a to-do list *(`VERSION` 388, cache-buster v387 → v388)*
+## ðŸ§  A model's musings are not a to-do list *(`VERSION` 388, cache-buster v387 â†’ v388)*
 
 *2026-11-08. A local agent asked to list the agents ran `list_agents` three times and then an `echo` nobody asked for. The roster was fine: the model was explaining tool-call syntax in its own thinking, and every example it wrote -- `{"tool":"list_agents","arg":{}}`, `{"tool":"echo",...}` -- was parsed as a real call and executed.*
 
@@ -914,7 +918,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧠 A thought that ends in the answer is still a thought *(`VERSION` 387, cache-buster v385 → v387)*
+## ðŸ§  A thought that ends in the answer is still a thought *(`VERSION` 387, cache-buster v385 â†’ v387)*
 
 *2026-11-08. The reasoning box filled while the model thought and then emptied itself the moment the answer landed. The text was not lost -- the copy button still produced it -- but the renderer refused to draw it, and a turn that ran for several rounds kept only the last round's thinking.*
 
@@ -932,7 +936,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧹 Three repo docs that don't belong in a clone *(`VERSION` 386, no cache-buster bump)*
+## ðŸ§¹ Three repo docs that don't belong in a clone *(`VERSION` 386, no cache-buster bump)*
 
 *2026-11-08. `AGENTS.md`, `FRIENDS.md` and `RELEASE-NOTES.md` were repository housekeeping rather than part of the app: a note to coding agents, a hand-out for a friend, and a GitHub release body frozen at v368. They are out of the tree, and README no longer points at any of them.*
 
@@ -944,29 +948,29 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧠 What a local model thinks no longer vanishes when it answers *(`VERSION` 385, cache-buster v384 → v385)*
+## ðŸ§  What a local model thinks no longer vanishes when it answers *(`VERSION` 385, cache-buster v384 â†’ v385)*
 
 *2026-11-08. A local reasoning model streamed its thoughts, then the text disappeared the instant the turn completed and the tool calls and answer appeared in one block. Two separate gaps produced that: the live reasoning block was never painted, and the commit kept only the last step's text.*
 
-**`_paintReasoning` was never called.** The live bubble builds a Reasoning block, sizes it, hides it until there is something to show — and the streaming callback only did `reasoning = whole`, so nothing ever unhid it. A thinking model therefore thought into a variable for as long as its first token took, which from the outside is a hung request. `onReasoning` now paints, and the trace accumulates across steps instead of each step starting the panel over.
+**`_paintReasoning` was never called.** The live bubble builds a Reasoning block, sizes it, hides it until there is something to show â€” and the streaming callback only did `reasoning = whole`, so nothing ever unhid it. A thinking model therefore thought into a variable for as long as its first token took, which from the outside is a hung request. `onReasoning` now paints, and the trace accumulates across steps instead of each step starting the panel over.
 
-**Narration was painted and then dropped.** A local model thinks out loud in its reply text. Those sentences went into `node.turnProse` for the live bubble, but `_commitAgentReply` committed `result.value.content` — the last step's chunk alone — so the swap at the end emptied the bubble of everything said before the final answer. The turn's prose now rides along as the message's `reasoning` when the provider's own reasoning channel supplied none, which keeps what was watched and lets the existing echo rule hide it when it *is* the answer.
+**Narration was painted and then dropped.** A local model thinks out loud in its reply text. Those sentences went into `node.turnProse` for the live bubble, but `_commitAgentReply` committed `result.value.content` â€” the last step's chunk alone â€” so the swap at the end emptied the bubble of everything said before the final answer. The turn's prose now rides along as the message's `reasoning` when the provider's own reasoning channel supplied none, which keeps what was watched and lets the existing echo rule hide it when it *is* the answer.
 
-**Reasoning survives multiple steps.** `reasoning` held `res.reasoning` per step, so a think → tool → think turn committed only the last trace. It is accumulated now, and the abort path keeps the same text the bubble showed.
+**Reasoning survives multiple steps.** `reasoning` held `res.reasoning` per step, so a think â†’ tool â†’ think turn committed only the last trace. It is accumulated now, and the abort path keeps the same text the bubble showed.
 
 **No request, dialect, prompt or tool changed.** This is display and commit only; `tests/js` and the PHP suite are unchanged by it.
 
 ---
 
-## 🔎 The request itself, not just the reply *(`VERSION` 384, cache-buster v383 → v384)*
+## ðŸ”Ž The request itself, not just the reply *(`VERSION` 384, cache-buster v383 â†’ v384)*
 
-*2026-11-08. "Why can't this model use tools?" had no answer inside the app, because the app only showed the answer. A model that ignores its schemas and a request that never carried any look identical from a reply — and the body is built twice, once as the browser's spec and again by `Harness::payload` in PHP, so nothing in the UI could say which had happened.*
+*2026-11-08. "Why can't this model use tools?" had no answer inside the app, because the app only showed the answer. A model that ignores its schemas and a request that never carried any look identical from a reply â€” and the body is built twice, once as the browser's spec and again by `Harness::payload` in PHP, so nothing in the UI could say which had happened.*
 
-**Recorded where the body exists.** The new `SentLog` ring is written from `ModelManager::relayStream`, between `Harness::payload` and `Harness::auth` — the only point where the assembled JSON exists and the endpoint has not yet had a `?key=` appended. Each record keeps the harness family, model, endpoint, message roles, the schema names that went out, `tool_choice`, the byte size, and the whole body.
+**Recorded where the body exists.** The new `SentLog` ring is written from `ModelManager::relayStream`, between `Harness::payload` and `Harness::auth` â€” the only point where the assembled JSON exists and the endpoint has not yet had a `?key=` appended. Each record keeps the harness family, model, endpoint, message roles, the schema names that went out, `tool_choice`, the byte size, and the whole body.
 
 **`GET /sent`, `DELETE /sent`.** A route beside `/exec`, gated like every other endpoint. GET answers the ring newest first; DELETE empties it. The browser gets `api.sent()` and `api.clearSent()`.
 
-**A SENT tab, with the badge that answers the question.** Config → TRACE's fourth tab lists the last 20 requests and shows **12 tools** or **no tools** per row, names the schemas, and opens the pretty-printed body under each entry. The empty case is red on purpose: a turn that was supposed to call tools and posted none is a different bug from a model that ignored them, and this is the only place the two are distinguishable.
+**A SENT tab, with the badge that answers the question.** Config â†’ TRACE's fourth tab lists the last 20 requests and shows **12 tools** or **no tools** per row, names the schemas, and opens the pretty-printed body under each entry. The empty case is red on purpose: a turn that was supposed to call tools and posted none is a different bug from a model that ignored them, and this is the only place the two are distinguishable.
 
 **Bounded, and no secrets.** 20 entries, each body cut at 120 000 characters with a `truncated` flag, written through a temp file and `rename()` so a reader never sees half a record; a corrupt file reads as empty rather than fataling. The API key is never in the body, and the endpoint's query string is stripped before it is stored.
 
@@ -974,31 +978,31 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🔧 A guessed tool call still runs *(`VERSION` 383, cache-buster v382 → v383)*
+## ðŸ”§ A guessed tool call still runs *(`VERSION` 383, cache-buster v382 â†’ v383)*
 
-*2026-11-08. An LM Studio model on the Ollama harness + JSON object protocol calls tools through the prompt dialect, and its failures were spelling failures. Asked to name its format it answered "in OLLAMA … `<|begin|>{"tool":…}<|end|>`", then called `list_agent` for `list_agents`. Both were refused — the registry check was exact and nothing claimed the `<|begin|>` wrapper — so a turn that meant to run a tool ended as prose. Same reply, same tools, one repo away from working.*
+*2026-11-08. An LM Studio model on the Ollama harness + JSON object protocol calls tools through the prompt dialect, and its failures were spelling failures. Asked to name its format it answered "in OLLAMA â€¦ `<|begin|>{"tool":â€¦}<|end|>`", then called `list_agent` for `list_agents`. Both were refused â€” the registry check was exact and nothing claimed the `<|begin|>` wrapper â€” so a turn that meant to run a tool ended as prose. Same reply, same tools, one repo away from working.*
 
-**Names are repaired.** `repairToolName` folds case, separators and a stray `()`; drops a `functions.` / `tools.` prefix; accepts a plural or singular `s`; then allows a bounded edit distance — one character from five letters, two from ten — and only when the best match is unique. It is used everywhere a name was compared to `TOOL_REGISTRY`: the JSON form, Anthropic's `<invoke>`, the `function=` tag dialect and the native blocks. Exact names still win first, and an invented tool (`search_web`) still fails, because a wrong tool is worse than a clear refusal.
+**Names are repaired.** `repairToolName` folds case, separators and a stray `()`; drops a `functions.` / `tools.` prefix; accepts a plural or singular `s`; then allows a bounded edit distance â€” one character from five letters, two from ten â€” and only when the best match is unique. It is used everywhere a name was compared to `TOOL_REGISTRY`: the JSON form, Anthropic's `<invoke>`, the `function=` tag dialect and the native blocks. Exact names still win first, and an invented tool (`search_web`) still fails, because a wrong tool is worse than a clear refusal.
 
-**Wrappers are read.** `parseFenceToolCall` accepts `<|begin|> … <|end|>`, `<begin> … </begin>` and `<|tool|> … <|/tool|>` with the same three bodies the native parser takes — whole JSON, `name{…}`, bare name — and the fence joined `TOOL_BLOCK_PATTERNS`, so `stripToolCall` and the multi-call span walker remove it from the transcript once it has run. Prose inside a fence resolves to no tool and is left alone.
+**Wrappers are read.** `parseFenceToolCall` accepts `<|begin|> â€¦ <|end|>`, `<begin> â€¦ </begin>` and `<|tool|> â€¦ <|/tool|>` with the same three bodies the native parser takes â€” whole JSON, `name{â€¦}`, bare name â€” and the fence joined `TOOL_BLOCK_PATTERNS`, so `stripToolCall` and the multi-call span walker remove it from the transcript once it has run. Prose inside a fence resolves to no tool and is left alone.
 
 **Nothing else moved.** No request shape, dialect, prompt block or tool list changed: this only reads a reply the app used to discard. `tests/js/toolCalls.test.mjs` gained twelve cases for the names and wrappers, including the invented-name and prose-fence negatives.
 
 ---
 
-## 💬 The release notes finally describe the message log *(`VERSION` 382, cache-buster v381 → v382)*
+## ðŸ’¬ The release notes finally describe the message log *(`VERSION` 382, cache-buster v381 â†’ v382)*
 
 *2026-11-08. v380 taught every hop to carry its words and made Messages the whole conversation; v381 recorded the map's ASK box. Both shipped, and neither was described where a reader looks: the What's New entry had been narrowed to the v381 slice, and the trace section still claimed the log held "300 exchanges" of what "agents actually said to each other".*
 
 **One entry, the feature it really is.** What's new now covers the message log as it behaves -- prompt / delegation / reply text on the beams, Messages as the full transcript with **All communication** / **Agent to agent**, three doors in (3D card, 2D metrics modal, Comms tab), the ASK box and its failed asks, the 8 000-character / 600-hop bounds -- and states plainly that the card's metrics were not traded away for any of it.
 
-**Stale claims corrected.** The **COMMS** bullet under *Metrics & Run trace* under-reported both the size (300 → 600 entries, plus the per-entry cap) and the scope (agent-to-agent → prompts, delegations and replies included); the per-agent bullet now names the filter and the 2D door. The feature table's *Conversations, in words* row gained the ASK box and the failed ask.
+**Stale claims corrected.** The **COMMS** bullet under *Metrics & Run trace* under-reported both the size (300 â†’ 600 entries, plus the per-entry cap) and the scope (agent-to-agent â†’ prompts, delegations and replies included); the per-agent bullet now names the filter and the 2D door. The feature table's *Conversations, in words* row gained the ASK box and the failed ask.
 
 **No code moved.** Every number here was already true at v381; this release makes the documentation match it, and carries its own `VERSION` so the update check can actually deliver the corrected pages.
 
 ---
 
-## 🗨️ The map's ASK box is part of the conversation *(`VERSION` 381, cache-buster v380 → v381)*
+## ðŸ—¨ï¸ The map's ASK box is part of the conversation *(`VERSION` 381, cache-buster v380 â†’ v381)*
 
 *2026-11-08. `askAgentInline` is deliberately outside the transcript, so its hops were announced to the graph and then forgotten: the question you typed on the map was the one exchange the Messages drawer could not show, even after the log learned to hold prompts and replies.*
 
@@ -1008,25 +1012,25 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 💬 Every message keeps its words, and Messages reads the whole conversation *(`VERSION` 380, cache-buster v379 → v380)*
+## ðŸ’¬ Every message keeps its words, and Messages reads the whole conversation *(`VERSION` 380, cache-buster v379 â†’ v380)*
 
 *2026-11-08. The map drew a line for every hop and could name the two agents at its ends, then showed nothing beneath the row. Only `ask_agent` / `tell_agent` / a mailbox ping were recorded with text; the three hops that make up almost every turn were emitted bare, so the card's list was a list of things that happened without any of the things that were said.*
 
-**The words were already in scope.** `chat.js` dispatches with the prompt in hand, and `_commitAgentReply` holds the answer. `flow:start` now carries your prompt, `flow:delegate` carries the same task a coordinator hands down, and `flow:respond` carries the reply — through `topology.js`'s `_flowRespond(from, text)` and into the beam, so the 2D hover tooltip (`A → B: …`) stopped being mute too. Each hop is cut at 8 000 characters (`comms.clipText`), because a prompt can be a pasted file and the history ring is bounded.
+**The words were already in scope.** `chat.js` dispatches with the prompt in hand, and `_commitAgentReply` holds the answer. `flow:start` now carries your prompt, `flow:delegate` carries the same task a coordinator hands down, and `flow:respond` carries the reply â€” through `topology.js`'s `_flowRespond(from, text)` and into the beam, so the 2D hover tooltip (`A â†’ B: â€¦`) stopped being mute too. Each hop is cut at 8 000 characters (`comms.clipText`), because a prompt can be a pasted file and the history ring is bounded.
 
-**One log, the whole conversation.** `commsLog.js` gains `prompt`, `delegate` and `reply` beside `ask` / `tell` / `ping`, recorded from the same call sites, with the per-entry text capped at 8 000 characters and `MAX_EXCHANGES` raised 300 → 600 so a turn's own traffic cannot push out the questions being debugged. Still in memory, page-load only: nothing new reaches `storage/`.
+**One log, the whole conversation.** `commsLog.js` gains `prompt`, `delegate` and `reply` beside `ask` / `tell` / `ping`, recorded from the same call sites, with the per-entry text capped at 8 000 characters and `MAX_EXCHANGES` raised 300 â†’ 600 so a turn's own traffic cannot push out the questions being debugged. Still in memory, page-load only: nothing new reaches `storage/`.
 
-**Everything goes in Messages, and every metric stays where it was.** The 3D card keeps its latency sparkline, tokens, tool calls and recent hops untouched; its **Messages →** button opens the drawer, which now lists the agent's whole side of the conversation with the full text — and an **All communication** / **Agent to agent** filter for the narrower view it used to answer alone. The 2D agent metrics modal gained the same **Messages →** button, so Classic is no longer the one map with no way to read what was said, and Config → TRACE's Comms tab shows the same log for everyone.
+**Everything goes in Messages, and every metric stays where it was.** The 3D card keeps its latency sparkline, tokens, tool calls and recent hops untouched; its **Messages â†’** button opens the drawer, which now lists the agent's whole side of the conversation with the full text â€” and an **All communication** / **Agent to agent** filter for the narrower view it used to answer alone. The 2D agent metrics modal gained the same **Messages â†’** button, so Classic is no longer the one map with no way to read what was said, and Config â†’ TRACE's Comms tab shows the same log for everyone.
 
 **Tests.** `tests/js/commsLog.test.mjs`: the three new kinds, one agent's whole conversation newest-first, `forAgent` across a prompt / delegation / reply, the text cap (exactly at the cap, and a truncated entry that says so), `clipText` on a missing value, the new bound, and change events for a reply recorded after the fact.
 
 ---
 
-## 📄 The CHANGELOG stops dating itself *(`VERSION` 379, cache-buster v378 → v379)*
+## ðŸ“„ The CHANGELOG stops dating itself *(`VERSION` 379, cache-buster v378 â†’ v379)*
 
 *2026-11-08. Documentation only. The CHANGELOG header had hard-coded the claim that the cache-buster was v348, which stopped being true thirty releases ago -- a reader following it would have looked for the wrong number in `store.js`.*
 
-**A pointer, not a number.** The header now names where the buster lives -- `ui/js/store.js` → `APP_VERSION`, kept equal to `VERSION` at the repo root -- and leaves the actual value to each entry's heading. Nothing left in the prose can drift out of step with the code.
+**A pointer, not a number.** The header now names where the buster lives -- `ui/js/store.js` â†’ `APP_VERSION`, kept equal to `VERSION` at the repo root -- and leaves the actual value to each entry's heading. Nothing left in the prose can drift out of step with the code.
 
 **Released, not merely committed.** The update check compares `VERSION`, so a docs-only change with no bump is invisible to it: the tree would carry the correction while the app still reported being current. This entry exists so the fix, and the v377/v378 README work already behind it, actually arrive when you press update.
 
@@ -1034,7 +1038,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🎛️ The Reasoning switch follows a hand-toggled panel *(`VERSION` 378, cache-buster v377 → v378)*
+## ðŸŽ›ï¸ The Reasoning switch follows a hand-toggled panel *(`VERSION` 378, cache-buster v377 â†’ v378)*
 
 *2026-11-08. The switch could set the Reasoning preference but not read it back: opening or closing a message panel while Config was on screen left the dropdown describing the old choice until the section was reopened.*
 
@@ -1046,11 +1050,11 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🎛️ A Reasoning switch in Config → Interface *(`VERSION` 377, cache-buster v376 → v377)*
+## ðŸŽ›ï¸ A Reasoning switch in Config â†’ Interface *(`VERSION` 377, cache-buster v376 â†’ v377)*
 
 *2026-11-08. The panel remembered clicks, so the only way to set it was to open or close a message and hope the next reply followed -- no way to say "always open" on purpose, and no way back to the length rule once a click had been made.*
 
-**Three choices, one key.** Config → Interface now carries **Reasoning panels**: *Auto* (open at 400+ characters of reasoning), *Always open*, or *Always collapsed*. It writes the same `settings.reasoningOpen` the panels read -- true, false, or the string `'auto'` -- so a hand click and the switch cannot disagree. The change applies to the next reply with no SAVE, is persisted with the rest of the settings, and says what it did in a toast.
+**Three choices, one key.** Config â†’ Interface now carries **Reasoning panels**: *Auto* (open at 400+ characters of reasoning), *Always open*, or *Always collapsed*. It writes the same `settings.reasoningOpen` the panels read -- true, false, or the string `'auto'` -- so a hand click and the switch cannot disagree. The change applies to the next reply with no SAVE, is persisted with the rest of the settings, and says what it did in a toast.
 
 **Auto is a real choice.** `reasoningOpenByDefault()` treats `'auto'` like an absent preference, so picking Auto restores the length rule after a pinned one; a click on any panel still writes a boolean, which is the "remember what I did" half.
 
@@ -1058,19 +1062,19 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧠 The Reasoning box remembers you, and opens when it has a lot to say *(`VERSION` 376, cache-buster v375 → v376)*
+## ðŸ§  The Reasoning box remembers you, and opens when it has a lot to say *(`VERSION` 376, cache-buster v375 â†’ v376)*
 
 *2026-11-08. Every reply's Reasoning panel started collapsed, so a model that thought at length hid it all behind a click, and the one time an operator opened it the next message was shut again.*
 
 **Remembered.** `MessageRenderer._renderReasoning()` reads `settings.reasoningOpen` and the live streaming block in `chat.js` reads the same key, so the state is one preference rather than two behaviours. It is written from a click on the `<summary>`, read back on the next tick because the browser applies the toggle as the click's default action, and persisted with the rest of the settings. The app's own opening never writes it, so a default cannot look like a choice.
 
-**Opens itself until then.** `reasoningOpenByDefault()` in `ui/js/utils.js` returns the saved boolean when there is one, and otherwise opens only a trace of `REASONING_OPEN_CHARS` (400) or more. The live block follows the same rule on its first paint, and later paints only add text — a panel opened or closed mid-stream is not flipped back by the next token.
+**Opens itself until then.** `reasoningOpenByDefault()` in `ui/js/utils.js` returns the saved boolean when there is one, and otherwise opens only a trace of `REASONING_OPEN_CHARS` (400) or more. The live block follows the same rule on its first paint, and later paints only add text â€” a panel opened or closed mid-stream is not flipped back by the next token.
 
 **Tests and docs.** `tests/js/reasoningPanel.test.mjs` covers the threshold exactly, both remembered states, whitespace and empty input. README: the **What's new** entry for v376 (replacing v375, whose shape work stays in the *Reasoning, in its own box* row) and that row now names the remembering and the automatic opening.
 
 ---
 
-## 🧠 Thoughts get their own box, whatever shape the runner speaks *(`VERSION` 375, cache-buster v374 → v375)*
+## ðŸ§  Thoughts get their own box, whatever shape the runner speaks *(`VERSION` 375, cache-buster v374 â†’ v375)*
 
 *2026-11-08. Reasoning reached the transcript only when a provider happened to use OpenAI's field. Google's `thought: true` parts were joined into the answer, a runner's own reasoning blocks fed a panel nothing filled, and several blocks ran together as one sentence.*
 
@@ -1082,35 +1086,35 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🧩 A runner's own reply envelope no longer arrives as JSON *(`VERSION` 374, cache-buster v373 → v374)*
+## ðŸ§© A runner's own reply envelope no longer arrives as JSON *(`VERSION` 374, cache-buster v373 â†’ v374)*
 
-*2026-11-08. Some runners answer `{output:[{type:"message",content:"…"}],stats:{…}}` instead of the OpenAI shape. Nothing recognised it, so the raw-body fallback handed the whole envelope to the tool loop and the JSON was posted into the transcript as the agent's reply.*
+*2026-11-08. Some runners answer `{output:[{type:"message",content:"â€¦"}],stats:{â€¦}}` instead of the OpenAI shape. Nothing recognised it, so the raw-body fallback handed the whole envelope to the tool loop and the JSON was posted into the transcript as the agent's reply.*
 
 **The shape.** `Harness::content()`, `usage()` and `reasoning()` read an `output` block list: text blocks (`message` / `output_text` / `text`) become the answer, a block whose content is itself an array of `{type:"text"}` parts is joined, `reasoning` / `thinking` blocks become the thinking panel, and `stats` (`input_tokens`, `total_output_tokens`) become the token counts. The browser copy adds the same three readers to `ui/js/harness.js` (`outputText`, `outputUsage`), used by the direct-call parser, the stream parser and the reasoning/usage parsers, so the shape is understood whether it arrives as one body or as stream frames.
 
-**Not the answer.** A `reasoning`-only envelope reports no content rather than its thinking, so the loop does not take the model's private notes for its reply — the same rule the other shapes already follow. The raw-body fallback stays: an unrecognised body is still shown rather than swallowed, which is what made this bug visible.
+**Not the answer.** A `reasoning`-only envelope reports no content rather than its thinking, so the loop does not take the model's private notes for its reply â€” the same rule the other shapes already follow. The raw-body fallback stays: an unrecognised body is still shown rather than swallowed, which is what made this bug visible.
 
 `tests/php/harness.test.php` and `tests/js/harness.test.mjs` cover the envelope: the message block, a joined block array, a reasoning block kept out of the content, the `stats` counts, and an empty or absent `output` list returning nothing. Both suites green: `node tests/js/run.mjs` and `php tests/php/run.php`.
 
-**Docs.** README: the **What's new** entry for v374; the *Auto-fitting harness* row now credits reading the reply back; a new bullet under **The provider harness** puts reply parsing in the harness beside the per-family quirks; and **Troubleshooting** gains *A reply arrives as raw JSON* — what the body means, that the envelope is read from v374, and that the browser bundle has to reload because the parsers ship in `ui/js/harness.js`. The v369–v373 work got its **What's inside** rows in the same pass: *Verified calls* rewritten to name Auto / Always / Never and `tls.ca_bundle`, new *Pinned certificates* and *Expiry warnings* rows, and the limiter row recording that a cancelled or early call returns its slot. The **Security** section already carried the certificate and pin bullets, which were checked against that text rather than assumed.
+**Docs.** README: the **What's new** entry for v374; the *Auto-fitting harness* row now credits reading the reply back; a new bullet under **The provider harness** puts reply parsing in the harness beside the per-family quirks; and **Troubleshooting** gains *A reply arrives as raw JSON* â€” what the body means, that the envelope is read from v374, and that the browser bundle has to reload because the parsers ship in `ui/js/harness.js`. The v369â€“v373 work got its **What's inside** rows in the same pass: *Verified calls* rewritten to name Auto / Always / Never and `tls.ca_bundle`, new *Pinned certificates* and *Expiry warnings* rows, and the limiter row recording that a cancelled or early call returns its slot. The **Security** section already carried the certificate and pin bullets, which were checked against that text rather than assumed.
 
-**The feature list absorbs the history.** **What's new** now holds only the current release: the v361–v373 entries are gone, and every feature they described was moved into the ✨ **What's inside** table or the 🔐 **Security** section, where it stays as reference instead of scrolling out of sight. New rows: *Typing into programs* (`window_type`, Windows 11's packaged Notepad, the wait for a slow starter, the focus check, its own Ask / Allow / Deny), *Background commands* (`exec_start` / `exec_poll` / `exec_kill`), *One name, the whole roster* (`"ALL"` on `ask_agent` / `tell_agent`), *Scroll to latest* and *Prompt rail*. Folded into rows that already covered the ground: *Real tools* (timeouts that end the process, the argv shapes models write, approvals that resume the agent), *Self-updates* (asked again within the hour, offered on every load until installed), *Export / import* (a name you choose, one checkbox per section, a missing section left alone, this copy's own token kept) and *Mobile-first* (the composer riding above the keyboard, an **Allow** choice that sticks). Security gained *A restore cannot hand the gate away* (§1) and *Background commands pass the same bouncer* (§3). A scan for v361–v369 outside the current entry returns zero, so nothing was deleted without landing somewhere.
+**The feature list absorbs the history.** **What's new** now holds only the current release: the v361â€“v373 entries are gone, and every feature they described was moved into the âœ¨ **What's inside** table or the ðŸ” **Security** section, where it stays as reference instead of scrolling out of sight. New rows: *Typing into programs* (`window_type`, Windows 11's packaged Notepad, the wait for a slow starter, the focus check, its own Ask / Allow / Deny), *Background commands* (`exec_start` / `exec_poll` / `exec_kill`), *One name, the whole roster* (`"ALL"` on `ask_agent` / `tell_agent`), *Scroll to latest* and *Prompt rail*. Folded into rows that already covered the ground: *Real tools* (timeouts that end the process, the argv shapes models write, approvals that resume the agent), *Self-updates* (asked again within the hour, offered on every load until installed), *Export / import* (a name you choose, one checkbox per section, a missing section left alone, this copy's own token kept) and *Mobile-first* (the composer riding above the keyboard, an **Allow** choice that sticks). Security gained *A restore cannot hand the gate away* (Â§1) and *Background commands pass the same bouncer* (Â§3). A scan for v361â€“v369 outside the current entry returns zero, so nothing was deleted without landing somewhere.
 
 ---
 
-## ⚠️ A pinned certificate warns before it lapses *(`VERSION` 373, cache-buster v372 → v373)*
+## âš ï¸ A pinned certificate warns before it lapses *(`VERSION` 373, cache-buster v372 â†’ v373)*
 
 *2026-11-07. Pinning is only half the job: when the server renews its certificate the pin stops matching, and an expired one fails every verified call with an error nobody connects to last year's decision.*
 
-**The warning.** `Tls::pins()` reports `days_left` and `expiring` (inside `Tls::EXPIRY_WARN_DAYS`, 30 days). The TLS list shows `EXPIRES IN n DAYS (date)` in place of `valid to`, coloured like the expired row, and boot raises one notification per certificate that is expired or inside the window — naming the host, the date, and what fixes it (re-pin after the server renews). Expired and expiring are separate flags: a certificate that already ran out is `expired`, never both, and one whose expiry is unknown neither counts down nor warns.
+**The warning.** `Tls::pins()` reports `days_left` and `expiring` (inside `Tls::EXPIRY_WARN_DAYS`, 30 days). The TLS list shows `EXPIRES IN n DAYS (date)` in place of `valid to`, coloured like the expired row, and boot raises one notification per certificate that is expired or inside the window â€” naming the host, the date, and what fixes it (re-pin after the server renews). Expired and expiring are separate flags: a certificate that already ran out is `expired`, never both, and one whose expiry is unknown neither counts down nor warns.
 
-**Docs.** README: the **What's new** entry for v369–v373 (verification, pinning, the list, this warning, the limiter's returned slot and the per-agent harness), three new **What's inside** rows, and two bullets in the **Security** section's network-egress block covering what is verified, what Auto exempts, and what a pin actually is.
+**Docs.** README: the **What's new** entry for v369â€“v373 (verification, pinning, the list, this warning, the limiter's returned slot and the per-agent harness), three new **What's inside** rows, and two bullets in the **Security** section's network-egress block covering what is verified, what Auto exempts, and what a pin actually is.
 
 `tests/php/tls.test.php` grew the countdown cases: ten days out is flagged with its day count, four months out is not, one day past the window is not, an expired certificate is expired rather than expiring, and an unknown expiry reports neither. Both suites green: `node tests/js/run.mjs` and `php tests/php/run.php`.
 
 ---
 
-## 📋 Pinned certificates are listed, with their dates and a way out *(`VERSION` 372, cache-buster v371 → v372)*
+## ðŸ“‹ Pinned certificates are listed, with their dates and a way out *(`VERSION` 372, cache-buster v371 â†’ v372)*
 
 *2026-11-07. Pinning wrote a file and said nothing more about it -- no way to see what was trusted, and no way to stop trusting it.*
 
@@ -1124,7 +1128,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🔏 The app reads a host's certificate and can trust exactly that *(`VERSION` 371, cache-buster v370 → v371)*
+## ðŸ” The app reads a host's certificate and can trust exactly that *(`VERSION` 371, cache-buster v370 â†’ v371)*
 
 *2026-11-07. Turning verification on left a self-signed LAN endpoint refusing to connect unless the operator assembled a CA bundle by hand. The app does that now.*
 
@@ -1136,7 +1140,7 @@ Quick start now sits directly under Contents, before *What's inside*. The Labs s
 
 ---
 
-## 🔒 Model calls check the certificate again, and plain http still works *(`VERSION` 370, cache-buster v369 → v370)*
+## ðŸ”’ Model calls check the certificate again, and plain http still works *(`VERSION` 370, cache-buster v369 â†’ v370)*
 
 *2026-11-07. Every outbound model and speech call accepted any certificate. That is one setting now, defaulting to something safe, with an explicit way to turn it off.*
 
@@ -1150,7 +1154,7 @@ New `tests/php/tls.test.php` pins the policy: mode parsing, what counts as local
 
 ---
 
-## ⏱️ A stopped call gives its slot back, and every agent can pin its API harness *(`VERSION` 369, cache-buster v368 → v369)*
+## â±ï¸ A stopped call gives its slot back, and every agent can pin its API harness *(`VERSION` 369, cache-buster v368 â†’ v369)*
 
 *2026-11-07. The limiter's own claims were what could jam it, and the universal harness now takes an order from the operator instead of only a guess.*
 
@@ -1164,7 +1168,7 @@ Both suites green after the bump: `node tests/js/run.mjs` and `php tests/php/run
 
 ---
 
-## 🔧 Typing finds Store copies, waits for slow starters, checks the focus *(`VERSION` 368, cache-buster v367 → v368)*
+## ðŸ”§ Typing finds Store copies, waits for slow starters, checks the focus *(`VERSION` 368, cache-buster v367 â†’ v368)*
 
 *2026-11-07. The first `window_type` could not see Windows 11's Notepad: it runs from
 a WindowsApps path nobody configured. Now the match crosses that one alias boundary by
@@ -1177,7 +1181,7 @@ proving the Store match and the surviving twin rule in `tests/php/programs.test.
 
 ---
 
-## ⌨️ Watch it type: `window_type` sends keystrokes into a real window *(`VERSION` 367, cache-buster v366 → v367)*
+## âŒ¨ï¸ Watch it type: `window_type` sends keystrokes into a real window *(`VERSION` 367, cache-buster v366 â†’ v367)*
 
 *2026-11-07. Opening a program was half the trick -- now an agent can type into it, live on screen, plus the Config path fix that got lost behind a bad tool call.*
 
@@ -1197,7 +1201,7 @@ send skips itself headless, where no window can come forward).
 
 ---
 
-## 📣 One name reaches the whole roster: `ask_agent` / `tell_agent` take `"ALL"` *(`VERSION` 366, cache-buster v365 → v366)*
+## ðŸ“£ One name reaches the whole roster: `ask_agent` / `tell_agent` take `"ALL"` *(`VERSION` 366, cache-buster v365 â†’ v366)*
 
 *2026-11-07. Briefing every agent meant repeating the same call once per agent, and the Config path agents quoted never matched the Config on screen.*
 
@@ -1212,17 +1216,17 @@ line all document the keyword. New `tests/js/commsAll.test.mjs` covers the
 fan-out, the exact-name precedence, the empty roster and single-agent
 regression.
 
-**The Config path agents quote is the real one.** Every pointer said *Config →
-Shell access → …*, but Shell access is a subsection *inside* the Permissions
+**The Config path agents quote is the real one.** Every pointer said *Config â†’
+Shell access â†’ â€¦*, but Shell access is a subsection *inside* the Permissions
 card -- which is why it was never found where quoted. `window_list`, both
-Sandbox refusal messages, and the README now say *Config → Permissions →
-Shell access → …* (`tests/php/sandbox.test.php` updated to match).
+Sandbox refusal messages, and the README now say *Config â†’ Permissions â†’
+Shell access â†’ â€¦* (`tests/php/sandbox.test.php` updated to match).
 
 Both suites green after the bump: JS and PHP runners all passing.
 
 ---
 
-## 🔔 The update prompt nags every load, and notices within the hour *(`VERSION` 365, cache-buster v364 → v365)*
+## ðŸ”” The update prompt nags every load, and notices within the hour *(`VERSION` 365, cache-buster v364 â†’ v365)*
 
 *2026-11-07. Two behaviors that kept releases invisible, and the version bump that carries the repair.*
 
@@ -1243,12 +1247,12 @@ TTL-boundary cases in `tests/php/update.test.php` covering the shorter window sy
 
 ---
 
-## ⬇️ Scroll-to-latest button and a rail of your prompts *(`VERSION` 364, cache-buster v363 → v364)*
+## â¬‡ï¸ Scroll-to-latest button and a rail of your prompts *(`VERSION` 364, cache-buster v363 â†’ v364)*
 
 *2026-11-07. The transcript stops being a one-way ride, and the version bump that carries it.*
 
 **A scroll-to-latest button that respects the toggle.** With Auto Scroll off, scrolling up
-now reveals a circular `∨` button bottom-center of the chat box, parked above the composer.
+now reveals a circular `âˆ¨` button bottom-center of the chat box, parked above the composer.
 Clicking it jumps to the latest message and follows new output until you scroll up again --
 the temporary follow survives reaching the bottom and dies only on the next scroll up. As a
 side effect worth having, scrolling up with Auto Scroll *on* now pauses the follow instead of
@@ -1264,7 +1268,7 @@ Both suites green after the bump: PHP and JS runners all passing, including new
 
 ---
 
-## 🛠️ Agent tool calls and shell execution that hold up *(`VERSION` 363, cache-buster v362 → v363)*
+## ðŸ› ï¸ Agent tool calls and shell execution that hold up *(`VERSION` 363, cache-buster v362 â†’ v363)*
 
 *2026-11-07. Every item on the harness audit, and the version bump that carries it.*
 
@@ -1303,7 +1307,7 @@ Both suites green after the bump: PHP and JS runners all passing, including new
 
 ---
 
-## 📦 Backups in parts: named files, chosen sections, restores that land anywhere *(`VERSION` 362, cache-buster v361 → v362)*
+## ðŸ“¦ Backups in parts: named files, chosen sections, restores that land anywhere *(`VERSION` 362, cache-buster v361 â†’ v362)*
 
 *2026-11-07. The backup stops being all-or-nothing, and the version bump that carries it.*
 
@@ -1331,26 +1335,26 @@ changed (two new dialogs, a new picker module), so both numbers moved together.
 
 ---
 
-## 📱 The keyboard stops eating what you type, and Allow finally sticks *(`VERSION` 361, cache-buster v360 → v361)*
+## ðŸ“± The keyboard stops eating what you type, and Allow finally sticks *(`VERSION` 361, cache-buster v360 â†’ v361)*
 
 *2026-11-07. Two small fixes reported from a phone, carried by the version bump below them.*
 
 **Fullscreen + keyboard: the composer hid behind the keys.** On mobile the on-screen keyboard opens
-*over* the page instead of resizing it — and in fullscreen (`documentElement.requestFullscreen`) it
+*over* the page instead of resizing it â€” and in fullscreen (`documentElement.requestFullscreen`) it
 always overlays, because there is no browser chrome left to shrink. The fixed chat input then sat
 behind the keyboard and you typed blind. New `ui/js/keyboard.js` watches `window.visualViewport`
 (the part of the page the keyboard is not covering) and, while the keyboard is open, shrinks `.app`
 to the visible strip so the composer rides above it, exposes the covered height as `--kb-height`
-(which the composer and dialog padding absorb), and scrolls the focused field into view — pinning
+(which the composer and dialog padding absorb), and scrolls the focused field into view â€” pinning
 the chat to the newest message while you type. Changes under ~120px are ignored so the URL bar
 showing or hiding never resizes the app, and without a touch keyboard `--kb-height` stays 0, so
 the desktop is untouched. The viewport meta also gains `interactive-widget=resizes-content`, and
 the wiring is an isolated `safeInit`, so it cannot break boot.
 
 **Opening/Closing Programs snapped back to Ask.** The Permissions section renders six per-tool
-Allow/Ask/Deny dropdowns, but the change handler only listened to four of them — `window_open`
+Allow/Ask/Deny dropdowns, but the change handler only listened to four of them â€” `window_open`
 and `window_close` had no listener at all. Picking Allow changed the dropdown on screen and wrote
-nothing, so the next re-render read the still-unchanged setting (`ask`) and flipped it back —
+nothing, so the next re-render read the still-unchanged setting (`ask`) and flipped it back â€”
 exactly the reported symptom. Both keys are now in the handler loop; the enforcement side already
 read them generically, so nothing else had to change.
 
@@ -1359,7 +1363,7 @@ JS `10 files, 10 passed, 0 failed, 296 assertions`.
 
 ---
 
-## ⚡ Fourteen test files, four at a time: the fresh-copy check drops from 41 seconds to 17 *(tests only — `VERSION` 360 and the cache-buster are unchanged)*
+## âš¡ Fourteen test files, four at a time: the fresh-copy check drops from 41 seconds to 17 *(tests only â€” `VERSION` 360 and the cache-buster are unchanged)*
 
 *2026-10-27. The suite that checks the app, not the app: no runtime file changed except two inert seams, and no
 version or cache-buster moved.*
@@ -1367,26 +1371,26 @@ version or cache-buster moved.*
 **How it turned up.** Not from anyone complaining about the suite: from the phase breakdown and the per-file
 timings added in the entry below, which put **26 of the PHP half's 39.4s in two files** (`programs.test.php`
 ~14s, `setupToken.test.php` ~13s) and showed that the servers everyone suspected of being the cost were about two
-seconds *between them*. That same measurement produced the note the entry below ends on — the next lever is a
+seconds *between them*. That same measurement produced the note the entry below ends on â€” the next lever is a
 parallel runner, deliberately **not** taken, because "several files bind loopback ports and two of them write
 `storage/exec.log`". This entry is that deferral being taken, and that one sentence turned out to be the complete
 list of what had to be fixed first.
 
-**Finding the hazards, rather than trusting the note.** Two greps over `tests/php` — who starts a server, and who
-writes the install's `storage/` — turned the sentence into a list of three and a list of two: three files carried
+**Finding the hazards, rather than trusting the note.** Two greps over `tests/php` â€” who starts a server, and who
+writes the install's `storage/` â€” turned the sentence into a list of three and a list of two: three files carried
 their own copy of the same port helper (`guards`, `apacheGuards`, `secrets`), and two files wrote `exec.log`
 (`programs.test.php` and `sandbox.test.php`), each of them remembering its size on entry and truncating it back on
 the way out. Nothing else in the suite touches either one: the other `proc_open` callers speak stdio (the MCP
 mock), run the recovery script, or spawn nothing at all, and no test binds a fixed port number anywhere. So the
-hazard list in that note was accurate and also complete — which is the only reason the rest of this could be
+hazard list in that note was accurate and also complete â€” which is the only reason the rest of this could be
 mechanical.
 
 **The suite was never slow because of its work. It was slow because it waited.** Fourteen files, each its own
 process, run one after another: 39.4s of PHP, of which two files were 26s while twelve others sat runnable
 behind them. They now run **four at a time** (`--jobs N`, and `--jobs 1` for the old behaviour), and the PHP
-half is what the slowest single file costs: **15.4–16.1s**, measured over six full fresh-copy checks that
-came in at **16.8–17.5s** end to end — each of them green, with the same `840 assertions, 5 skipped` and the
-same `296 assertions` in JS. The whole check went 41.0s → 16.8–17.5s, and nothing was weakened to get there:
+half is what the slowest single file costs: **15.4â€“16.1s**, measured over six full fresh-copy checks that
+came in at **16.8â€“17.5s** end to end â€” each of them green, with the same `840 assertions, 5 skipped` and the
+same `296 assertions` in JS. The whole check went 41.0s â†’ 16.8â€“17.5s, and nothing was weakened to get there:
 the same fourteen files ran the same assertions from the same fixtures.
 
 **Two hazards had to be designed away first, and both were real rather than theoretical.** The note in this
@@ -1397,35 +1401,35 @@ two of them write `storage/exec.log`", and that was indeed the whole reason:
 own copy of the same helper: ask the OS for `tcp://127.0.0.1:0`, read the number, close the socket, then
 start a server on it. Serially that is correct and always was, because there is only ever one server. The
 instant two files run at once it is a race by construction: the number goes back in the pool the moment the
-socket closes, so both files can be handed the same one — and one of them is then binding an occupied port
+socket closes, so both files can be handed the same one â€” and one of them is then binding an occupied port
 or, worse, sending requests to **the other file's server**. There is now one helper,
 [tests/php/free-port.php](tests/php/free-port.php), and it does not ask for any free port: the walk starts at
 `21000 + pid % 4000`, below the OS's own ephemeral range, and takes the first port that binds, so two files
-in the same run start from different numbers. It cannot make the handover atomic — nothing can — so every
+in the same run start from different numbers. It cannot make the handover atomic â€” nothing can â€” so every
 caller keeps the retry loop it already had.
 - **The log each file writes.** `exec.log` (Sandbox) and `mcp.log` (McpServer) are appends in the install's
 `storage/`, and two files write each. The dangerous one is `exec.log`: `programs.test.php` and
 `sandbox.test.php` each remember its size on entry and **truncate it back on the way out**, which is tidy when
-you are the only writer and is a deletion of another file's lines the moment you are not — while that other
+you are the only writer and is a deletion of another file's lines the moment you are not â€” while that other
 file is part-way through reading its own audit lines back. `Sandbox::logDir()` now honours `ROUTER_LOG_DIR`,
 and the runner sets it to a directory per file, so a file's trace is its own. The two tests ask the code for
 the path (`Sandbox::execLogPath()`) rather than rebuilding `dirname(__DIR__, 2) . '/storage/exec.log'`
 themselves, which is how they would otherwise have gone on asserting against a file nobody was writing.
 
-**Why this is a security change and not only a fast one.** `storage/exec.log` is the audit trail — the two-phase
-`run=… phase=start|end` record the README's **§22** rests on, and the answer to *"did anything actually run?"*.
+**Why this is a security change and not only a fast one.** `storage/exec.log` is the audit trail â€” the two-phase
+`run=â€¦ phase=start|end` record the README's **Â§22** rests on, and the answer to *"did anything actually run?"*.
 Running the test suite used to write into that trail and then **truncate it back to the size it found**, and two
 files doing that at the same time means each can delete the other's lines while that other file is reading them
 back. A test run could therefore be mistaken for real commands, and a real record could be lost under one. The
-suite now writes its trace to a directory of its own, and `ROUTER_LOG_DIR` — read from the **process
-environment**, so no request, header, query string or model can set it — is what points it there. The port half is
+suite now writes its trace to a directory of its own, and `ROUTER_LOG_DIR` â€” read from the **process
+environment**, so no request, header, query string or model can set it â€” is what points it there. The port half is
 the same story in miniature: every server the suite starts is bound to **`127.0.0.1`** only (the generated Apache
-config is `Listen 127.0.0.1`), and the walk now stays in 21000–25200, below the OS's own ephemeral range, so a
-test can no longer be handed a port another process on the machine is using — or end up talking to another file's
-server. Full account in the README's security section, **§23**.
+config is `Listen 127.0.0.1`), and the walk now stays in 21000â€“25200, below the OS's own ephemeral range, so a
+test can no longer be handed a port another process on the machine is using â€” or end up talking to another file's
+server. Full account in the README's security section, **Â§23**.
 
 **The runner does the rest.** `proc_open` replaces the `exec()` it used to call, because the children have to
-overlap — and its array form, because on Windows a string command line is handed to `cmd.exe`, which would
+overlap â€” and its array form, because on Windows a string command line is handed to `cmd.exe`, which would
 read a path's own characters as its grammar. Both streams are opened in **append** mode on the same file: two
 descriptors from zero, one `w` and one `a`, would leave the second stream overwriting the first's bytes
 rather than joining them. Output is buffered per file and printed **in file-name order** as soon as the head
@@ -1436,12 +1440,12 @@ failing run keeps its directory of per-file logs and prints where it is, because
 output cannot carry is the other files' logs.
 
 **What was checked rather than assumed.** Six consecutive parallel runs, plus `--jobs 8` and `--jobs 2`, all
-green with identical counts (15.1–18.2s); `--jobs 0` and an unknown argument exit 2 with a message instead of
+green with identical counts (15.1â€“18.2s); `--jobs 0` and an unknown argument exit 2 with a message instead of
 silently running four-wide. The port fix was seen working rather than inferred: sampling `netstat` during a
-run caught **seven simultaneous listeners, all inside the pid-derived band (22462–24688) and none of them
-repeated**. The log isolation was checked the same way — run by itself with `ROUTER_LOG_DIR` set,
+run caught **seven simultaneous listeners, all inside the pid-derived band (22462â€“24688) and none of them
+repeated**. The log isolation was checked the same way â€” run by itself with `ROUTER_LOG_DIR` set,
 `sandbox.test.php` writes its 9 audit lines into that directory while the install's `storage/exec.log` is
-byte-identical before and after — which is also the first time the suite has not written the operator's trace
+byte-identical before and after â€” which is also the first time the suite has not written the operator's trace
 at all. Six full fresh-copy checks then confirmed the end-to-end figure.
 
 **What is left, honestly.** Concurrency removed the waiting, not the work: `programs.test.php` is still ~13s
@@ -1450,23 +1454,23 @@ because it really does run the recovery script 16 times. `--jobs 8` costs the sa
 that reason, and it is why 4 is the default rather than the widest width that fits. The next lever is those
 two files' real invocations, not more parallelism. One thing is deliberately left shared: the operator's
 `storage/exec-approvals.json`, which `mcpServer.test.php` queues one approval into and restores from a backup
-— redirecting it would be tidier, but that file is also what a *running* app writes, so it is a question for
+â€” redirecting it would be tidier, but that file is also what a *running* app writes, so it is a question for
 its own change rather than a passenger on this one.
 
 ---
 
-## 🔐 The keys stopped leaving, and a close can no longer end the wrong program *(`VERSION` 360, cache-buster v359 → v360)*
+## ðŸ” The keys stopped leaving, and a close can no longer end the wrong program *(`VERSION` 360, cache-buster v359 â†’ v360)*
 
 **Every read route was answering with the secrets it exists to protect.** `GET /api/config` returned
-`storage/config.json` verbatim — the access token, every MCP client's `Authorization` header, every friend
-token — and `GET /api/mcp/servers` and `GET /api/mcp-server/config` did the same for their half. Those are
+`storage/config.json` verbatim â€” the access token, every MCP client's `Authorization` header, every friend
+token â€” and `GET /api/mcp/servers` and `GET /api/mcp-server/config` did the same for their half. Those are
 exactly the values the *other* gates compare against, so one read disclosed the keys to every other door;
 the route sits behind the web-token gate, which a copy running `setup-token.sh --off` does not have.
 
 Reads now **mask** those values (`********`) and the write paths **put them back**. Every panel here reads
 the config, changes one key and posts the whole thing back, so a masked value reaching disk would have wiped
-a credential and shown up only as a server answering 401. Restore matches by identity — a server by its id,
-then its URL, then its command line; a friend by id, then label — and a mask with nothing behind it is
+a credential and shown up only as a server answering 401. Restore matches by identity â€” a server by its id,
+then its URL, then its command line; a friend by id, then label â€” and a mask with nothing behind it is
 dropped or reissued, **never stored**. A new or rotated friend token comes back in plaintext **once**, in an
 `issued` map, because that is the only moment it can be handed over; `COPY` on a stored token now says so
 instead of copying eight asterisks.
@@ -1474,11 +1478,11 @@ instead of copying eight asterisks.
 **With no token set, only this machine is answered.** `setup-token.sh --off` documents itself as safe on "a
 machine nothing else can reach" and nothing enforced it: behind a web server bound to all interfaces, the
 agent-reachable launcher and the config route above were open to the network. A request whose peer address is
-not loopback now gets **403** while `require_token` is off. The MCP RPC route stays exempt — friends on other
+not loopback now gets **403** while `require_token` is off. The MCP RPC route stays exempt â€” friends on other
 machines are its whole point, and it authenticates with its own per-friend Bearer token.
 
-**`window_close` matches the binary, not its name.** The lookup was `tasklist /FI "IMAGENAME eq …"`, so a
-configured `notepad.exe` was "the same program" as every other copy of that file on the machine — closing
+**`window_close` matches the binary, not its name.** The lookup was `tasklist /FI "IMAGENAME eq â€¦"`, so a
+configured `notepad.exe` was "the same program" as every other copy of that file on the machine â€” closing
 could end a process the operator never opened. Processes are found by the file they are running from
 (`/proc/<pid>/exe` on Linux, one `Get-CimInstance Win32_Process` query on Windows, `ps` elsewhere, absolute
 paths only) and compared as resolved paths, case-folded on Windows. A host that will not give up a process
@@ -1488,56 +1492,56 @@ Getting that table is also what exposed a hang in the command runner it uses: `s
 `proc_open` **ignores its own timeout on Windows** and waited on the handle, so a script that answers in half a
 second became a request that never answered at all (and `proc_close()` then waited on it for good measure).
 The reader is now a bounded poll loop that cannot outlive its deadline, and the timeout path no longer calls
-`proc_close()` on a process it could not terminate — a bounded reply beats a leaked handle that dies with the
+`proc_close()` on a process it could not terminate â€” a bounded reply beats a leaked handle that dies with the
 request.
 
-**A kill reports what actually happened.** `terminate()` returned `ok: true` for everything — a kill that
-never happened, a pid that was already gone, a refusal whose output it never read — so "closed" could be said
+**A kill reports what actually happened.** `terminate()` returned `ok: true` for everything â€” a kill that
+never happened, a pid that was already gone, a refusal whose output it never read â€” so "closed" could be said
 about a program still on screen. The command's **exit status** decides (taskkill's own message is localised),
 `ok` now means *nothing of it is running any more*, and the reply names each pid that survived and why
 ("access denied (it runs as another user, or elevated)", "it had already exited").
 
 **Three smaller repairs in the same paths.** An argument ending in a backslash is **doubled** on the Windows
-command line (`"C:\dir\\"`), because `"…\"` is read by the program as an *escaped quote* — a configured path
+command line (`"C:\dir\\"`), because `"â€¦\"` is read by the program as an *escaped quote* â€” a configured path
 silently corrupted into a different argument. The exec trace can no longer be forged: `Sandbox::audit()`
 strips control characters from every field it writes, so an agent name or argv element carrying a newline
 cannot add a record of a command that never ran (or hide one that did). And `POST /config` stopped reporting
-success for a write that failed — a config that could not be written now says so.
+success for a write that failed â€” a config that could not be written now says so.
 
 **The way back in no longer depends on the one interpreter this app does not need.** `./setup-token.sh`
-required `python3` for everything it did — including `--show`, which is the command you reach for *because*
+required `python3` for everything it did â€” including `--show`, which is the command you reach for *because*
 you are locked out. On Windows that name is usually the Microsoft Store's execution alias: a stub that prints
-"Python was not found…" and exits 49, so `--show` printed its heading and no token, and generating one failed
+"Python was not foundâ€¦" and exits 49, so `--show` printed its heading and no token, and generating one failed
 the same way. PHP is not optional on a copy of this app, so it is the fallback; `python` is tried as well as
-`python3`, and no candidate is trusted by name — each has to prove itself by returning `1` from a one-line
-program. `--show` now ends by naming the engine it used ("Read with: …" / "… (no working python3 or python
+`python3`, and no candidate is trusted by name â€” each has to prove itself by returning `1` from a one-line
+program. `--show` now ends by naming the engine it used ("Read with: â€¦" / "â€¦ (no working python3 or python
 here)"), so a fallback is a fact in the output rather than a guess. With neither engine present, and with
 `PHP_BIN` pointing at something that is not a working php, the script says which of the two it could not do
 instead of failing silently.
 
-The same rewrite had also dropped the call that re-creates `storage/.htaccess` — the guard that stops
-`storage/` from being served — leaving it **defined and never called**, which is a folder quietly becoming
+The same rewrite had also dropped the call that re-creates `storage/.htaccess` â€” the guard that stops
+`storage/` from being served â€” leaving it **defined and never called**, which is a folder quietly becoming
 readable rather than a visible error. Restored, and covered.
 
 Both are held down by the new `php tests/php/setupToken.test.php` (56 assertions), which plants a stub
-`python3` **and** `python` at the front of PATH, ahead of any real python the machine has — the Windows
-symptom, made portable — and drives all four modes against throwaway copies. A fixture assertion proves the
+`python3` **and** `python` at the front of PATH, ahead of any real python the machine has â€” the Windows
+symptom, made portable â€” and drives all four modes against throwaway copies. A fixture assertion proves the
 stub really is what PATH resolves to, so a green run cannot be one that skipped the interesting case; the
 regression itself was re-introduced to check that the suite catches it (it does, on the engine line and on
 the guard). `--show` on this install is asserted read-only, `storage/config.json` byte-identical after.
 
 **A fresh clone runs the same suite as the operator's checkout, assertion for assertion.** Not "passes too
-— with a few bits skipped": an identical `14 files, 14 passed, 0 failed, 840 assertions, 5 skipped`, where
+â€” with a few bits skipped": an identical `14 files, 14 passed, 0 failed, 840 assertions, 5 skipped`, where
 all five skips are things this machine cannot do (no symlinks on Windows, no python for the two audit
 checks, no `curl` extension in this PHP) rather than things the checkout does not have.
 
 It was not like that. A fresh clone ran **18 fewer assertions** and reported an ordinary green line, because
 a file's `SKIP:` lines were visible only when that file *failed*, so nobody saw them. Three blocks needed the
-operator's own install — the archived copy of the app that the nested-folder rule exists for, a real session
-transcript — and the leak checks inside them had gone vacuous anyway: *"the body contains no secret"* passes
+operator's own install â€” the archived copy of the app that the nested-folder rule exists for, a real session
+transcript â€” and the leak checks inside them had gone vacuous anyway: *"the body contains no secret"* passes
 trivially against a file that does not exist. The tests build their own fixtures now. `apacheGuards.test.php`
-writes a throwaway copy of the app into the web root — its own `storage/config.json`, `state.json`, a cookie
-jar, `tests/` in two languages and a `ui/` module, each carrying a probe string — asserts against it and
+writes a throwaway copy of the app into the web root â€” its own `storage/config.json`, `state.json`, a cookie
+jar, `tests/` in two languages and a `ui/` module, each carrying a probe string â€” asserts against it and
 removes it, so a 403 that still returned the body is a failure now; `guards.test.php` uses `storage/models.json`,
 which ships with the app, instead of a transcript only the operator has; and `nginxGuards.test.php` uses a
 transcript name in the shape `SessionManager` actually mints, since those rules match a path and never the
@@ -1546,21 +1550,21 @@ used to be skipped.
 
 The runner re-prints a passing file's `SKIP:` lines under its result and totals them, and a file that skips
 reports it in its own count line (`58 passed, 0 failed, 2 skipped`), which is also what you see when you run
-one by hand. That is what surfaced the five environmental skips above — nobody had noticed those either.
+one by hand. That is what surfaced the five environmental skips above â€” nobody had noticed those either.
 
-Doing that by hand is now one command. `php tests/freshClone.php` copies the tree to the system temp dir —
+Doing that by hand is now one command. `php tests/freshClone.php` copies the tree to the system temp dir â€”
 every tracked file at its working content plus files that are new and not ignored, so **uncommitted work is
-included**, which is the usual state of a change under development and the state a `git clone` cannot see —
+included**, which is the usual state of a change under development and the state a `git clone` cannot see â€”
 runs both suites inside the copy, and prints their numbers side by side: `PHP 14 files, 14 passed, 0 failed,
 840 assertions, 5 skipped` / `JS 10 files, 10 passed, 0 failed, 296 assertions`. The ignored runtime files are
 left behind on purpose, since they are the operator state whose presence used to mask the difference, and
 nothing reads or writes the operator's own `storage/`. The copy is deleted when both suites pass and **kept,
-with its path printed, when one fails** — a failure in a copy should be looked at in the copy. `--head`
+with its path printed, when one fails** â€” a failure in a copy should be looked at in the copy. `--head`
 clones the last commit instead, for the other question: what does someone who clones the repo right now get?
 
 `.githooks/pre-commit` runs that same check on **what you are committing**: it calls the command with
 `--index`, so the copy is the staged snapshot rather than the working tree, and a half-staged commit is
-verified as the commit it will actually be — a test file that is broken on disk but not staged correctly
+verified as the commit it will actually be â€” a test file that is broken on disk but not staged correctly
 passes, because the commit will not contain it. Enable it once per clone with `git config core.hooksPath
 .githooks`; `git commit --no-verify` skips it once, and a failing run keeps its copy for inspection.
 `.gitattributes` pins `.githooks/*` to LF, because bash refuses a CRLF hook and every commit would then be
@@ -1568,18 +1572,18 @@ refused for the wrong reason, and the hook says in its own header to add it exec
 (`git add --chmod=+x`), or a fresh clone gets a hook git silently skips.
 
 The hook's own stated cost was wrong in the direction that matters: it said *about two minutes*, and it
-measures **39–42 seconds** over five runs on a warm machine — the number a reader uses to decide whether to
+measures **39â€“42 seconds** over five runs on a warm machine â€” the number a reader uses to decide whether to
 leave the hook on at all. A cold machine, or a scanner reading 280 fresh files, is slower; the copy is real
 work, so the figure is stated with its conditions rather than as a promise.
 
-It is no longer stated at all, on trust: the check ends **every** run — passing or failing — with what it
+It is no longer stated at all, on trust: the check ends **every** run â€” passing or failing â€” with what it
 cost, `took: 40.6s (copy 0.4s, PHP 39.2s, JS 0.9s)` -- a verbatim run, not a tidy one, since a figure that
 drifts is the thing this line exists to stop -- and the hook prints its own end-to-end seconds next to
 it. A quoted cost that nobody re-measures is how *about two minutes* survived as long as it did.
 
 The breakdown also answered a question the total could not, and the answer was **not** the one guessed here
 first: the PHP half is the whole price, but not because of the servers. Apache, `serve.php` and the MCP mock
-cost about two seconds *between them*. Per file, two files were 27 of the 41 seconds — `programs.test.php`
+cost about two seconds *between them*. Per file, two files were 27 of the 41 seconds â€” `programs.test.php`
 at ~14 (`Programs::list()` is one PowerShell start per look at the process table, ~0.65s, and the feature is
 about what that table says) and `setupToken.test.php` at ~13 (16 real invocations of the recovery script,
 ~0.8s each, in an environment where python is deliberately broken so php is what gets used). Both were found
@@ -1588,24 +1592,24 @@ by timing each file, which is what the phase breakdown in the output is for.
 Three of those seconds were removable without weakening anything, so they are gone. **Four `sleep(1)` calls
 in `install.test.php`** existed only to give four snapshots distinct mtimes so the prune order was
 deterministic; the folders are now given known ages by `touch` (the same idiom the stale-lock case above
-already used) and the assertion is *sharper* than the one it replaces — it no longer settles for "at most two
+already used) and the assertion is *sharper* than the one it replaces â€” it no longer settles for "at most two
 survive" but states that exactly two do, and that they are the two newest. Names turned out to be the wrong
 identity to phrase that on: snapshot folders are named to the second and a name that has just been pruned is
-free again, so the fourth snapshot can legitimately carry the first one's name — measured, not assumed. **A
+free again, so the fourth snapshot can legitimately carry the first one's name â€” measured, not assumed. **A
 duplicated process-table read** in `programs.test.php` is gone too: the poll now hands back the look that
 satisfied it instead of the test asking the same instant again, which A/B measured at 2.3s. And
-`setup-token.sh` no longer probes php when python has already proved itself — every read and write in that
+`setup-token.sh` no longer probes php when python has already proved itself â€” every read and write in that
 script picks python in that case, so the probe was ~150ms proving an interpreter that would never be called.
 (It saves nothing in the case where python is *broken*, which is most of what the test covers: then php is
 the engine and it has to be found.)
 
 Honest accounting of what that bought: **6.5 seconds of work removed** (4s of sleeps, 2.3s of duplicate
-querying, 0.15s of probing), and the end-to-end fresh-copy check moved from 43.0s to 40.9–41.7s on the same
+querying, 0.15s of probing), and the end-to-end fresh-copy check moved from 43.0s to 40.9â€“41.7s on the same
 machine on the same day. The rest of the difference is the noise floor of this setting: a fresh copy is 280
 newly written files plus everything the suites create, and Windows' file scanning makes two runs of
-*identical* code differ by 2–4s. What is left is not slack: 16 genuine invocations of a script that costs
+*identical* code differ by 2â€“4s. What is left is not slack: 16 genuine invocations of a script that costs
 ~0.8s to run, and ~15 genuine observations of process state at ~0.65s each. The remaining lever is a parallel
-runner, and it is deliberately **not** taken here — several files bind loopback ports and two of them write
+runner, and it is deliberately **not** taken here â€” several files bind loopback ports and two of them write
 `storage/exec.log`, so concurrency needs those hazards designed away first, and an intermittently failing
 hook is worse than a slow one. (Taken in the entry at the top of this file: both hazards were designed away
 first, and the check came down to 17s.)
@@ -1614,39 +1618,39 @@ Covered by the new `php tests/php/secrets.test.php` (66 assertions: mask/restore
 friend-token lifecycle, the local-only gate, and the live routes with the real handlers running against a
 throwaway config), by the new `tests/php/setupToken.test.php` (56, above), and by additions to
 `tests/php/programs.test.php` (61): a **second copy of the same file
-name** is started from another folder and must be invisible to the configured entry — and must survive a
-close of it — plus the kill verdict, the trailing-backslash quoting and the audit-injection guard. Both
+name** is started from another folder and must be invisible to the configured entry â€” and must survive a
+close of it â€” plus the kill verdict, the trailing-backslash quoting and the audit-injection guard. Both
 suites green: **840 PHP assertions across 14 files** (the same 840 in a fresh clone), 296 JS.
 
 **The docs carry the whole account.** The README gained a *What's new* block (v360 at the top, v359 below
-it), its Contents entry, three rows in *What's inside*, and **four new security subsections** — **§19**
-opening programs, **§20** masked reads, **§21** local-only with no token set, **§22** the un-forgeable trace
-— each written as the argument for the design rather than as a feature note, since that section is what a
+it), its Contents entry, three rows in *What's inside*, and **four new security subsections** â€” **Â§19**
+opening programs, **Â§20** masked reads, **Â§21** local-only with no token set, **Â§22** the un-forgeable trace
+â€” each written as the argument for the design rather than as a feature note, since that section is what a
 reader actually checks before handing this thing a shell. `RELEASE-NOTES.md` is now the v360 release page:
 the new work in its own tables, the security measures listed row by row, and two host-specific limits added
-under *Known limits* — a program opens in the session the server runs in, and a POSIX close is a signal
+under *Known limits* â€” a program opens in the session the server runs in, and a POSIX close is a signal
 (`TERM`) rather than a window request (`WM_CLOSE`). All 67 anchors on the page resolve.
 
-`VERSION` 359 → **360**; cache-buster v359 → **v360** (all 275 `?v=` references in `ui/**` plus the two
+`VERSION` 359 â†’ **360**; cache-buster v359 â†’ **v360** (all 275 `?v=` references in `ui/**` plus the two
 `<script>`/`<link>` pages, and `APP_VERSION` in `ui/js/store.js`).
 
 ---
 
-## 🖥️ Agents can open real programs — and the window stays open *(UI + API — `VERSION` 359, cache-buster v358 → v359)*
+## ðŸ–¥ï¸ Agents can open real programs â€” and the window stays open *(UI + API â€” `VERSION` 359, cache-buster v358 â†’ v359)*
 
 **The capability already existed and was unusable.** An agent could start a GUI program through `exec`,
 but `execCommand` waits for the process, force-kills it at the timeout, and holds the whole turn open
-while it runs — so "open Notepad" produced a window that closed itself a minute later inside a stalled
+while it runs â€” so "open Notepad" produced a window that closed itself a minute later inside a stalled
 chat. It left no usable record either: the run ended as a timeout, indistinguishable from a command that
 hung.
 
-**Config → Shell access → Programs** changes the shape of it. The operator lists programs — a name, a path,
-optional arguments — and an agent may only **name** one. It never supplies a path or a command line, so the
+**Config â†’ Shell access â†’ Programs** changes the shape of it. The operator lists programs â€” a name, a path,
+optional arguments â€” and an agent may only **name** one. It never supplies a path or a command line, so the
 only text a model controls is a name that must already exist in your config. That is what makes this safe to
 give a model where a raw `cmd /c` would not be: the launcher's input is operator data, not model output.
 
-The launch is **detached** — `cmd /c start` with the empty title token on Windows (the mechanism the
-built-in browser has used for Chrome/Edge since it landed), a backgrounded process on POSIX — so the window
+The launch is **detached** â€” `cmd /c start` with the empty title token on Windows (the mechanism the
+built-in browser has used for Chrome/Edge since it landed), a backgrounded process on POSIX â€” so the window
 outlives the reply and no timeout closes it behind you. It is audited as `kind=program phase=start` with
 **no end line**: exactly the "started and still running" record the two-phase log was built for. Closing
 writes the end.
@@ -1654,27 +1658,27 @@ writes the end.
 `window_open`, `window_close` and `window_list` are the tools, behind the same Ask/Allow/Deny policy as
 everything else, with **Opening programs** and **Closing programs** added to the per-tool list. Closing is
 graceful first (`taskkill /PID` posts WM_CLOSE; POSIX sends TERM) so an editor can still ask about unsaved
-work, and `force` ends the process outright — the result says which one it took, and a console program with
+work, and `force` ends the process outright â€” the result says which one it took, and a console program with
 no window has nothing to receive a close request, so it needs force. Processes are found by the program they
 are running from (`/proc` on Linux, `tasklist` on Windows, `ps` elsewhere) because `start` hands off and
 never reports the pid it produced.
 
 Refused as launch targets: anything that is not `.exe`/`.com` on Windows, so starting a `.bat`, `.cmd` or
 `.ps1` can never hand back the command shell or script host the rest of this design keeps away from a model.
-That refusal is by extension and is **not** overridable from the list — `exec_interpreters` is the door for
+That refusal is by extension and is **not** overridable from the list â€” `exec_interpreters` is the door for
 script files, where the script is jailed and inline code is refused.
 
 **Off by default** (`sandbox.programs_enabled`, empty list), so an install that updates gains nothing until
-the operator adds it. Each row shows its verdict — the resolved path, *not running* or *pid …*, or the reason
-it would be refused — and the platform caveat that decides whether this works at all: Apache started as a
+the operator adds it. Each row shows its verdict â€” the resolved path, *not running* or *pid â€¦*, or the reason
+it would be refused â€” and the platform caveat that decides whether this works at all: Apache started as a
 console process opens windows on your desktop, while Apache installed as a **service** lands in session 0
 and nothing is ever visible. `php tests/php/programs.test.php` covers the policy, the normalisation, every
-refusal message, the process lookup, the detach and the two-phase audit — and really launches and closes a
+refusal message, the process lookup, the detach and the two-phase audit â€” and really launches and closes a
 process of its own (`ping` on Windows, a private copy of `sleep` on POSIX).
 
 ---
 
-## 🧩 An unfinished install says so, and finishes from the panel *(UI — `VERSION` 358, cache-buster v353 → v358)*
+## ðŸ§© An unfinished install says so, and finishes from the panel *(UI â€” `VERSION` 358, cache-buster v353 â†’ v358)*
 
 **The panel had a sentence about a stuck install and no way to act on it.**
 `_paintInstall()` printed "Waiting to be swapped in: api/index.php" into a grey
@@ -1682,30 +1686,30 @@ hint underneath a hidden button, and `POST /update/finish` had existed since the
 installer landed with nothing in the UI calling it. So the honest answer to "one
 file is waiting" was still a terminal.
 
-Config → Updates now opens with a box that names the files — *1 file waiting —
-this update is unfinished* — and a **FINISH THE UPDATE** button that calls that
+Config â†’ Updates now opens with a box that names the files â€” *1 file waiting â€”
+this update is unfinished* â€” and a **FINISH THE UPDATE** button that calls that
 route and reports what actually swapped. The section badge flips to
 **UNFINISHED** in red, because a collapsed section would otherwise still claim
-`PUBLISHED v…` while the tree was one rename short.
+`PUBLISHED vâ€¦` while the tree was one rename short.
 
 A 404 is handled as the thing it is: while `api/index.php` is the file still
 waiting, the OLD api answers these calls and may not have the route at all, so
-the box says to reload — the retry added in v357 finishes it on load.
+the box says to reload â€” the retry added in v357 finishes it on load.
 
 The box should almost never appear, which is the point of having it: the retry
 runs before the panel is drawn, so it survives on screen only when the automatic
 path could not finish the job.
 
-## 🔁 A hand-off that failed retries itself *(PHP — `VERSION` 357, no cache-buster bump)*
+## ðŸ” A hand-off that failed retries itself *(PHP â€” `VERSION` 357, no cache-buster bump)*
 
 **The installer that runs an update is the copy being replaced.** Harmless until
-the copy being replaced is one whose `phpCli()` cannot find PHP — v354 and v355
+the copy being replaced is one whose `phpCli()` cannot find PHP â€” v354 and v355
 under XAMPP. Those installs write every other file, defer the entry script, and
 then cannot start the finisher. Nothing ever tried again: the tree reported the
 new version, so the prompt was gone, and the last swap waited for a human with
 `install-update.php --finish`.
 
-Found by running it rather than reasoning about it — a copy extracted from the
+Found by running it rather than reasoning about it â€” a copy extracted from the
 `v355-open-testing` tag, installing the published v356 over Apache: 252 files
 backed up, **176 written**, `api/index.php` deferred, `could not start the
 finisher automatically` in the journal, and `storage/` intact byte for byte.
@@ -1718,7 +1722,7 @@ attempts before it stops and points at `install-update.php`; a marker whose
 files are already in place is closed rather than retried forever; and a failed
 retry can never break the request it is repairing after.
 
-**It cannot rescue the v354/v355 → v356 hop**, because that install is driven by
+**It cannot rescue the v354/v355 â†’ v356 hop**, because that install is driven by
 the old code and the hook only exists in the new tree. From v357 on the hand-off
 repairs itself on the next page load.
 
@@ -1727,18 +1731,18 @@ attempt is recorded, a polling page does not restart it, a finished install is
 left alone, a stale marker is closed, no marker means no journal, and the hook
 in `autoload.php` is wiring-checked so it cannot quietly disappear.
 
-## 🧭 Finding the PHP CLI on a host that lies about where it is *(PHP — `VERSION` 356, no cache-buster bump)*
+## ðŸ§­ Finding the PHP CLI on a host that lies about where it is *(PHP â€” `VERSION` 356, no cache-buster bump)*
 
 **`PHP_BINDIR` is a compile-time prefix, not where XAMPP put PHP.** On the
-install this was tested against it is `C:\php` — a directory that does not
-exist — while the CLI lives at `C:\xampp\php\php.exe` and `PHP_BINARY` points at
+install this was tested against it is `C:\php` â€” a directory that does not
+exist â€” while the CLI lives at `C:\xampp\php\php.exe` and `PHP_BINARY` points at
 `httpd.exe`. So `phpCli()` found nothing, the finisher was never started, and an
 install left `api/.router-new-index.php` waiting with `could not start the
 finisher automatically` in the journal: correct, honest, and no use to anybody.
 
-The candidates now include the layouts hosts actually have — the CLI beside the
+The candidates now include the layouts hosts actually have â€” the CLI beside the
 binary, `apache/bin/../../php/php.exe` (XAMPP), `../php`, `PHP_BINDIR`, then a
-`where php` / `which php` lookup — each accepted only if it is a real file whose
+`where php` / `which php` lookup â€” each accepted only if it is a real file whose
 name is `php`/`php.exe`.
 
 **Verified end to end against Apache with a real download.** A copy at v350,
@@ -1747,7 +1751,7 @@ replaced**, the entry script deferred and swapped in **one second later** by the
 generated finisher, the finisher deleted itself, `/` and `/api/update` still 200,
 `/storage/config.json` still **403**, and `storage/` untouched throughout.
 
-## 🩹 The installer survives being installed *(PHP + UI — `VERSION` 355, cache-buster v352 → v353)*
+## ðŸ©¹ The installer survives being installed *(PHP + UI â€” `VERSION` 355, cache-buster v352 â†’ v353)*
 
 **The first real run of v354's installer ate `api/index.php`.** Two faults, both
 only visible on a machine where Apache is actually serving the app, and both
@@ -1755,7 +1759,7 @@ found by doing it rather than reasoning about it:
 
 1. **A request cannot replace the file it is executing.** On Windows the entry
    script is held open for the life of the request, so `rename()` onto it fails.
-   The fallback then **deleted the target first and tried again** — so the second
+   The fallback then **deleted the target first and tried again** â€” so the second
    failure left the app with no `api/index.php` at all. The API was simply gone
    while `/` kept answering 200, which is the worst shape a breakage can take.
 2. **The finisher was spawned as `PHP_BINARY`.** Under mod_php that constant is
@@ -1765,7 +1769,7 @@ found by doing it rather than reasoning about it:
 **Now: nothing is ever deleted to make room.** A file that cannot be swapped is
 written as a `.router-new-<name>` sibling and recorded as deferred; the install
 finishes every other file, journals the wait, and hands the rest to a
-**generated, self-contained script in `storage/updates/`** — which is the one
+**generated, self-contained script in `storage/updates/`** â€” which is the one
 place an update never writes. It carries its own list of swaps, retries for ten
 seconds while Apache releases its handle, appends to the same journal and deletes
 itself. The binary comes from `PHP_BINDIR`, falling back to `PHP_BINARY` only
@@ -1785,10 +1789,10 @@ afterwards. `tests/php/install.test.php` grew to 67 assertions, including a test
 that runs the generated finisher as its own process and checks it needs nothing
 from the app.
 
-## ⬇️ The update installs itself, and there is a way back *(UI + PHP — `VERSION` 354, cache-buster v351 → v352)*
+## â¬‡ï¸ The update installs itself, and there is a way back *(UI + PHP â€” `VERSION` 354, cache-buster v351 â†’ v352)*
 
 **The updater stopped one step short of doing its job.** Everything up to the
-write was there — download, verify, extract, diff — and the whole feature ended
+write was there â€” download, verify, extract, diff â€” and the whole feature ended
 at a note in the release page telling the operator to replace the files by hand
 and keep `storage/`. That is a fine instruction for the person who wrote the
 app and a wall for everybody else.
@@ -1797,8 +1801,8 @@ app and a wall for everybody else.
 three answers: **BACK UP, THEN UPDATE** (a full settings backup to the Downloads
 folder, named `router-backup-<version>-<timestamp>.json` so a restore six months
 later knows which release wrote it), **UPDATE WITHOUT A BACKUP**, or **CANCEL**.
-Either of the first two runs the rest unattended — download, verify, diff,
-install, reload — because four prompts for one decision is not an update, it is
+Either of the first two runs the rest unattended â€” download, verify, diff,
+install, reload â€” because four prompts for one decision is not an update, it is
 a questionnaire. The prompt waits for a clear screen: it will not open over
 another dialog or over a reply that is still streaming, retrying for a minute
 before leaving the news in the bell.
@@ -1806,7 +1810,7 @@ before leaving the news in the bell.
 **What the install is allowed to touch.** `Src\Install` refuses `storage`,
 `.git`, `node_modules`, `.freebuff`, `screenshots` and `sandbox` **before it
 looks at a single file**, so sessions, models, keys, the token and the allow/deny
-lists are unreachable by an update — not filtered out, out of scope. A plan.json
+lists are unreachable by an update â€” not filtered out, out of scope. A plan.json
 that named `storage/config.json` is refused file by file and the refusal is
 written to the journal; `tests/php/install.test.php` asserts exactly that.
 
@@ -1825,7 +1829,7 @@ XAMPP's PHP ships no `ZipArchive` and `phar.readonly` on, and a rollback that
 needs an extension the host may not have is not a rollback. After writing, the
 installer re-reads `VERSION`; if the tree does not call itself the release it was
 handed, it **restores the backup and says so**, and the marker records
-`rolled-back` rather than a bare `failed` — the tree is fine, the release was
+`rolled-back` rather than a bare `failed` â€” the tree is fine, the release was
 bad, and those are different messages. The lock that serialises all this is
 re-entrant, because without that the self-heal path deadlocks against its own
 install. Two rollback copies are kept, pruned oldest-first.
@@ -1835,15 +1839,15 @@ install-update.php`, `--rollback`, `--status`. It requires **one file**
 (`src/Install.php`), uses no autoloader, and refuses to do anything over HTTP. It
 exists for the two cases a button cannot cover: a Linux host where `www-data`
 cannot write the app folder, and a tree that a half-finished update already
-broke — the code that would fix it is inside the tree.
+broke â€” the code that would fix it is inside the tree.
 
 **`update` left the curl-only gate.** It was in the blanket `$needsNet` list, so
-on a PHP with no `curl` every update route returned a 503 — including reading
+on a PHP with no `curl` every update route returned a 503 â€” including reading
 what was staged, backing up, installing and rolling back, none of which touch the
 network. A machine with no curl is exactly the machine most likely to be
 hand-fixing a release offline. Only `check` and `download` require curl now.
 
-**Verified.** `tests/php/install.test.php` — 43 assertions over a throwaway tree:
+**Verified.** `tests/php/install.test.php` â€” 43 assertions over a throwaway tree:
 a normal install, `storage/` unreachable including through a forged plan, rollback
 restores, rollback refuses a folder outside `storage/backups`, a version mismatch
 rolls back by itself, a stale lock is ignored and a fresh one is respected,
@@ -1852,12 +1856,12 @@ the app: install reported `{"ok":true,"installed":2,"from":"353","to":"354"}`,
 206 files backed up, config untouched, `/storage/config.json` still **403**, and
 `POST /update/rollback` put it back to 353 with 205 of 206 files already correct.
 
-## ⏱️ Replies that land when they land, and an Always-On switch that goes both ways *(UI — `VERSION` 353, cache-buster v350 → v351)*
+## â±ï¸ Replies that land when they land, and an Always-On switch that goes both ways *(UI â€” `VERSION` 353, cache-buster v350 â†’ v351)*
 
 **A finished reply is finished now, not when the slowest agent is done.** Every
 agent in a fan-out had its turn committed in one `results.forEach` *after*
 `Promise.all`, so a reply that had already arrived stayed on screen as a live
-node — blinking caret, no copy button, reasoning still labelled "streaming" —
+node â€” blinking caret, no copy button, reasoning still labelled "streaming" â€”
 until the last agent in the turn finished. One fast model therefore looked hung
 for as long as one slow model, and the whole turn only settled when the slowest
 one did. Each agent now commits at the moment it lands: its bubble finalizes in
@@ -1866,25 +1870,25 @@ conversation immediately, and the failure path commits a refusal at its own pace
 too instead of leaving a stranded streaming bubble behind.
 
 Five agents also answered in single file on one server: nothing started until the
-reply ahead of it had finished. Nothing in the loop was wrong there — PHP's
+reply ahead of it had finished. Nothing in the loop was wrong there â€” PHP's
 built-in server (the one `start-php.bat` starts) accepts **one request at a
 time**, and while a streamed reply is open the next call waits outside in the
 kernel's backlog. Apache (which `start.bat` installs) answers many at once.
 Measured on the same machine, three streams against the same endpoint reached it
 at **1.1 s, 1.1 s and 1.1 s** through Apache, and at **1.1 s, 4.1 s and 7.2 s**
-through `php -S`. That is a property of the server — no change in the browser can
+through `php -S`. That is a property of the server â€” no change in the browser can
 move it.
 
 The app now **knows which server is answering**. `/api/diag` reports the SAPI, the
 worker count and a plain `concurrent` flag; the page asks once at load and, on a
 one-at-a-time server, raises **one** notification naming the cause and the fix
-(`start.bat` → Apache; settings, sessions and keys are untouched because they live
+(`start.bat` â†’ Apache; settings, sessions and keys are untouched because they live
 in `storage/`). The Diagnose readout in Config carries the same warning. Nothing
 is refused and nothing is hidden: one agent on the built-in server still works
 exactly as it did.
 
-**Always-On → Apply to All works in both directions now.** It used to ship the goal
-text only, and to refuse an empty box — so the one thing it could not do was
+**Always-On â†’ Apply to All works in both directions now.** It used to ship the goal
+text only, and to refuse an empty box â€” so the one thing it could not do was
 **remove**. You could hand a goal to every agent and never take it back. The
 switch and the sentence travel together: untick the box, clear the goal, click
 apply, and every agent's Always-On turns off with its goal deleted (conversations,
@@ -1892,7 +1896,7 @@ memory and every other setting stay put). Ticked, it behaves as before and also
 turns the switch **on** for the agents that receive the goal, which it previously
 left alone.
 
-## 🗣️ What the agents said, and a trail that can be trusted *(UI — `VERSION` 352, cache-buster v349 → v350)*
+## ðŸ—£ï¸ What the agents said, and a trail that can be trusted *(UI â€” `VERSION` 352, cache-buster v349 â†’ v350)*
 
 The map could already show **that** two agents spoke. It could not show a word of
 it, and the audit log it pointed at could not prove a command had run at all.
@@ -1900,33 +1904,33 @@ Both records are now readable, and both are honest about what happened.
 
 **The audit trail tells the truth now.** `storage/exec.log` used to get one line
 per run, written *after* the process was reaped, with no idea who asked for it.
-That meant a run killed mid-command — the operator force-stops, the server
-restarts, a GUI app is left open — left **no record whatsoever**, and a line
+That meant a run killed mid-command â€” the operator force-stops, the server
+restarts, a GUI app is left open â€” left **no record whatsoever**, and a line
 could never be tied to the turn that requested it. Each run now writes **two**
 lines: `phase=start` *before* the spawn and `phase=end` after it, sharing one
 `run=` id, both carrying `agent=<id>`. A start with no end is now visible as
 exactly what it is: something that started and never reported back. `run_code`
 (the code interpreter) was not audited at all; it is now, as `kind=code`.
 
-**Config → TRACE is three views of one question.** The single table became
-**RUNS · COMMS · EXEC**:
+**Config â†’ TRACE is three views of one question.** The single table became
+**RUNS Â· COMMS Â· EXEC**:
 
-- **RUNS** — unchanged: model turns and tool calls with timing, tokens, success.
-- **COMMS** — what the agents *said* to each other, with the text: the question an
+- **RUNS** â€” unchanged: model turns and tool calls with timing, tokens, success.
+- **COMMS** â€” what the agents *said* to each other, with the text: the question an
   agent asked, the answer that came back, one-way orders, and pings, each with
   its duration and a failure marker. Questions and answers stay paired as one
   exchange instead of two unrelated lines.
-- **EXEC** — `storage/exec.log`, parsed server-side and paired into runs, newest
+- **EXEC** â€” `storage/exec.log`, parsed server-side and paired into runs, newest
   first: time, agent, command, working directory, duration, exit code, and a
-  **no end** marker for a run that never finished. Read-only on purpose — the
+  **no end** marker for a run that never finished. Read-only on purpose â€” the
   UI cannot clear evidence, and the Clear button only ever empties RUNS or
   COMMS.
 
 **Per-agent, from the map itself.** The 3D agent card's *Recent messages* now
-shows what was said, and a **Messages →** button opens a drawer scoped to that
+shows what was said, and a **Messages â†’** button opens a drawer scoped to that
 agent: **TALK** (every exchange it sent or received, both halves with the text)
 and **RUNS** (its own audited commands, fetched by agent id). Hovering a beam on
-the chart shows *"Agent A → Agent B: …"*, so the map stops being mute.
+the chart shows *"Agent A â†’ Agent B: â€¦"*, so the map stops being mute.
 
 Agent-to-agent chat is memory-only and bounded to 300 exchanges, like the run
 trace: it is for watching a run, and a second copy of every conversation on
@@ -1941,54 +1945,54 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## 🗄️ Add sandboxes from Brain Lab, and the Browser rail stops overlapping on a phone *(UI — `VERSION` 351, cache-buster v348 → v349)*
+## ðŸ—„ï¸ Add sandboxes from Brain Lab, and the Browser rail stops overlapping on a phone *(UI â€” `VERSION` 351, cache-buster v348 â†’ v349)*
 
 - **The gap.** A per-agent file jail already existed (`agent.sandboxRoot`, picked
-  from a dropdown in Brain Lab → Sandbox), but the only places you could *create*
-  one were Config → Sandbox's two textareas. So "give this agent its own
+  from a dropdown in Brain Lab â†’ Sandbox), but the only places you could *create*
+  one were Config â†’ Sandbox's two textareas. So "give this agent its own
   directory" meant leaving the agent you were editing, typing a path into a
   multi-line list as text, coming back, and hoping it matched. The dropdown only
   ever showed what the global allowlist already contained.
-- **What was added.** Brain Lab → Sandbox now has an **Add a sandbox** row: type a
+- **What was added.** Brain Lab â†’ Sandbox now has an **Add a sandbox** row: type a
   folder, press ADD, and it becomes a selectable jail for the open agent (and for
-  every other agent) immediately. Nothing about Config → Sandbox changed — it is
+  every other agent) immediately. Nothing about Config â†’ Sandbox changed â€” it is
   the same `sandbox.read_roots` / `write_roots` allowlist, edited from a second
   place, because one allowlist that two screens share is the whole reason the
   jail is enforceable.
 - **Why it appends to the global lists instead of keeping its own.** The jail is
   checked server-side against `storage/config.json`; a per-agent list that the
   server cannot see would be a UI that offers jails every tool call then refuses.
-  Adding here unions the effective roots (not just the stored ones — a fresh
+  Adding here unions the effective roots (not just the stored ones â€” a fresh
   install has no `sandbox` block at all and runs on the app-directory default,
   which writing a single path would have silently dropped) with the new folder,
   saves, and re-reads them.
 - **"Saved" is not "usable", so the two are answered separately.** The server
   `realpath`s every root and drops anything that is not an existing directory. The
   new control checks whether the folder actually came back, and if it did not it
-  says so — keeping what you typed in the box to fix, and leaving the agent on its
+  says so â€” keeping what you typed in the box to fix, and leaving the agent on its
   previous jail rather than pointing it at a path that will fail on the next call.
 - **The Browser screen's right rail was being squashed, not scrolled.** In mobile
   view (and in any short window) `.bs-side` is a `flex` column with a `max-height`
   and `overflow-y: auto`. A `<textarea>` has no intrinsic minimum height, so flex
   shrank the text boxes to fit instead of letting the rail scroll: measured on a
-  390×844 viewport, the **type box was 14px tall with 46px of content** and the
+  390Ã—844 viewport, the **type box was 14px tall with 46px of content** and the
   **block list was 14px with 74px**, so their text drew over the rows beneath them
-  — "Block list" on top of "Save block list", "Drive it" on top of "Send text".
+  â€” "Block list" on top of "Save block list", "Drive it" on top of "Send text".
   The rail's children now refuse to shrink (`flex: 0 0 auto`), which turns the
   same overflow into ordinary scrolling; the read-text pane is restated as the one
   child that should still absorb leftover height, so the desktop rail looks
-  exactly as it did (verified at 1400×900: 355px tall, rail not scrolling).
+  exactly as it did (verified at 1400Ã—900: 355px tall, rail not scrolling).
 
-## 🗂️ The checkout moved to the app root — and Apache was serving `.git` *(Apache + tests + docs — `VERSION` 350, cache-buster unchanged)*
+## ðŸ—‚ï¸ The checkout moved to the app root â€” and Apache was serving `.git` *(Apache + tests + docs â€” `VERSION` 350, cache-buster unchanged)*
 
 - **What changed.** `git` now lives in the project root, which is also the web
   root. Before this the repository sat one folder down, inside `cleancopy/`, and
-  every change had to be mirrored into that copy before it could be pushed — a
+  every change had to be mirrored into that copy before it could be pushed â€” a
   manual step with no feedback, and the only way it fails is silently.
 - **The consequence nobody asked about.** Putting `.git/` behind the same URL
   prefix as the app puts the whole history on the web. `.git/config` can carry a
   remote URL with a token in it, and `.git/objects` reconstructs **every file ever
-  committed** — including one removed later *because* it held a secret.
+  committed** â€” including one removed later *because* it held a secret.
   `serve.php` and `nginx.example.conf` have always refused dotfiles; Apache's own
   `.ht*` default does not cover them, and it answered `.git/config` with a **200**
   and the real `[core]` body. Measured before the fix, not assumed from the docs.
@@ -1998,30 +2002,30 @@ assertions in `tests/php/sandbox.test.php`.
   nor a host without mod_alias can slip past). `/.well-known` is the one
   exception, matched by name, because refusing it breaks ACME renewal.
 - **`.gitignore` grew teeth.** With the repo in the root, one `git add -A` was
-  enough to commit `Autonomous.zip` (220 MB), `storage/config.json.bak` — the
+  enough to commit `Autonomous.zip` (220 MB), `storage/config.json.bak` â€” the
   access token and every provider key, under a filename the old rules did not
-  match — the update feature's working folder (`storage/updates/`, a cached answer
+  match â€” the update feature's working folder (`storage/updates/`, a cached answer
   and a full staged copy of the app), and two complete extra copies of the app.
 - **Verified.** `apacheGuards.test.php` gained assertions over `.git/config`,
   `.git/HEAD`, `.git/objects/pack/`, a nested `.git`, and the ACME exception:
   **11 assertions fail** when the new rule is removed, and all 62 pass with it.
   `serve.php` and nginx already had the policy *and* the tests, which is why only
   Apache needed a change.
-- **Cache-buster:** unchanged at `v348` — no browser file moved this time.
+- **Cache-buster:** unchanged at `v348` â€” no browser file moved this time.
 
 ---
 
-## 🔎 "What's new" opens: the release note is readable *(PHP + UI — `VERSION` 349, cache-buster v348)*
+## ðŸ”Ž "What's new" opens: the release note is readable *(PHP + UI â€” `VERSION` 349, cache-buster v348)*
 
-- **What it does.** **Config → Updates** used to show a release title and one
-  trimmed line of its CHANGELOG entry — *"What's new:"* plus an opening
+- **What it does.** **Config â†’ Updates** used to show a release title and one
+  trimmed line of its CHANGELOG entry â€” *"What's new:"* plus an opening
   sentence, and the rest of the entry was not read at all. That row is now a
   **disclosure**: closed it still says what shipped, and opened it lists the
-  entry's own lines — every bullet, each with its bold lead-in and its wrapped
+  entry's own lines â€” every bullet, each with its bold lead-in and its wrapped
   text, sub-points indented.
 - **One pass, not two.** The parser returns the whole entry (`items`, each with
   `lead` / `body` / `depth`) alongside the one-line `summary` the bell uses, both
-  built in the same walk — so what you expand can never disagree with what you
+  built in the same walk â€” so what you expand can never disagree with what you
   clicked. `changelogHead()` stays a two-key wrapper, so every existing caller
   and assertion kept its contract.
 - **The collapsed line nearly vanished.** A closed `<details>` renders *none* of
@@ -2037,24 +2041,24 @@ assertions in `tests/php/sandbox.test.php`.
 - **Still text, never markup.** Every line is placed as a text node with the
   lead-in bolded by a real `<b>`, so a changelog title cannot become HTML. The
   same holds for the trim: only the ellipsis is added, never the remote text.
-- **Cache-buster:** `v347` → `v348` (both UI files changed); `VERSION` → `349`.
-- **Tests:** `tests/php/update.test.php` 112 → **129** assertions — whole-entry
+- **Cache-buster:** `v347` â†’ `v348` (both UI files changed); `VERSION` â†’ `349`.
+- **Tests:** `tests/php/update.test.php` 112 â†’ **129** assertions â€” whole-entry
   parsing, lead/body split, sub-bullet depth, both caps, blank-line vs wrapped
   line, non-UTF-8 refusal, and the two-key `changelogHead` contract. Eight
   mutations of the new parser were run and all eight were caught.
 
 ---
 
-## 📰 The update notice names what shipped *(PHP + UI — `VERSION` 348, cache-buster v347)*
+## ðŸ“° The update notice names what shipped *(PHP + UI â€” `VERSION` 348, cache-buster v347)*
 
 - **What it does.** When the check finds a newer release it now also reads the
   **top entry of the published `CHANGELOG.md`** and puts its title in the
-  notification: *"Update available — published v348 · RELEASING.md: the
-  two-number checklist. This copy is v347."* **Config → Updates** keeps a
+  notification: *"Update available â€” published v348 Â· RELEASING.md: the
+  two-number checklist. This copy is v347."* **Config â†’ Updates** keeps a
   *What's new:* line with the entry's opening paragraph.
 - **Asked for only when it is needed.** The CHANGELOG is the largest file in the
   repo (six figures of bytes and growing), so it is fetched **only when an
-  update exists** — while the two copies match, every byte of it would be
+  update exists** â€” while the two copies match, every byte of it would be
   wasted. The transfer is capped at 64 KB and stopped early, because only the
   newest entry matters and it is at the top; that abort is expected and handled,
   not treated as a failure.
@@ -2062,28 +2066,28 @@ assertions in `tests/php/sandbox.test.php`.
   still a release: an unreachable or unparseable CHANGELOG returns null and the
   notification falls back to naming the versions alone.
 - **Remote text is treated as text.** The title is escaped before it reaches the
-  panel and built as a DOM node in the bell, so a `<img onerror=…>` planted in
-  a changelog title is displayed rather than executed — checked in the browser,
+  panel and built as a DOM node in the bell, so a `<img onerror=â€¦>` planted in
+  a changelog title is displayed rather than executed â€” checked in the browser,
   not assumed.
 - **Two real bugs, and two tests that could not fail.** The summary ran on
   through every bullet of the entry (entries are a bullet list with NO blank
   line between bullets, so "stop at the first blank line" produced
-  "… - **What.** …"), and the UTF-8 guard never actually ran because the
+  "â€¦ - **What.** â€¦"), and the UTF-8 guard never actually ran because the
   invalid bytes were being dropped by a failing regex first. Mutation testing
-  then showed the truncation fixtures were **even-split** — a byte-counted cut
-  landed on a character boundary and looked identical to a correct one — and
+  then showed the truncation fixtures were **even-split** â€” a byte-counted cut
+  landed on a character boundary and looked identical to a correct one â€” and
   the emphasis check looked for `**` while the italic rule had already eaten one
   of the two stars. All four are fixed and now fail as intended.
-- **Cache-buster:** `v346` → `v347` (both UI files changed); `VERSION` → `348`.
-- **Tests:** `tests/php/update.test.php` 94 → 112 assertions, and all seven
+- **Cache-buster:** `v346` â†’ `v347` (both UI files changed); `VERSION` â†’ `348`.
+- **Tests:** `tests/php/update.test.php` 94 â†’ 112 assertions, and all seven
   mutations of the new reader are caught by it.
 
 ---
 
-## 📋 RELEASING.md: the two-number checklist *(docs — no cache-buster bump)*
+## ðŸ“‹ RELEASING.md: the two-number checklist *(docs â€” no cache-buster bump)*
 
 - **Why.** Two numbers now decide whether a running copy sees a new release,
-  and the failure mode is a release that bumps one and forgets the other — which
+  and the failure mode is a release that bumps one and forgets the other â€” which
   is quiet: a missed `VERSION` hides the release entirely, and a missed
   cache-buster serves a new module next to an old one in the browser.
 - **What.** `RELEASING.md` says which number to bump when, gives the exact
@@ -2091,7 +2095,7 @@ assertions in `tests/php/sandbox.test.php`.
   states the one caveat: a copy that predates `VERSION` can only see the
   cache-buster, so a release that has to reach those copies needs that bump too.
 - **Cache-buster: `v346`, NOT bumped.** No browser-cached file changed, which is
-  exactly the distinction this split exists to make — and this is the first
+  exactly the distinction this split exists to make â€” and this is the first
   release to exercise it: `VERSION` moved to `347` on its own.
 - **Nothing else changed.** Pointers added from `VERSION` itself, the README
   table of contents, and the README's Tests section, so the checklist is
@@ -2099,19 +2103,19 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## 🏷️ VERSION: a release number the update check reads too *(PHP + cache-buster — v345 → v346)*
+## ðŸ·ï¸ VERSION: a release number the update check reads too *(PHP + cache-buster â€” v345 â†’ v346)*
 
 - **Why.** The load-time check compared exactly one thing: `APP_VERSION`, the
   browser cache-buster. That number correctly does **not** move when a release
-  changes no browser-cached file — so a PHP-only (or docs-only) release was
+  changes no browser-cached file â€” so a PHP-only (or docs-only) release was
   invisible, and the check reported *"up to date"* for a release that had shipped.
 - **What.** A `VERSION` file at the repo root carries the *release* number, and
   the check reads **both** signals from the published copy, announcing a release
   when **either** is newer. The rule: bump `VERSION` on every release; bump
   `APP_VERSION` when a file the browser caches changes. `VERSION` is the file that
   says *"something shipped"*, including when the browser files are untouched.
-- **Rules the code enforces.** A plain integer — a dotted date could never compare
-  as newer, because the comparison is numeric — and never behind `APP_VERSION`;
+- **Rules the code enforces.** A plain integer â€” a dotted date could never compare
+  as newer, because the comparison is numeric â€” and never behind `APP_VERSION`;
   `tests/php/update.test.php` fails if it is, so a release cannot quietly make
   itself invisible again.
 - **Backward compatible, both directions.** A published copy with no `VERSION`
@@ -2119,9 +2123,9 @@ assertions in `tests/php/sandbox.test.php`.
   change is still read (its `remoteVersion` *was* the cache-buster). Both were
   verified against the real published repo, which has no `VERSION` yet:
   `ok: true`, `remoteRelease: null`, `remoteApp: 337`.
-- **Cache-buster:** `v345` → `v346`, even though no browser-cached file changed.
+- **Cache-buster:** `v345` â†’ `v346`, even though no browser-cached file changed.
   Deliberate, once: an install that predates `VERSION` can only ever see the
-  cache-buster, and this is the release that introduces `VERSION` — so bumping it
+  cache-buster, and this is the release that introduces `VERSION` â€” so bumping it
   here is what makes THIS release visible to those installs instead of shipping
   it silently. From the next release on, `VERSION` alone is enough and a PHP-only
   release needs no bump here at all.
@@ -2131,10 +2135,10 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## 🔔 Update check at load, with a notification *(PHP + UI — v344 → v345)*
+## ðŸ”” Update check at load, with a notification *(PHP + UI â€” v344 â†’ v345)*
 
 - **What it does.** Every page load now asks the server whether a *newer* release
-  is published, and puts the answer in the notification bell. Config → Updates
+  is published, and puts the answer in the notification bell. Config â†’ Updates
   gains **Check for updates when the app loads** (on by default), **CHECK NOW**,
   and a one-line answer under them.
 - **Cheap on purpose.** The check is not the 11 MB download: it reads the
@@ -2142,19 +2146,19 @@ assertions in `tests/php/sandbox.test.php`.
   caches the answer for **six hours**, so a reload is usually one local request
   and no network at all. Forcing it is a `POST`.
 - **Silent on failure.** Offline, behind a proxy, or on a PHP without curl, the
-  check returns `ok: false` **instead of throwing** — it runs at boot, so it must
+  check returns `ok: false` **instead of throwing** â€” it runs at boot, so it must
   never block it. Failures are cached for 15 minutes rather than six hours, so an
   offline machine does not pay a connect timeout on every reload, and an unknown
   version is never read as "you are out of date".
 - **Announced once per version.** The version already announced is remembered,
   so the same release cannot fill the bell on every reload; a *newer* release
   re-notifies. Both numbers are shown, because the published copy can be behind a
-  local one — "v345 → v337" would read as an upgrade that moves you backwards.
+  local one â€” "v345 â†’ v337" would read as an upgrade that moves you backwards.
 - **Both bugs found while building it, and what they were.** (1) `store.set` is
   memory-only in this app; a toggle wired with it alone flips, toasts, and is
   forgotten by the next load. The switch uses the shared `_initToggle`, which
   persists the settings blob. (2) The "announced" marker had the same problem,
-  which would have re-notified on every load — it now persists too.
+  which would have re-notified on every load â€” it now persists too.
 - **Cache-buster:** `v345`. Tests: `tests/php/update.test.php` (version parsing,
   the numeric compare in both directions, and every cache-expiry rule) and five
   cases in `tests/php/guards.test.php` for the new `storage/updates/*` files
@@ -2162,9 +2166,9 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## 📥 Updates: download, verify and diff a release — without installing it *(PHP + UI — v342 → v344)*
+## ðŸ“¥ Updates: download, verify and diff a release â€” without installing it *(PHP + UI â€” v342 â†’ v344)*
 
-- **What it does.** Config → Updates → **DOWNLOAD UPDATE…** fetches the
+- **What it does.** Config â†’ Updates â†’ **DOWNLOAD UPDATEâ€¦** fetches the
   published archive into `storage/updates/`, verifies it, extracts a staging copy
   and returns a plan: new / changed / unchanged / not-in-release, the version each
   side calls itself, archive size and SHA-256. **DISCARD** removes the lot.
@@ -2183,7 +2187,7 @@ assertions in `tests/php/sandbox.test.php`.
 - **Verification is not decorative.** https only, GitHub release hosts only
   (checked before the request *and* on the final URL after redirects), credentials
   and non-443 ports refused, 64 MB and 20 000-entry caps, and every entry name
-  resolved by hand — `..`, absolute paths, drive letters and `stream://` wrappers
+  resolved by hand â€” `..`, absolute paths, drive letters and `stream://` wrappers
   are refused; each write is re-checked to be inside the staging folder.
 - **Diff honesty.** Data folders (`screenshots/`, `sandbox/`) are excluded from the
   comparison entirely; files on disk the release lacks are listed as *not in this
@@ -2193,7 +2197,7 @@ assertions in `tests/php/sandbox.test.php`.
 - **No ZipArchive here.** Stock XAMPP does not enable it, so archives are read
   through PharData, which is compiled in; ZipArchive is still preferred when
   present. That difference is why the extraction path has two readers.
-- **Tests:** new `tests/php/update.test.php` — 45 assertions covering entry-name
+- **Tests:** new `tests/php/update.test.php` â€” 45 assertions covering entry-name
   refusals, wrapper stripping before the storage rule, diff classification,
   data-folder exclusion, and the source guard. Suite: **10 files / 447 assertions**
   (was 9 / 402). README gained an Updates section, its TOC entry and the API rows.
@@ -2201,11 +2205,11 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## 🧪 The layer ladder is now enforced by a test *(tests only — still v341)*
+## ðŸ§ª The layer ladder is now enforced by a test *(tests only â€” still v341)*
 
 - **New `tests/php/layers.test.php`.** It parses every `z-index` in `ui/css/*.css`
   with a real bracket/selector walker (grouped selectors and `@media` blocks
-  included — a "match up to the brace" regex gets both wrong, and getting them
+  included â€” a "match up to the brace" regex gets both wrong, and getting them
   wrong is how an audit quietly passes), then the literals set from `ui/js` and
   the inline ones in `index.html`, and fails if any **surface** ties or outranks
   the dialog layer.
@@ -2218,21 +2222,21 @@ assertions in `tests/php/sandbox.test.php`.
   from the `.modal-bg`/`.modal-overlay` rule, and the ladder comment in
   `modals.css` is checked against it, so moving the layer without updating the note
   fails the build rather than the next reader.
-- **The surfaces that broke once are asserted by name** — Browser pane, API Lab
+- **The surfaces that broke once are asserted by name** â€” Browser pane, API Lab
   drawer, terminal panel, notif dropdown, the floated agent menu, the 3D label
-  base — so a regression reports *which* one came back, not "something did".
+  base â€” so a regression reports *which* one came back, not "something did".
 - **Mutation-tested, because a guard that cannot fail is decoration.** Four changes
-  were applied and reverted: `.browser-screen` to 1400 → *"the built-in Browser pane
-  sits below dialogs (z=1400 vs 1300)"*; the menu back to 3000 → *"the floated agent
+  were applied and reverted: `.browser-screen` to 1400 â†’ *"the built-in Browser pane
+  sits below dialogs (z=1400 vs 1300)"*; the menu back to 3000 â†’ *"the floated agent
   menu stays under dialogs (z=3000)"*; `.notif-dropdown` (inside `@media`) to 1500
-  → caught with its media query named; a brand-new `.new-floating-thing` at 2000 →
+  â†’ caught with its media query named; a brand-new `.new-floating-thing` at 2000 â†’
   caught as an undeclared surface. All four exited `1`; the clean tree exits `0`.
 - **Suite:** 9 PHP files, **402 assertions**, 0 failed (was 8 files / 384).
   `README.md`'s test table now names the audit.
 
 ---
 
-## 🔍 z-index audit — nothing but notices outranks a dialog now *(CSS + 1 JS line — v340 → v341)*
+## ðŸ” z-index audit â€” nothing but notices outranks a dialog now *(CSS + 1 JS line â€” v340 â†’ v341)*
 
 - **Method.** Every `z-index` in `ui/css/*.css`, plus every one set from JS or an
   inline attribute, was listed; the ones at or above the dialog layer were then
@@ -2249,21 +2253,21 @@ assertions in `tests/php/sandbox.test.php`.
   | 1250 | `.browser-screen` | below dialogs, correct |
   | 1200 | `.lab-drawer` | below dialogs, correct |
   | 1000 | `.notif-dropdown` (`!important`, <=1024px) | below dialogs, correct |
-  | **3000 → 1000** | **agent/provider .agent-menu clone** | **was the one violation — fixed** |
+  | **3000 â†’ 1000** | **agent/provider .agent-menu clone** | **was the one violation â€” fixed** |
 
 - **The violation.** `sidebar.js` clones a card's `.agent-menu` onto `<body>` so it
   can escape the card's `overflow`, and stamped it `z-index: 3000`. Body-level, so
   that number competed with dialogs *directly*: with a menu open, a dialog (1300)
   and even the approval veil (2000) could be painted over by a menu that was
-  already on screen. It is now 1000 — the documented menus layer, still above the
+  already on screen. It is now 1000 â€” the documented menus layer, still above the
   cards (40), the chart drawer (950) and the terminal (100).
 - **Verified by A/B on the live page.** A menu clone overlapping an open dialog is
   hit at `1000` and `3000`: at 1000 the probe returns dialog content, at 3000 it
   returns `agent-menu`. With nothing open the real menu still receives clicks
   (`agent-menu-item`), so the fix costs no interactivity.
 - **Stacking-context check.** All ten modal constructors mount on
-  `document.body` (brainlab ×2, agentEditor ×3, export, metricsPanel,
-  providerEditor, sidebar ×2, tracePanel), so 1300 always competes at the root and
+  `document.body` (brainlab Ã—2, agentEditor Ã—3, export, metricsPanel,
+  providerEditor, sidebar Ã—2, tracePanel), so 1300 always competes at the root and
   no dialog is trapped beneath a lower context.
 - **Deliberately unchanged:** the notices above (a fatal banner or an approval must
   be seen), and the 3D labels' per-frame 1000, which lives inside the chart
@@ -2272,7 +2276,7 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## 🗂️ Dialogs now sit above every app surface *(CSS only — v339 → v340)*
+## ðŸ—‚ï¸ Dialogs now sit above every app surface *(CSS only â€” v339 â†’ v340)*
 
 - **The terminal was a false alarm.** Measured rather than eyeballed:
   `.terminal-panel` is `z-index: 100`, `.modal-bg` is 1000, and a hit test in the
@@ -2284,10 +2288,10 @@ assertions in `tests/php/sandbox.test.php`.
   the built-in Browser pane and then Config: the dialog painted underneath the
   pane, so the click read as dead rather than covered.
 - **Dialogs moved to 1300**, between the app surfaces and the notice layer, and the
-  whole ladder is now written down in `modals.css`: 100 floating panels · 1000
-  menus/dropdowns · 1200 API Lab drawer · 1250 Browser pane · **1300 dialogs** ·
-  2000 toasts + approval veil · 60000 API-locked banner. Approvals stay above
-  dialogs deliberately — a blocking prompt has to be visible even over one.
+  whole ladder is now written down in `modals.css`: 100 floating panels Â· 1000
+  menus/dropdowns Â· 1200 API Lab drawer Â· 1250 Browser pane Â· **1300 dialogs** Â·
+  2000 toasts + approval veil Â· 60000 API-locked banner. Approvals stay above
+  dialogs deliberately â€” a blocking prompt has to be visible even over one.
 - **Verified by A/B hit test on the live page.** With a dialog open over a visible
   Browser pane, probing a point both cover returned `bsImg` (pane content) at the
   old 1000 and dialog content at 1300. The earlier terminal overlap returns dialog
@@ -2296,7 +2300,7 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## 🧹 Section 3 of Allow / Deny stops overlapping *(CSS only — v338 → v339)*
+## ðŸ§¹ Section 3 of Allow / Deny stops overlapping *(CSS only â€” v338 â†’ v339)*
 
 - **What was wrong.** The interpreters block was a 3-up
   `repeat(auto-fill, minmax(190px, 1fr))` grid, but each `.interp-row` inside it
@@ -2305,13 +2309,13 @@ assertions in `tests/php/sandbox.test.php`.
   cell containing it: the next column's interpreter name and picker printed
   straight over it, and the overflow widened the modal body enough to put a
   horizontal scrollbar across the whole panel.
-- **The fix.** `grid-template-columns: minmax(0, 1fr)` — one full-width row per
+- **The fix.** `grid-template-columns: minmax(0, 1fr)` â€” one full-width row per
   interpreter. Ten rows, so the card grid bought nothing; the description column
   went from 0px to ~400px, which is what makes "scripts only vs full access"
   legible in the first place. Added `min-width: 0` on the row's children and
   `overflow-wrap: anywhere` on the description, because grid children default to
   `min-width: auto` and one long unbroken token would have re-created the same
-  overflow. The existing ≤560px stacking rule now uses `minmax(0, 1fr)` too.
+  overflow. The existing â‰¤560px stacking rule now uses `minmax(0, 1fr)` too.
 - **Verified on the live panel**, not just in CSS: modal body `scrollWidth ===
   clientWidth` (643px), zero rows whose content exceeds their box, description
   column 401px, and no horizontal scrollbar in the screenshot.
@@ -2320,15 +2324,15 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## ↩️ Denials now show their own undo path *(PHP + UI — v337 → v338)*
+## â†©ï¸ Denials now show their own undo path *(PHP + UI â€” v337 â†’ v338)*
 
 - **The problem was legibility, not policy.** A refused command said *"is on the
   command denylist and cannot be approved"* and pointed at an "Allow/Deny list"
   that is actually called **Shell access**. Nothing said the name could be
-  removed, or which box to remove it from — so a list you own read as a wall.
+  removed, or which box to remove it from â€” so a list you own read as a wall.
 - **The refusal carries the fix.** It now names the program, says the list is
   yours rather than a rule in code, and gives the exact path: *delete the
-  `explorer` line under Config → Shell access → Allow / Deny (section 4), add it
+  `explorer` line under Config â†’ Shell access â†’ Allow / Deny (section 4), add it
   to section 2.* The model relays it verbatim, so the person who can edit the
   list does not have to go looking.
 - **Section 4 of the panel stopped calling itself absolute.** It now says the
@@ -2336,30 +2340,30 @@ assertions in `tests/php/sandbox.test.php`.
   stating plainly that it is not permanent, and the hint under the box always
   explains how to un-deny a line.
 - **New: Restore built-in defaults.** `execAllowListPublic()` now sends
-  `deny_defaults` — the shipped list — *even when a custom list is active*.
+  `deny_defaults` â€” the shipped list â€” *even when a custom list is active*.
   Previously, once you replaced the defaults you could not see what you had
   replaced without opening `config.json`, so "put it back" was effectively a
   reinstall. The button loads the shipped list into the box; Save still applies it.
 - **An empty box is not "deny nothing".** It falls back to the built-in defaults,
-  deliberately — otherwise clearing the field would silently un-deny `rm`,
+  deliberately â€” otherwise clearing the field would silently un-deny `rm`,
   `sudo` and the Windows hosts in one click. The hint says so and names the real
   escape hatch, `"exec_deny": []` in `storage/config.json`.
-- **Tests:** 3 more assertions in `tests/php/sandbox.test.php` — the refusal text
+- **Tests:** 3 more assertions in `tests/php/sandbox.test.php` â€” the refusal text
   must name the undo path and the reason approval can't override it; policy info
   must expose the built-in defaults while a custom list is active; and an
   explicit empty array must deny *nothing* (so the hint's advice is true).
   Suite: **97 passed, 0 failed**.
 - **Cache-buster:** `v338` across `ui/` (52 files) **and the served root
-  `index.html`** (19 links) — the panel lives in `sidebar.js`, so a stale cache
+  `index.html`** (19 links) â€” the panel lives in `sidebar.js`, so a stale cache
   would hide the button. The root shell is the one `/` actually serves; bumping
   only `ui/` left the browser asking for `?v=337` and quietly running the old
   file.
 
 ---
 
-## 🛡️ Windows command hosts closed in the default denylist *(PHP only — v337)*
+## ðŸ›¡ï¸ Windows command hosts closed in the default denylist *(PHP only â€” v337)*
 
-- **The gap.** The denylist named `bash`, `sh`, `python`, `node` and friends — but
+- **The gap.** The denylist named `bash`, `sh`, `python`, `node` and friends â€” but
   policy compared the **literal** program name, so `bash.exe` (the WSL launcher)
   matched nothing. Worse, `cmd` and `powershell` were on *neither* list: an
   "Always allow" on one careless approval handed back a permanent shell, with the
@@ -2367,8 +2371,8 @@ assertions in `tests/php/sandbox.test.php`.
   jail cannot see it.
 - **The fix is one normalisation.** New `Sandbox::policyName()` folds case and
   drops a trailing `.exe`/`.com`, and `inPolicyList()` compares through it. Every
-  decision now goes through that pair — allowlist, denylist, both interpreter
-  levels, the approval grants and the per-command path table — so one entry
+  decision now goes through that pair â€” allowlist, denylist, both interpreter
+  levels, the approval grants and the per-command path table â€” so one entry
   covers both spellings **in both directions**: `grep` matches the `grep.exe` Git
   for Windows ships, and `bash` finally stops `bash.exe`.
 - **New default denials (all removable):** `cmd`, `powershell`, `pwsh`,
@@ -2379,66 +2383,66 @@ assertions in `tests/php/sandbox.test.php`.
   (`explorer thing.exe` runs it).
 - **Nothing is permanent, by design.** These are *defaults*. An explicit
   `sandbox.exec_deny` replaces the defaults wholesale, the list is editable in
-  **Config → Shell access**, and removing a name makes that command ordinary
-  again — refused as "not allowed" and back in the approval queue. No program is
-  refused by name anywhere in the code, and README §3 no longer claims otherwise.
+  **Config â†’ Shell access**, and removing a name makes that command ordinary
+  again â€” refused as "not allowed" and back in the approval queue. No program is
+  refused by name anywhere in the code, and README Â§3 no longer claims otherwise.
 - **Your own install was not covered by the code alone.** A config that has ever
   saved its list keeps its own copy, so the 15 names were appended to the live
-  `storage/config.json` (86 → 101 entries, order preserved, backup written to
+  `storage/config.json` (86 â†’ 101 entries, order preserved, backup written to
   `storage/config.json.bak`). Nothing was added to any allowlist, and **shell
-  access stays off** — this changes what happens the day it is switched on, not
+  access stays off** â€” this changes what happens the day it is switched on, not
   what happens today.
-- **Tests:** `tests/php/sandbox.test.php` gains 20 assertions — every host refused
+- **Tests:** `tests/php/sandbox.test.php` gains 20 assertions â€” every host refused
   by default in either spelling (`CMD.EXE`, `PowerShell.EXE`), `echo.exe` still
   reaching the allowlisted `echo`, and the one that matters most: with a deny list
   that omits `cmd`, `cmd` is ordinary again. Full suite: **94 passed, 0 failed**.
 
 ---
 
-## 📸 README rebuilt around the two interfaces *(docs only — still v337)*
+## ðŸ“¸ README rebuilt around the two interfaces *(docs only â€” still v337)*
 
 - **The README now opens on the new UI.** `screenshots/new-ui-main.png` is the
   hero, captioned as **Desktop 2026**; `screenshots/mainscreen01.png` follows
   immediately as **Classic**, stated plainly to be **the default** and not a
-  legacy mode. Both are 1920×1080 and referenced relatively, so they render on
+  legacy mode. Both are 1920Ã—1080 and referenced relatively, so they render on
   GitHub exactly as they do locally.
 - **Two new sections.** *Two interfaces, one switch* compares the shells row by
-  row with a layout sketch, and *Config → Desktop — the machine-room card* uses
+  row with a layout sketch, and *Config â†’ Desktop â€” the machine-room card* uses
   `screenshots/desktop-settings.png` to walk every knob: a relative-cost ladder
   (blur > detail > bloom > floor > fps > glow/motion > rotate), what the
   performance preset writes and how it restores, and a full topography
-  explanation — the screen-space haze (v336), the pinned floor, why map detail is
+  explanation â€” the screen-space haze (v336), the pinned floor, why map detail is
   manual now (the three-or-four "flashes" that used to degrade the lines), the
-  frame cap, idle auto-rotate — ending with a defaults table for Desktop, Labs
+  frame cap, idle auto-rotate â€” ending with a defaults table for Desktop, Labs
   and Resource Manager.
-- **Security grew real detail.** §16 is now a **path × serving-mode matrix**
+- **Security grew real detail.** Â§16 is now a **path Ã— serving-mode matrix**
   (`serve.php` / Apache / nginx / IIS) covering any-depth paths, case variants,
   dotfiles, loose data files, the `/api/*` exemption and lookalike names, plus
   *why* the nested-copy case exists and why Apache needs `RedirectMatch` where a
-  `RewriteRule` is silently replaced by the child `.htaccess`. New **§17** lists
-  the tests that request each path for real, and new **§18** documents the closed
+  `RewriteRule` is silently replaced by the child `.htaccess`. New **Â§17** lists
+  the tests that request each path for real, and new **Â§18** documents the closed
   browser-side defaults: no CORS wildcard (with `ROUTER_CORS_ORIGINS` as the
   opt-in), the three security headers, and the `no-store` / `no-cache` policy.
-- **Corrected while passing through:** the API-pool default is **ON** (§14 and
-  the API-pool section — it stays inert without pool keys), the Config section
-  list now matches the app (Interface · Limits & Budgets · Permissions · Labs ·
-  Resource Manager · Throttle / Limiter · MCP Client · MCP Server + Desktop), the
+- **Corrected while passing through:** the API-pool default is **ON** (Â§14 and
+  the API-pool section â€” it stays inert without pool keys), the Config section
+  list now matches the app (Interface Â· Limits & Budgets Â· Permissions Â· Labs Â·
+  Resource Manager Â· Throttle / Limiter Â· MCP Client Â· MCP Server + Desktop), the
   IIS snippet blocks all five names, `mcpStdio` is in the tree, the defaults are
-  stated once and pointed at from elsewhere, and the clean-copy section is gone —
+  stated once and pointed at from elsewhere, and the clean-copy section is gone â€”
   the published repo *is* that copy, so a section describing a nested folder was
   pointing at a door that isn't there. A **contents list** at the top links every
   section (and all eighteen security subsections) straight to its heading.
 
 ---
 
-## v337 — shipped defaults for a weak GPU, and a genuinely clean copy
+## v337 â€” shipped defaults for a weak GPU, and a genuinely clean copy
 
 - **The Desktop card now opens the way a low-powered machine wants it.** These
   are the defaults a fresh install starts from; anything already saved in
   `storage/state.json` is untouched, so an existing install keeps its own values
-  until a control is moved. Chat background **4%** (`d26ChatAlpha` 0.72 → 0.04),
-  glass blur **1px** (`d26Blur` 10 → 1), floor **pinned** (`topoFloorFixed` false
-  → true). Already at the requested end and left alone: tuck panels away **on**,
+  until a control is moved. Chat background **4%** (`d26ChatAlpha` 0.72 â†’ 0.04),
+  glass blur **1px** (`d26Blur` 10 â†’ 1), floor **pinned** (`topoFloorFixed` false
+  â†’ true). Already at the requested end and left alone: tuck panels away **on**,
   background fog **on**, bloom **on**, floating floor **on**, slow auto-rotate
   **on**, glow and ambient motion **100%**, map detail **100%**, frame cap **60**,
   performance mode **off**. The blur slider is pixels (0-24), not per cent, so
@@ -2447,7 +2451,7 @@ assertions in `tests/php/sandbox.test.php`.
   `--d26-blur` fallbacks were brought to the same values so the first paint
   matches what JS then sets.
 - **Labs:** API pool is now **on** by default (it only engages for a provider that
-  actually carries pool keys — `pickKey` returns null with an empty pool, so the
+  actually carries pool keys â€” `pickKey` returns null with an empty pool, so the
   single provider key is used exactly as before), Dynamic tools **on**, Remember
   the working dialect **on**, Keep Live running when hidden **on**, and the
   built-in Browser **off** (already the server-side default: `browser.enabled`
@@ -2456,17 +2460,17 @@ assertions in `tests/php/sandbox.test.php`.
 - **`cleancopy/` is now a clean, runnable copy of the current app.** It carries no
   access token, no provider keys, no MCP servers, no saved state, no session
   transcripts, no exec/MCP logs, no approvals file, no browser profile and no
-  `.htpasswd` — and it ships `storage/models.json` with the three hard-coded
+  `.htpasswd` â€” and it ships `storage/models.json` with the three hard-coded
   model templates (ChatGPT-4 / Claude 3.5 / Gemini 2.0, endpoints intact,
   `api_key` empty) plus `storage/.htaccess`, so it starts from a first-run state
   that the app fills in itself. The reference archive, `Autonomous.zip`, the
   editor folders and the handover notes are not part of it; its `.git` (the clone
-  of the upstream repo — the working folder has none) is preserved.
+  of the upstream repo â€” the working folder has none) is preserved.
 - **`apacheGuards.test.php` could 500 on any nested checkout.** Apache reads
   `.htaccess` files **above** DocumentRoot too, so a copy of the app sitting
   *inside* another copy had the parent's file parsed as server config, where its
-  `<IfModule>` is illegal: `C:/…/router/.htaccess: <IfModule not allowed here`,
-  and every request in the document root answered 500 — 19 red assertions that
+  `<IfModule>` is illegal: `C:/â€¦/router/.htaccess: <IfModule not allowed here`,
+  and every request in the document root answered 500 â€” 19 red assertions that
   said nothing about the copy. The generated config now pins every ancestor of
   the document root to `AllowOverride None`, so only the shipped `.htaccess`
   files (root, `storage/`, `tests/`) are under test. Proof: nested copy before the
@@ -2478,17 +2482,17 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v336 — the background fog stops travelling with the map
+## v336 â€” the background fog stops travelling with the map
 
 - **The haze was a fog effect, not a backdrop.** `scene.fog` was active with
-  `fog.mode = 'bg'` and the scene background was a `HAZE → SPACE` gradient texture
-  whose vertical span was the map's own extent (`minY … maxY`). Fog is painted in
+  `fog.mode = 'bg'` and the scene background was a `HAZE â†’ SPACE` gradient texture
+  whose vertical span was the map's own extent (`minY â€¦ maxY`). Fog is painted in
   the map's eye space, so orbiting, zooming or dragging the chart carried the haze
-  along with the nodes it surrounded — and because the gradient was anchored to the
+  along with the nodes it surrounded â€” and because the gradient was anchored to the
   picture, it only ever covered the slice of the window the map happened to fill.
 - **The backdrop now paints itself, in screen space.** `scene.background` is a
   `_skyTexture()` sized to the renderer (the same 512 px radial gradient, same six
-  stops — clear near the grid at the bottom, ~0.5 alpha at the top edge, darker than
+  stops â€” clear near the grid at the bottom, ~0.5 alpha at the top edge, darker than
   the fog's old `fogColor` so the bottom keeps its contrast), and `scene.fog` is
   `null` so nothing can smear it again. Background quads are drawn by the renderer
   before any scene content and never move with the camera, so the haze reaches the
@@ -2497,28 +2501,28 @@ assertions in `tests/php/sandbox.test.php`.
   falloff), `fog: false` on the ground haze keeps it out of the removed fog's reach,
   and **Background Only** still fills the window; turning fog off still gives a flat
   `SPACE` colour, **Background + floor** still fogs the floor.
-- **Measured in the running app** (1400×900, real WebGL, left edge of the canvas to
+- **Measured in the running app** (1400Ã—900, real WebGL, left edge of the canvas to
   stay clear of nodes): fog on, top-of-viewport pixel `rgb(20, 47, 72)`, 75% height
-  `rgb(19, 43, 67)`, bottom `rgb(4, 7, 12)` — the fade into the grid survives. After
-  a 49° orbit the top and 75% pixels are **byte-identical** while an off-centre world
-  point moved from NDC `(0.855, 0.104)` to `(0, −0.063)`, i.e. the view really
-  changed and the haze did not. Fog off → every sample is `rgb(4, 7, 12)` and the
+  `rgb(19, 43, 67)`, bottom `rgb(4, 7, 12)` â€” the fade into the grid survives. After
+  a 49Â° orbit the top and 75% pixels are **byte-identical** while an off-centre world
+  point moved from NDC `(0.855, 0.104)` to `(0, âˆ’0.063)`, i.e. the view really
+  changed and the haze did not. Fog off â†’ every sample is `rgb(4, 7, 12)` and the
   background is a plain `Color`, so the toggle is intact.
 
 ---
 
-## v335 — the Config tab stops locking the page up, and the guard stops eating /api/sessions
+## v335 â€” the Config tab stops locking the page up, and the guard stops eating /api/sessions
 
 - **A childList observer that fed itself.** `syncDesktopConfig()` was called from
-  the sidebar's mutation observer and always ran `syncSkinOnly()` →
-  `syncFloorControls()`, which assigned `out.textContent = …`. Assigning
+  the sidebar's mutation observer and always ran `syncSkinOnly()` â†’
+  `syncFloorControls()`, which assigned `out.textContent = â€¦`. Assigning
   `textContent` replaces a text node, which is a childList mutation, so the
-  observer fired again on its own write — forever. With the Config tab open, any
-  sidebar mutation (the Resource Manager CPU readout ticks ~3.5×/s) started an
+  observer fired again on its own write â€” forever. With the Config tab open, any
+  sidebar mutation (the Resource Manager CPU readout ticks ~3.5Ã—/s) started an
   endless loop and Chrome killed the page: *Script terminated by timeout at
-  syncSkinOnly … syncDesktopConfig … MutationCallback*.
+  syncSkinOnly â€¦ syncDesktopConfig â€¦ MutationCallback*.
 - **Fixed at the source, twice over.** The observer now returns immediately when
-  the Desktop card is already in place — it does no work, so it cannot re-enter —
+  the Desktop card is already in place â€” it does no work, so it cannot re-enter â€”
   and `syncDesktopConfig()` on its own only injects a missing card. The floor label
   is written only when the string actually changes, so no future caller can feed a
   mutation back into the same observer. `sync()` now calls `syncSkinOnly()`
@@ -2532,8 +2536,8 @@ assertions in `tests/php/sandbox.test.php`.
   the API client could not parse it, and the sidebar reported *API 403: the server
   sent a web page instead of JSON*. The nginx rule and the Apache `RedirectMatch`
   had the same collision. In all three modes the segment rule now skips the API
-  namespace — `$isApiRoute` in `serve.php`, a `(?!api/)` lookahead in
-  `nginx.example.conf` and in the root `.htaccess` — because API routes are
+  namespace â€” `$isApiRoute` in `serve.php`, a `(?!api/)` lookahead in
+  `nginx.example.conf` and in the root `.htaccess` â€” because API routes are
   endpoints, not files: the handlers open `storage/` themselves, server-side.
 - Each mode has a test that would have caught it: `guards.test.php` asserts
   `/api`, `/api/sessions`, `/api/config` and `/api/state` are never refused and are
@@ -2543,16 +2547,16 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v335 — the interface is a choice again: Classic by default, Desktop 2026 on request
+## v335 â€” the interface is a choice again: Classic by default, Desktop 2026 on request
 
-- **Two shells, one switch.** Config → Interface now carries an **Interface**
+- **Two shells, one switch.** Config â†’ Interface now carries an **Interface**
   picker. **Classic** is the default and is the layout from before the desktop
   refresh: the left setup panel, the chat and the right map/network panel side by
   side, with nothing tucked away. **Desktop 2026** is the glass shell that used to
-  arrive on its own at 1025px — floating cards on a rail, Config in drawers that
+  arrive on its own at 1025px â€” floating cards on a rail, Config in drawers that
   fly out of their labels, a wider chat.
 - **Silence means Classic.** The rule lives in the new `ui/js/ifaceMode.js`: any
-  value that is not an explicit `desktop` — absent, empty, stale, misspelled —
+  value that is not an explicit `desktop` â€” absent, empty, stale, misspelled â€”
   resolves to Classic. A fresh install and every existing profile therefore start
   Classic on the next load, with nothing migrated and no setting rewritten behind
   the operator.
@@ -2562,7 +2566,7 @@ assertions in `tests/php/sandbox.test.php`.
   untouched in either mode.
 - **No reload, nothing lost.** Changing the picker applies at once (the skin
   listens for the change) and is written through immediately, so it survives a
-  reload even if SAVE is never pressed. Every feature works in both shells — map
+  reload even if SAVE is never pressed. Every feature works in both shells â€” map
   detail, floor pinning, the performance preset, the `/` palette, the streaming
   fixes; only the glass goes away.
 - **The Desktop card now exists in both shells.** It used to be injected by the
@@ -2579,7 +2583,7 @@ assertions in `tests/php/sandbox.test.php`.
 - Covered by `tests/js/ifaceMode.test.mjs` (37 assertions: the default, every
   spelling that must not upgrade the shell, and the narrow-window rule). The
   archive at `the-copy-before-the-huge-ui-change/` was used only to confirm the
-  change was additive — `layout.css`, `chat.css` and `base.css` are identical
+  change was additive â€” `layout.css`, `chat.css` and `base.css` are identical
   there, so Classic needs no duplicated front end. It is not a second copy of the
   app: nothing loads from it, and it is 588 MB including its own `storage/`.
 - **The `storage`/`tests` refusal now holds at any depth.** Verified while
@@ -2589,28 +2593,28 @@ assertions in `tests/php/sandbox.test.php`.
   router now refuses those names as any path segment, case-insensitively, and
   `guards.test.php` has four nested cases (`/a-copy-of-the-app/storage/config.json`,
   a nested case variant, a nested transcript, nested dev tooling) so it cannot
-  slide back. App files inside a nested copy are still served — only the data
+  slide back. App files inside a nested copy are still served â€” only the data
   folders are refused.
 - **The same hole in `nginx.example.conf`, closed the same way.** Its rules
   anchored on `^/router/(storage|logs|tmp|sessions|tests)/`, so only the app's own
   folders were guarded: a nested copy's bare `storage/`, and the extension-less
-  files under it (`storage/browser-profile/` — the Chromium cookie jar), were
+  files under it (`storage/browser-profile/` â€” the Chromium cookie jar), were
   readable. Its `.json/.log/.ini` files were already caught by the loose-data rule,
   which is why this narrower hole went unnoticed. The two folder rules are now one
-  case-insensitive rule matching those names as any path segment —
-  `^/router/(.+/)?(storage|logs|tmp|sessions|tests)(/|$)` — which also covers the
+  case-insensitive rule matching those names as any path segment â€”
+  `^/router/(.+/)?(storage|logs|tmp|sessions|tests)(/|$)` â€” which also covers the
   bare folder with or without a trailing slash (the old pair needed 1b for that).
   `tests/php/nginxGuards.test.php` now pins it: it lifts the regexes out of the
   shipped file and runs them through PCRE (the engine nginx itself uses, so no
   nginx binary is needed): 37 refused URIs, a real session transcript too when one
-  exists, and 15 that must still be served — including `ui/js/storage.js`,
+  exists, and 15 that must still be served â€” including `ui/js/storage.js`,
   `ui/js/tests.js`, `mytests/run.mjs`, `storagelike/` and the `/.well-known/` ACME
   exception. Put the old anchored rule  back and 7 of them fail, including the bare nested folder and nested tooling; the
   file was restored byte-identically (sha256 checked) and all 55 pass again.
 - **Apache had the same gap, and it was the worst of the three.** Booting the
   local XAMPP Apache (2.4.58) with this project as DocumentRoot and
   `AllowOverride All`, the archive's `storage/` was refused by its own
-  `storage/.htaccess` — but `…/the-copy-before-the-huge-ui-change/tests/php/sandbox.test.php`
+  `storage/.htaccess` â€” but `â€¦/the-copy-before-the-huge-ui-change/tests/php/sandbox.test.php`
   came back **200, in full, PHP source included**, and `tests/js/context.test.mjs`
   returned its `import` lines. That copy predates `tests/.htaccess`, and the app
   root `.htaccess` had no path rule at all.
@@ -2621,13 +2625,13 @@ assertions in `tests/php/sandbox.test.php`.
   root `.htaccess` now carries `RedirectMatch 403 (?i)^/(?:.*/)?(?:storage|logs|tmp|sessions|tests)(?:/|$)`,
   inside `<IfModule mod_alias.c>` so a host without the module skips it rather than
   failing to parse. mod_alias has shipped with Apache since 1.3 and `RedirectMatch`
-  sees the full URL-path, which is what the nested case needs — the alternative,
+  sees the full URL-path, which is what the nested case needs â€” the alternative,
   `<If>`, only became legal in `.htaccess` in later 2.4 releases. The `RewriteRule`
   stays as the cheap root-level path; segment anchoring keeps `/testsuite/`,
   `/ui/js/tests.js` and `/storagelike/` out of both.
 - `apacheGuards.test.php` covers the copy: nested config, state, both bare folders,
   the cookie jar under `browser-profile/` (no extension, so only a folder rule
-  protects it), nested PHP and JS tooling, and an upper-case spelling — while
+  protects it), nested PHP and JS tooling, and an upper-case spelling â€” while
   asserting a nested copy's `ui/js/store.js` still serves and names that merely
   contain a guarded word are not blocked. 47 assertions, up from 28. Deleting the
   `RedirectMatch` block and re-running fails 7 of them (`nested PHP tooling is
@@ -2637,10 +2641,10 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v335 — the "/" palette answers to how an agent is actually written
+## v335 â€” the "/" palette answers to how an agent is actually written
 
 - **A code can be typed without its hash.** Codes are displayed as `#B8NL6F`, so
-  the hash reads as part of the handle — but the palette compared what you typed
+  the hash reads as part of the handle â€” but the palette compared what you typed
   against the stored value *including* the `#`, so `/B8NL6F` listed nothing while
   `/#B8NL6F` worked. `agentSearch.js` normalises both sides the same way
   `routing.js` already did, so either spelling finds the agent.
@@ -2654,7 +2658,7 @@ assertions in `tests/php/sandbox.test.php`.
   pointing at detached nodes: typing then rendered the list into a panel nobody
   could see, with no error. `_render()` now rebuilds a panel that has left the
   document, the input is re-resolved when it has gone, and two instances on one
-  textarea (an init that ran twice) resolve to one — the newest takes the box and
+  textarea (an init that ran twice) resolve to one â€” the newest takes the box and
   disposes the older, instead of stacking a stale copy over it.
 - The matching rule moved into `ui/js/agentSearch.js`, which imports nothing and
   touches no browser global, so it is covered by `tests/js/agentSearch.test.mjs`
@@ -2664,18 +2668,18 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v335 — the fallback floor can be fixed in place, and no longer drags with an orbit
+## v335 â€” the fallback floor can be fixed in place, and no longer drags with an orbit
 
 - **Why it moved.** With the floating floor off, the grid you get is a real
-  object in the 3D scene, sitting at a real height along with the graph — so an
+  object in the 3D scene, sitting at a real height along with the graph â€” so an
   orbit carried it around with the camera, and a low angle flattened it into a
   line. It was never the still backdrop the DOM floor is.
-- **Desktop → Fix the floor in place** (Config tab, Desktop section, under
+- **Desktop â†’ Fix the floor in place** (Config tab, Desktop section, under
   Floating floor). On, `_pinGrid()` re-places the polar grid in camera space each
   frame, sized and pitched like the DOM floor: a 150vmax disc centred 10% below
   the middle of the view. The same spot at every orbit angle, pan and zoom, while
   the graph itself stays fully orbitable, draggable and zoomable. Measured: after
-  a 35° orbit and a 3× zoom, every sampled point of the grid projected to the same
+  a 35Â° orbit and a 3Ã— zoom, every sampled point of the grid projected to the same
   pixel as before.
 - **`setGridFixed()` / `setFloor()` share the transform.** While pinned, the
   follow lerp stops writing to the grid, so the auto-fit cannot nudge it; its
@@ -2683,23 +2687,23 @@ assertions in `tests/php/sandbox.test.php`.
   of sliding back to it. Fog is skipped on the grid while it is pinned (at a fixed
   camera distance it would only dim evenly, or erase it in "background only"
   mode), and restored when it is released.
-- **The disc is clamped to stay in front of the camera.** At a 74° pitch 96% of
-  its radius comes back toward the viewer, so geometry behind the near plane — the
-  cause of the tearing a full-bleed fixed floor would show — is avoided by holding
+- **The disc is clamped to stay in front of the camera.** At a 74Â° pitch 96% of
+  its radius comes back toward the viewer, so geometry behind the near plane â€” the
+  cause of the tearing a full-bleed fixed floor would show â€” is avoided by holding
   its near edge at least 35% of the placement distance away; it spans about three
-  quarters of the window at 1500×900.
+  quarters of the window at 1500Ã—900.
 - **The control only applies to the fallback grid**, so it is disabled (keeping
   its value) while the floating floor is the one on screen, and says why:
   "floating floor is on" / "pinned" / "moves with the map".
 
 ---
 
-## v335 — the map keeps its detail, and one control lowers it on purpose
+## v335 â€” the map keeps its detail, and one control lowers it on purpose
 
 - **The pixelation was the map lowering its own resolution.** `SceneCore` shipped
   an adaptive render scale: every 1.5s it sampled the GPU timer (or frame time)
-  and stepped the internal resolution down one rung — 100% → 85% → 70% → 55% →
-  42% — whenever a frame ran long. Every rung re-set the renderer's pixel ratio
+  and stepped the internal resolution down one rung â€” 100% â†’ 85% â†’ 70% â†’ 55% â†’
+  42% â€” whenever a frame ran long. Every rung re-set the renderer's pixel ratio
   and re-sized the composer, which is the flash or refresh you saw, and the map
   never came back up unless the machine was comfortably fast. On a slower GPU
   that is four steps within the first ~6s, so the lines went soft a few seconds
@@ -2707,11 +2711,11 @@ assertions in `tests/php/sandbox.test.php`.
 - **`_adapt()` is gone.** Nothing steps the map's resolution behind your back
   any more; the scene renders at one scale from load until you change it. The
   scale is now an explicit setting, read once by `_applyTopoSettings()`.
-- **Desktop → Map detail** (Config tab, Desktop section): 100 / 85 / 70 / 55 /
+- **Desktop â†’ Map detail** (Config tab, Desktop section): 100 / 85 / 70 / 55 /
   42%, shown as a slider with its value beside the label. `setQuality()` in
   `scene.js` snaps to the nearest rung and does nothing when it is already there,
   so re-applying the setting never re-sizes or flickers the composer. Lowering it
-  is the GPU win the old adaptive scale was reaching for — it draws the same map,
+  is the GPU win the old adaptive scale was reaching for â€” it draws the same map,
   fewer pixels deep.
 - **Performance mode includes it now** (70%), so the one-click cheap preset
   still cuts fill rate; switching the preset off restores whatever value you had,
@@ -2719,13 +2723,13 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v335 — the config drawer closes once, and a press outside closes it
+## v335 â€” the config drawer closes once, and a press outside closes it
 
 - **The re-open.** Closing an expanded section from the left stack retracted,
   then the panel popped back in about four fifths of the way through and
   vanished again. `closeFly()` clears `fly` immediately (so a click during the
   animation is not read as "still out"), but the Config tab repaints its live
-  status lines, and every repaint runs `decorate()` → `syncFly()`, which saw the
+  status lines, and every repaint runs `decorate()` â†’ `syncFly()`, which saw the
   section still `open` for the rest of the 440ms retract and opened it again.
   A new `closing` reference (`desktop2026.js`) remembers what is retracting, and
   `syncFly()` now skips it; its `done()` also stands down if a drawer has taken
@@ -2742,10 +2746,10 @@ assertions in `tests/php/sandbox.test.php`.
   owns "which section's drawer should be out" as `planDrawer()`, with no DOM and
   no imports; the skin passes the section elements in and gets them back. It is
   the same rule, including the `closing` gate above.
-- **`tests/js/drawerState.test.mjs` pins the race** — 21 assertions: the named
+- **`tests/js/drawerState.test.mjs` pins the race** â€” 21 assertions: the named
   cases (a repaint mid-close, a click mid-close, clicking the retracting section,
   a finished close, a swap, a click that closed its own section) plus every
-  combination of open-set × current × closing × clicked (512), asserting no
+  combination of open-set Ã— current Ã— closing Ã— clicked (512), asserting no
   combination ever opens the retracting section, never folds up the outgoing or
   the incoming drawer, always retracts before opening, and always obeys a click
   on an open section. Proved to fail: dropping the `closing` filter reproduces
@@ -2760,12 +2764,12 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v335 — a finished reply never commits raw tool-call JSON
+## v335 â€” a finished reply never commits raw tool-call JSON
 
 - **The leak.** When a turn ended without prose (out of steps, out of time, or
-  stopped right after a call), the fallback committed `turnText` — the run's raw
-  stream — so the transcript could end up holding
-  `{"tool":"read_file","arg":{…}}` as the answer, duplicating the tool panel in a
+  stopped right after a call), the fallback committed `turnText` â€” the run's raw
+  stream â€” so the transcript could end up holding
+  `{"tool":"read_file","arg":{â€¦}}` as the answer, duplicating the tool panel in a
   shape that reads like an unfinished reply.
 - **Two accumulators, two jobs.** `node.turnText` stays the raw stream and is what
   the live bubble paints (the operator asked to see everything while it runs).
@@ -2774,7 +2778,7 @@ assertions in `tests/php/sandbox.test.php`.
 - **`stripToolCall()` in `tools.js`** does the cutting, next to the parser that
   owns the dialects: it removes fenced call blocks, XML/native wrappers
   (`<invoke>`, `<function>`, `<tool_call>`, Qwen `tool_call_begin`), and bare
-  balanced JSON objects — each removal validated by `_parseToolCall()`, so prose
+  balanced JSON objects â€” each removal validated by `_parseToolCall()`, so prose
   containing braces or angle brackets is left untouched. It walks past non-call
   objects instead of stopping at the first `{`.
 - **An out-of-budget turn now returns prose (possibly none)** instead of the raw
@@ -2782,7 +2786,7 @@ assertions in `tests/php/sandbox.test.php`.
   N tool calls" notice.
 - **`tests/js/stripToolCall.test.mjs`** pins it: 27 DOM-free assertions over every
   markup shape (JSON, fenced JSON, `<invoke>`/`<function_calls>`, the three Qwen
-  spellings), plus the cases that must be left alone — ordinary code blocks,
+  spellings), plus the cases that must be left alone â€” ordinary code blocks,
   brace-and-angle-bracket prose, and an object naming no known tool. Verified to
   fail (15 assertions) against a no-op `stripToolCall`, so it cannot pass by
   accident.
@@ -2793,11 +2797,11 @@ assertions in `tests/php/sandbox.test.php`.
   picked up as a test.
 - **`php tests/php/run.php`** does the same for the PHP suite (7 files, 265
   assertions): each `*.test.php` in its own PHP process via `PHP_BINARY`.
-  `mcp-mock-server.php` stays a helper — it is not named `*.test.php`.
-- **`tests/php/apacheGuards.test.php` — the `.htaccess` denial is tested too,**
+  `mcp-mock-server.php` stays a helper â€” it is not named `*.test.php`.
+- **`tests/php/apacheGuards.test.php` â€” the `.htaccess` denial is tested too,**
   not just the router in `serve.php`. It writes a throwaway Apache config (free
   loopback port, `DocumentRoot` at this project, `AllowOverride All`, only the
-  modules the shipped `.htaccess` files need — each added only when its `.so`
+  modules the shipped `.htaccess` files need â€” each added only when its `.so`
   exists, since loading a compiled-in module is fatal), boots the local Apache,
   asserts, and shuts it down; config, logs, pidfile all in the system temp dir and
   removed afterwards. It **skips** (exit 0, `SKIP:` line) when there is no Apache
@@ -2808,26 +2812,26 @@ assertions in `tests/php/sandbox.test.php`.
     `/storage/sessions/`. Each denied path is checked for **403** *and* for the
     absence of that file's own content in the error body (Apache answers with an
     HTML error page, so "tiny body" is not available here).
-  - **case variants** (`/Tests/…`, `/TESTS/`) accept **403 or 404**: Windows and
+  - **case variants** (`/Tests/â€¦`, `/TESTS/`) accept **403 or 404**: Windows and
     macOS resolve them to the real folder, Linux does not.
   - **still served, checked by content:** `/` (real `index.html`) and
     `/ui/js/store.js` (`APP_VERSION`).
   - **no overreach:** `/testsuite/missing` must not be 403.
-- **Proved it fails:** removing `tests/.htaccess` → exit 1, **11 failures**, with
-  the JS and PHP test sources served; removing `storage/.htaccess` → exit 1,
+- **Proved it fails:** removing `tests/.htaccess` â†’ exit 1, **11 failures**, with
+  the JS and PHP test sources served; removing `storage/.htaccess` â†’ exit 1,
   **7 failures**, with `state.json` and `config.json` served and `/storage`
   answering **301** (a listing). Both files were restored byte-identical (`cmp`)
   and the suite went back to green.
-- **`tests/php/guards.test.php` — the guards are now tested, not just written.**
+- **`tests/php/guards.test.php` â€” the guards are now tested, not just written.**
   It starts `php -S 127.0.0.1:<free port> serve.php` from the project root, makes
   real requests, and stops the server (a shutdown function kills it even on a
   fatal). 70 assertions, each blocked path checked **twice**: the status must be
-  **403**, and the body must be the router's own nine-byte `Forbidden` — anything
+  **403**, and the body must be the router's own nine-byte `Forbidden` â€” anything
   larger means content came with it.
   - **tests:** the two runners, a JS test, `guards.test.php` itself, the folder
-    with and without a slash, and the case variants `/TESTS/…`, `/Tests/…`.
+    with and without a slash, and the case variants `/TESTS/â€¦`, `/Tests/â€¦`.
   - **storage and its neighbours:** `state.json`, `config.json`, the bare folder,
-    `sessions/`, a missing transcript, a `.bak` dropped in there, `/STORAGE/…`, and
+    `sessions/`, a missing transcript, a `.bak` dropped in there, `/STORAGE/â€¦`, and
     **a real transcript by its real name** (globbed from the disk, skipped cleanly
     when a checkout has none).
   - **the other refused dirs:** `logs/`, a log file, `tmp/`, `/sessions/` and a
@@ -2841,13 +2845,13 @@ assertions in `tests/php/sandbox.test.php`.
     part of a filename) are not blocked.
   Loopback only, no curl extension (this machine has none), no token, and it never
   writes to `storage/`.
-- **Proved it fails when it should** — three mutations, each restored byte-for-byte
+- **Proved it fails when it should** â€” three mutations, each restored byte-for-byte
   (`cmp`) and re-run green:
-  - drop `'/tests'` → exit 1, 6 failures;
-  - make the prefix match case-sensitive → exit 1 on exactly the two case variants;
-  - disable the dotfile rule → exit 1, 12 failures, including `.htaccess` served
+  - drop `'/tests'` â†’ exit 1, 6 failures;
+  - make the prefix match case-sensitive â†’ exit 1 on exactly the two case variants;
+  - disable the dotfile rule â†’ exit 1, 12 failures, including `.htaccess` served
     with **1871 bytes** and `.htpasswd` with **67**;
-  - drop `'/storage'` → exit 1, 18 failures, including `state.json` served with
+  - drop `'/storage'` â†’ exit 1, 18 failures, including `state.json` served with
     **1,339,033 bytes** and `config.json` (token + keys) with **334**. The test
     prints body *lengths* only, never body content, so a failing run cannot spill
     secrets into a log.
@@ -2856,7 +2860,7 @@ assertions in `tests/php/sandbox.test.php`.
   interpreter is missing is reported as **did not run and fails the command**,
   never as a pass (verified: with a broken `PHP_BINARY` the JS suite still runs
   and the exit code is 1).
-- **README → 🧪 Tests** documents all three commands, the naming rule that
+- **README â†’ ðŸ§ª Tests** documents all three commands, the naming rule that
   registers a test, the exit-code contract, the `PHP_BINARY` fallback, and the
   the two cases that **skip** rather than pass: `sandbox.test.php` when git is
   unavailable or refused, and `guards.test.php` when `proc_open` is disabled or
@@ -2865,8 +2869,8 @@ assertions in `tests/php/sandbox.test.php`.
   runners as well. Suite now: 14 files, 450 assertions (PHP 265 + JS 185), ~9s
   (two of the PHP files boot a real server).
 - **The section leads with what `tests/` is NOT:** optional dev tooling that the
-  app never loads, needing no `package.json`, no `node_modules` and no install —
-  the app stays plain PHP and drag-and-drop — and says where the folder is
+  app never loads, needing no `package.json`, no `node_modules` and no install â€”
+  the app stays plain PHP and drag-and-drop â€” and says where the folder is
   blocked and where it is not.
 - **The same denial now exists in every serving mode.** `tests/.htaccess` ships
   with the app (the same portable `Require all denied` + Apache 2.2 fallback as
@@ -2894,11 +2898,11 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v334 — streaming stays cheap as the bubble grows
+## v334 â€” streaming stays cheap as the bubble grows
 
 - **The cost.** v333 made the live bubble hold the whole run, but it was still one
   string rewritten on every token, so a long turn recopied everything it had said
-  for each new token — work that grows with the length of the turn.
+  for each new token â€” work that grows with the length of the turn.
 - **The bubble is now three text nodes**: the run's settled prose, a paragraph gap
   that exists only once there are two blocks, and the step in flight.
   `_paintProse()` writes each only when it changed, so the settled block is written
@@ -2912,7 +2916,7 @@ assertions in `tests/php/sandbox.test.php`.
 
 ---
 
-## v333 — the live reply reads continuously across tool steps
+## v333 â€” the live reply reads continuously across tool steps
 
 - **The bug.** The streaming bubble painted only the CURRENT step's stream, so
 every tool call wiped the prose the operator had just watched arrive and the
@@ -2934,16 +2938,16 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v332 — replies can no longer vanish when they finish
+## v332 â€” replies can no longer vanish when they finish
 
 - **The bug.** A finished turn could be committed with `content: ''`: `text` only
   ever held the CURRENT step's stream (each step starts a fresh one), so a turn
-  that ended on a tool call — or was cut short by the step/time budget — returned
+  that ended on a tool call â€” or was cut short by the step/time budget â€” returned
   no text of its own. `sendMessage()` then did `result.value.content ??
   result.value.text`, which `??` does not fall back for, and `''` is an empty
   string, so the blank answer was accepted. The renderer produced an empty
   bubble, which replaced the streaming node *at the moment the reply finished*,
-  and the same `''` was what `_saveDialog` sent to the server — which is why
+  and the same `''` was what `_saveDialog` sent to the server â€” which is why
   reloading did not bring it back either.
 - **Each run now owns its turn and its text.**
   - `_liveNodes` is keyed by a **turn id**, not by agent. Before, a second run for
@@ -2951,11 +2955,11 @@ answer rather than resetting the bubble it is still writing into.
     routing-chart workflow) deleted the first run's node and the finishing run
     wrote into whatever node the map held at completion. The fan-out now creates
     and captures its node at dispatch and commits to that exact node.
-  - `_toolLoop()` keeps `turnText` — every step's prose in the run — so the
+  - `_toolLoop()` keeps `turnText` â€” every step's prose in the run â€” so the
     finished message can fall back to everything the operator watched arrive.
 - **One commit point, and it cannot produce a blank.** `_replaceLiveNode()` now:
-  normalises the message through `_finalMsg()` (last answer → streamed text →
-  “finished after running N tool calls…” → “finished without writing a reply”);
+  normalises the message through `_finalMsg()` (last answer â†’ streamed text â†’
+  â€œfinished after running N tool callsâ€¦â€ â†’ â€œfinished without writing a replyâ€);
   removes its node from `_liveNodes` by turn id; and **appends** the message when
   its node is detached instead of silently `return`ing. A detached node (session
   reload, cleared transcript, an overlapping run) used to drop the reply from the
@@ -2970,24 +2974,24 @@ answer rather than resetting the bubble it is still writing into.
   reply into `conv.messages` a second time (the render path already recorded
   them), so stored conversations accumulated duplicates that re-rendered on the
   next session open. It now only saves to the server and touches freshness.
-- **`MessageRenderer.render()` always returns a whole message.** With “Show Code”
-  off it returned a bare `.message-body` — no wrapper, no header, no actions — so a
+- **`MessageRenderer.render()` always returns a whole message.** With â€œShow Codeâ€
+  off it returned a bare `.message-body` â€” no wrapper, no header, no actions â€” so a
   streaming placeholder was being swapped for a different kind of element.
 - Cache-buster 331 -> 332.
 
 ---
 
-## v331 — performance mode, and a render scale that actually scales
+## v331 â€” performance mode, and a render scale that actually scales
 
-- **The adaptive render scale was a no-op — this is the 99% GPU bug.**
+- **The adaptive render scale was a no-op â€” this is the 99% GPU bug.**
   `EffectComposer` caches the renderer's pixel ratio at construction and only
   refreshes it in `reset()`/`setPixelRatio()`, but `SceneCore._setScale()` changed
   the renderer alone. So the scene, the bloom mip chain and every pass kept
   rendering at the **original** 1.5x resolution however far the scale stepped
   down, and only the final blit shrank. The composer is now told the ratio
   explicitly, which is what makes the existing "step down when the frame is over
-  budget" logic real. (`resize()` also stopped sizing bloom a second time — the
-  composer already sizes every pass — so a resize no longer rebuilds its render
+  budget" logic real. (`resize()` also stopped sizing bloom a second time â€” the
+  composer already sizes every pass â€” so a resize no longer rebuilds its render
   targets twice.)
 - **No per-frame allocation in the map's hot paths.**
   - `_updateLinks()` reuses grow-only position/colour buffers instead of
@@ -3002,18 +3006,18 @@ answer rather than resetting the bubble it is still writing into.
     buckets `zIndex` to 0.02 of NDC z, so a slow camera drift no longer forces a
     style recalc for every label every frame.
 - **Two knobs that lied now do what they say.** Glass blur at **0** emits
-  `backdrop-filter: none` instead of `blur(0px)` — the zero position used to keep
+  `backdrop-filter: none` instead of `blur(0px)` â€” the zero position used to keep
   the compositing layer (and its per-frame re-blur of the live map) alive. Ambient
   motion at **0** actually stops: the old `Math.max(0.05, ...)` clamp left every
   loop running at 1/20 speed, which still repainted every frame.
-- **New, ordinary controls in Desktop → Config**, each one reversible on its own:
+- **New, ordinary controls in Desktop â†’ Config**, each one reversible on its own:
   **Bloom glow**, **Floating floor** (falls back to the cheap in-scene polar
   grid) and **Slow auto-rotate** (the idle camera drift, which is what used to
-  keep the whole scene — and everything composited over it — permanently busy).
-- **Performance mode** preset at the top of Desktop → Config (and it is *not* a
+  keep the whole scene â€” and everything composited over it â€” permanently busy).
+- **Performance mode** preset at the top of Desktop â†’ Config (and it is *not* a
   second set of visual state): it writes the same settings those controls already
-  own — blur 0, glow 0, motion 0, fog off, 30fps, bloom/floor/drift off, plus the
-  Resource Manager's idle throttle and covered-panel pause — and puts them back
+  own â€” blur 0, glow 0, motion 0, fog off, 30fps, bloom/floor/drift off, plus the
+  Resource Manager's idle throttle and covered-panel pause â€” and puts them back
   when switched off. A value you move by hand while it is on is kept when it is
   switched off, and it only ever *tightens*: a machine already running at 20fps
   and an idle floor of 5fps keeps both.
@@ -3024,13 +3028,13 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v330 — curl-template agents now replay conversation history
+## v330 â€” curl-template agents now replay conversation history
 
 - **"I don't have context from a previous conversation."** Agents driven by a
   saved **curl / Python / Node snippet** (the NVIDIA example shape: a single
   `{"role":"user","content":"$USER-PROMPT-VARIABLE"}` and **no system message**)
   never received their replayed history. `injectContext()` inserted history only
-  when the first user turn was at index **> 0**; in this — the *most common* —
+  when the first user turn was at index **> 0**; in this â€” the *most common* â€”
   template the live turn sits at index **0**, so it matched neither branch and
   history was dropped silently. Every ordinary (non-template) agent was fine,
   which is why only the snippet-based models looked amnesiac.
@@ -3041,31 +3045,31 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v329 — Always-On hold/release reset; global pre-prompt prepend/replace
+## v329 â€” Always-On hold/release reset; global pre-prompt prepend/replace
 
 - **The HELD badge is no longer a trap.** `alwaysOnMaxIterations` /
   `alwaysOnMaxMinutes` (or a click on an agent's ALWAYS ON badge) park an agent by
-  adding it to a **saved hold set** — and nothing ever released it. The master
+  adding it to a **saved hold set** â€” and nothing ever released it. The master
   switch's own documentation said *"switching it off releases everyone,"* but the
-  function that does that (`stopAll`) was **never called**; off→on was a no-op and
+  function that does that (`stopAll`) was **never called**; offâ†’on was a no-op and
   the roster came back with every badge stuck on **HELD**.
 - The master switch is now read as a **transition**: turning it **on** clears
   every hold (a real reset), turning it **off** runs `stopAll()` (stop + release
   everyone). New `releaseAll()` / `alwaysOn:releaseAll`.
-- **Config → Permissions → Always-On** shows the held count and a **RELEASE HELD
+- **Config â†’ Permissions â†’ Always-On** shows the held count and a **RELEASE HELD
   AGENTS** button, and the status line warns when the cadence is long enough that
   a cap would fire after a *single* tick (so a low cap read as "always-on turned
   itself off"). Files: `ui/js/alwaysOn.js`, `ui/js/components/sidebar.js`.
 - **Global pre-prompt: prepend or replace, your choice.** The override used to
   **replace** every agent's system prompt (v235), which silently stripped agents
-  of their instructions — hence "they ignore everything and just explore." The
-  popup now carries a **bottom-left mode switch**: **Prepend** (default — the
+  of their instructions â€” hence "they ignore everything and just explore." The
+  popup now carries a **bottom-left mode switch**: **Prepend** (default â€” the
   override goes in front of the agent's own prompt, which still follows) or
   **Replace** (the old behaviour). The hint updates live; the choice is stored as
   `globalPrePrompt.mode` and a missing `mode` is treated as `prepend`.
   Files: `ui/js/components/{sidebar,chat}.js`, `ui/js/store.js`,
   `ui/css/modals.css`.
-- **SECURITY — `storage/` web-exposure hardened.** The shipped
+- **SECURITY â€” `storage/` web-exposure hardened.** The shipped
   `storage/.htaccess` used Apache **2.2** `Deny from all`, which needs
   `mod_access_compat` on 2.4 (XAMPP loads it, a plain host may not); it is now the
   portable form (`Require all denied` with an `!mod_authz_core.c` fallback), so a
@@ -3080,18 +3084,18 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v327 — Always-On survives leaving the tab; browser click fix; block list
+## v327 â€” Always-On survives leaving the tab; browser click fix; block list
 
 - **Always-On no longer stops when you leave the tab.** `visibilitychange`
   aborted the in-flight turn on *every* hide, even with "Run while tab is hidden"
-  on — so a background run died the instant you switched away. It now aborts only
+  on â€” so a background run died the instant you switched away. It now aborts only
   when that setting is off, drives the timer from a **Web Worker** (page
   `setInterval` is throttled hard in a hidden tab), and ticks immediately on
-  return. Turn on **Config → Permissions → Run while tab is hidden** to run
+  return. Turn on **Config â†’ Permissions â†’ Run while tab is hidden** to run
   off-screen.
 - **`browser_click` / `browser_type` no longer toast "JS: Uncaught".** An invalid
   CSS selector made `querySelector` throw inside the page eval; it is now guarded
-  and returns a readable *"invalid selector …"* result, and `Cdp` reports the real
+  and returns a readable *"invalid selector â€¦"* result, and `Cdp` reports the real
   one-line exception description instead of "Uncaught".
 - **New domain/URL/IP block list** on the Browser screen (right rail, below the
   buttons). One pattern per line, `*` wildcard: `*.gov` (any .gov), `*word*`
@@ -3102,51 +3106,51 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v326 — config saves on hosts that block PUT; stray headless browsers
+## v326 â€” config saves on hosts that block PUT; stray headless browsers
 
 - **"Not saved: API 404" when saving the sandbox path** (and the wall of HTML in
   the status line). Some hosts block or reroute the **`PUT`** method at the
   web-server level, so the request never reached the app and the site's own 404
   page came back. Config and state saves now use **POST**, which the API accepts
   for the same routes (`handleConfig` / `handleState` take PUT or POST), and a
-  non-JSON response no longer dumps a page of markup into the UI — it reports
-  "the server sent a web page instead of JSON — check the app URL / API path".
-- **Stray headless Chrome/Edge instances piling up** (the GPU/CPU you saw —
+  non-JSON response no longer dumps a page of markup into the UI â€” it reports
+  "the server sent a web page instead of JSON â€” check the app URL / API path".
+- **Stray headless Chrome/Edge instances piling up** (the GPU/CPU you saw â€”
   you found ~8). `Browser::launch()` started a *fresh* instance whenever the
   saved debug port was dead, leaving the old ones running. It now **reaps** any
   chrome/edge still holding our unique profile dir before launching, and
-  `stop()` reaps too — so there is only ever one, and Stop clears any orphans.
+  `stop()` reaps too â€” so there is only ever one, and Stop clears any orphans.
 
 ---
 
-## v325 — toggle switches no longer squashed by long labels
+## v325 â€” toggle switches no longer squashed by long labels
 
-- In **Config → Resource Manager** (and any row with a long label beside a
+- In **Config â†’ Resource Manager** (and any row with a long label beside a
   toggle) the switch was squeezed by flex-shrink: the track shrank below the
   knob's travel so an "on" knob hung outside it, and every row came out a
-  different width. `.toggle` is now `flex: 0 0 auto` (a fixed 36×20) and
+  different width. `.toggle` is now `flex: 0 0 auto` (a fixed 36Ã—20) and
   `.toggle-label` takes the slack and wraps. Measured before/after: track 25/35/36px
-  → a uniform 36px.
+  â†’ a uniform 36px.
 
 ---
 
-## v324 — installers: the copyright header no longer runs on screen
+## v324 â€” installers: the copyright header no longer runs on screen
 
 - `start.bat`, `start-php.bat` and `setup-xampp.bat` had the copyright notice
-  **above** `@echo off`, so cmd echoed the `REM` lines as they scrolled past —
+  **above** `@echo off`, so cmd echoed the `REM` lines as they scrolled past â€”
   it looked like the notice was being run as commands. `@echo off` is now line 1
   and the notice stays as `REM` comments (silent). The `.sh` and `.ps1`
   installers already use `#`, which never executes.
 
 ---
 
-## v323 — tell agents how they persist (they kept saying they can't)
+## v323 â€” tell agents how they persist (they kept saying they can't)
 
 - A model answered that it had *no runtime, no filesystem between calls, no way
-  to stay alive* — true of a bare LLM, but wrong here, and it then advised the
+  to stay alive* â€” true of a bare LLM, but wrong here, and it then advised the
   user to build a wrapper the app **already is**. The tool block now carries a
   short, honest **"How you persist"** note: you are invoked one turn at a time
-  (true), but persistence lives in this app — `remember`/`recall`/`share`
+  (true), but persistence lives in this app â€” `remember`/`recall`/`share`
   survive reloads and sessions, `write_file` leaves work on disk, the
   conversation is stored and reloaded, and an **Always-On** goal makes the app
   re-invoke you on a timer. It tells the model to reach for these instead of
@@ -3155,24 +3159,24 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v322 — Browser: Live-in-background is now a toggle
+## v322 â€” Browser: Live-in-background is now a toggle
 
 - The "keep Live polling while the Browser screen is hidden" behaviour from
-  v321 is now **Config → Labs → "Keep Live running when hidden"** (default ON),
+  v321 is now **Config â†’ Labs â†’ "Keep Live running when hidden"** (default ON),
   so you can flip it either way:
-  - **On** — Live keeps refreshing while you're on other screens; never stale.
-  - **Off** — Live pauses when you leave the Browser screen and resumes on return.
+  - **On** â€” Live keeps refreshing while you're on other screens; never stale.
+  - **Off** â€” Live pauses when you leave the Browser screen and resumes on return.
   - The Live on/off choice itself stays a separate, remembered preference.
 - `store.js` setting `browserLiveBackground`; `browserView._syncLive()` honours
   it (and re-syncs when the toggle changes).
 
 ---
 
-## v321 — Browser: Live stays on
+## v321 â€” Browser: Live stays on
 
 - The **Live** auto-refresh is now a **sticky preference** (persisted in
   localStorage), not a per-visit toggle. Leaving the Browser screen no longer
-  switches it off, and the poll keeps running **while the app tab is visible** —
+  switches it off, and the poll keeps running **while the app tab is visible** â€”
   so coming back to the screen (or an agent acting on the page) is never stale.
   It still pauses when the browser isn't running or the whole tab is hidden.
 - `browserView.js`: `_live` preference + a single `_syncLive()` that reconciles
@@ -3180,14 +3184,14 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v320 — Resource Manager: optional 3D performance controls + CPU/GPU gauges
+## v320 â€” Resource Manager: optional 3D performance controls + CPU/GPU gauges
 
-- **New Config → Resource Manager section.** Every switch is **OFF by default**,
-  so the 3D graph keeps rendering continuously exactly as before — nothing
+- **New Config â†’ Resource Manager section.** Every switch is **OFF by default**,
+  so the 3D graph keeps rendering continuously exactly as before â€” nothing
   changes until you turn one on:
   - **Pause when a panel is open** (routing chart, API Lab, Brain Lab, Browser, modals);
   - **Pause when the window isn't focused**;
-  - **Pause when the graph is off-screen** — an `IntersectionObserver`, which also
+  - **Pause when the graph is off-screen** â€” an `IntersectionObserver`, which also
     fixes the **mobile** case: the right panel is moved off-screen with
     `transform: translateX(100%)`, so the old `offsetParent` guard never fired and
     the scene kept rendering hidden;
@@ -3202,50 +3206,50 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v318 — browser tools always offered (while the Browser is on) + mobile logo
+## v318 â€” browser tools always offered (while the Browser is on) + mobile logo
 
 - **Every agent now gets the browser tools** automatically while
-  Config → Labs → Browser is on — `browser_open` / `browser_click` /
+  Config â†’ Labs â†’ Browser is on â€” `browser_open` / `browser_click` /
   `browser_type` / `browser_read` / `browser_wait` are unioned in the way memory
   tools are, so an agent with a hand-ticked tool list still has them and can no
   longer answer that it lacks browser automation. Turning the Browser off removes
   them again (and the API refuses them regardless). The on/off state is cached
   ~5 min and cleared the instant the Labs toggle is flipped.
-- **Mobile header:** the wordmark is now centred as a stack on phones — "Loop
+- **Mobile header:** the wordmark is now centred as a stack on phones â€” "Loop
   Studio" under AUTONOMOUS, "Made By: MBHudson" under that. Desktop is unchanged.
 
 ---
 
-## v317 — tell agents they CAN drive a browser
+## v317 â€” tell agents they CAN drive a browser
 
 - A model asked to operate a page replied that it had no browser automation and
   suggested installing **Playwright/Selenium**. The capability was already there
   (`browser_open` / `browser_click` / `browser_type` / `browser_read` /
-  `browser_wait`) — nothing made it obvious:
-  - the tool **descriptions were thin** — they now say plainly that these drive a
+  `browser_wait`) â€” nothing made it obvious:
+  - the tool **descriptions were thin** â€” they now say plainly that these drive a
     **real Chrome/Edge window the operator watches**, and that **no
     Playwright/Selenium/extension is needed**;
-  - the prompt protocol had **no examples** for them — JSON and Claude-XML
+  - the prompt protocol had **no examples** for them â€” JSON and Claude-XML
     examples added;
-  - native tool-calling gave them a **blank schema** — real schemas now
+  - native tool-calling gave them a **blank schema** â€” real schemas now
     (`url`, `selector`/`x`/`y`, `text`+`enter`, `ms`);
-  - and a new instruction line spells out the workflow (open → read → click/type
-    → read) and says the model must **never claim it lacks browser access**.
+  - and a new instruction line spells out the workflow (open â†’ read â†’ click/type
+    â†’ read) and says the model must **never claim it lacks browser access**.
 - Note: the browser tools must be ticked on the agent (they are in the default
   set for new agents).
 
 ---
 
-## v316 — header mark back to the light
+## v316 â€” header mark back to the light
 
-- Reverted the **desktop header logo to the blinking indicator** — the `main.png`
+- Reverted the **desktop header logo to the blinking indicator** â€” the `main.png`
   brand mark didn't read well at 26px beside the title.
 - `main.png` **stays as the favicon** (tabs/bookmarks). The apps-notch shape and
   chat-column centring from v315 are unchanged.
 
 ---
 
-## v315 — brand mark + apps-notch shape and centring
+## v315 â€” brand mark + apps-notch shape and centring
 
 - **The apps pull-tab was upside down.** It is now wide at the top (flush under
   the header) and narrows toward the bottom.
@@ -3256,15 +3260,15 @@ answer rather than resetting the bubble it is still writing into.
 - **Brand mark.** `ui/img/main.png` (transparent) is now the **favicon**, and on
   **desktop only** it replaces the blinking green dot beside the title in the
   header; the small dot remains as the mobile fallback. `main-motion.gif` was not
-  used — its background is white, which cannot sit on the dark header.
+  used â€” its background is white, which cannot sit on the dark header.
 
 ---
 
-## v314 — Browser: the multi-second stall that made a page take minutes
+## v314 â€” Browser: the multi-second stall that made a page take minutes
 
 - **Root cause found.** Chrome answers its DevTools HTTP endpoints (`/json/version`,
   `/json/list`) in ~1 ms but keeps the socket open, and `file_get_contents` reads
-  to EOF — so it blocked for the full timeout on every call. Each browser action
+  to EOF â€” so it blocked for the full timeout on every call. Each browser action
   paid that twice (`status` + `pageWs`), and stacking requests (Go, the Live
   poll) exhausted the browser's connection pool: a page took **minutes**.
   `Browser::httpJson()` now reads exactly `Content-Length` bytes over a raw
@@ -3272,24 +3276,24 @@ answer rather than resetting the bubble it is still writing into.
 - **Navigation no longer waits for `complete`.** It returns as soon as
   `readyState` leaves `loading` (interactive is enough to screenshot); heavy
   sites that never reach `complete` used to sit out the full 25s every time.
-- **Faster cold launch** — the readiness poll is instant now, and headless starts
+- **Faster cold launch** â€” the readiness poll is instant now, and headless starts
   with background work off (`--disable-extensions`, `--disable-component-update`,
-  `--disable-sync`, `--disable-background-networking`, …).
+  `--disable-sync`, `--disable-background-networking`, â€¦).
 - **The screen can't stampede.** Go, click, type, Enter and screenshots are
   single-flight, the Live poll runs every 2s and skips while a shot is in
   flight, and it no longer closes on Escape while you are typing in it.
-- Measured on this machine: navigate **8.3s → 0.3s**, screenshot **8.1s → 0.1s**,
-  launch **~14s → ~3s**.
+- Measured on this machine: navigate **8.3s â†’ 0.3s**, screenshot **8.1s â†’ 0.1s**,
+  launch **~14s â†’ ~3s**.
 
 ---
 
-## v313 — the built-in Browser screen (Chrome/Edge over CDP)
+## v313 â€” the built-in Browser screen (Chrome/Edge over CDP)
 
 - **A real browser, no packages.** New `src/Cdp.php` is a hand-rolled WebSocket +
   DevTools Protocol client (the framing this needs, including reassembling big
   screenshot frames), and `src/Browser.php` detects, launches and drives an
-  installed **Chrome or Edge**. Verified end-to-end: launch → navigate →
-  screenshot → read the DOM → close.
+  installed **Chrome or Edge**. Verified end-to-end: launch â†’ navigate â†’
+  screenshot â†’ read the DOM â†’ close.
 - **Its own screen**, opened from a new **Browser** item in the apps notch: an
   address bar, Go/Reload, **Live** auto-refresh, a headless tick-box, and the
   page screenshotted into an image you can **click** (coordinates map straight to
@@ -3298,18 +3302,18 @@ answer rather than resetting the bubble it is still writing into.
   `browser_type` / `browser_read` / `browser_wait` (click by CSS selector or x,y;
   type into a selector, optionally pressing Enter). The operator can watch.
 - **Logins stick.** The profile is persistent (`storage/browser-profile`), so you
-  log into an account once — headless or in a visible window you can take over —
+  log into an account once â€” headless or in a visible window you can take over â€”
   and both you and the agents reuse it.
-- **Off by default and gated server-side** (Config → Labs → Browser writes
+- **Off by default and gated server-side** (Config â†’ Labs â†’ Browser writes
   `browser.enabled` to the config, and every route returns 403 until it is on).
   Only http/https pages may be opened; the cloud-metadata addresses are refused.
 - New `src/Cdp.php`, `src/Browser.php`, `ui/js/components/browserView.js`,
   `api/index.php` route, `api.js` methods, `tools.js` tools, apps-notch item,
-  Config → Labs toggle, styles.
+  Config â†’ Labs toggle, styles.
 
 ---
 
-## v312 — API pool: scope a key to one model
+## v312 â€” API pool: scope a key to one model
 
 - Each pooled key can now be **pinned to a model**: tick **Only this model** and
   enter a model # (the agent's code, like `#63BET7`) or a model id. That key is
@@ -3322,17 +3326,17 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v311 — API pool: rotate several keys for one provider
+## v311 â€” API pool: rotate several keys for one provider
 
-- **A provider can hold a pool of extra keys** (Provider editor → *API pool*:
+- **A provider can hold a pool of extra keys** (Provider editor â†’ *API pool*:
   label + key rows) and **rotate after N requests** you set (0 = every call).
   The agent's own Key Override still wins; with the pool empty or the feature
   off, the single provider key is used exactly as before.
 - **A 429 rests a key.** A rate-limit refusal puts that key on a 60s cooldown and
   the next call picks a different one, so one exhausted free-tier key no longer
   stalls the whole provider.
-- Feature-gated: **Config → Labs → "API pool"** (default **OFF**). Rotation
-  counters are session-only — a reload simply starts a clean round, which is the
+- Feature-gated: **Config â†’ Labs â†’ "API pool"** (default **OFF**). Rotation
+  counters are session-only â€” a reload simply starts a clean round, which is the
   safe direction (a stale counter only ever rotates away from a good key).
 - New `ui/js/apiPool.js` (`pickKey` / `noteResult`); `chat.js` resolves the key
   through it and reports the outcome; UI in `providerEditor.js`, toggle in
@@ -3340,24 +3344,24 @@ answer rather than resetting the bubble it is still writing into.
 
 ---
 
-## v310 — Dynamic tools: teach each model the environment it is really in
+## v310 â€” Dynamic tools: teach each model the environment it is really in
 
 Free/quantised models used to burn several tool calls re-guessing the syntax.
-Three changes, all behind **Config → Labs → "Dynamic tools"** (default ON; off
+Three changes, all behind **Config â†’ Labs â†’ "Dynamic tools"** (default ON; off
 restores the classic behaviour exactly):
 
 - **Environment-aware manifest.** The tool instructions now open with the facts
   that actually matter: the **server's** OS and working directory, and which
-  allowlisted shell commands resolve — so a model is told to use `grep` where it
+  allowlisted shell commands resolve â€” so a model is told to use `grep` where it
   exists and not to try `findstr` off Windows. Built from `GET /sandbox/status`
   (new `os`, `exec_allow`, `binaries` fields); the old check read the *browser's*
   user-agent, which is wrong when the app is served from another machine.
 - **Parse-failure escalation.** If a reply clearly tries to call a tool but
   parses to nothing, the loop re-teaches **once** with a different dialect
-  (`plain → json → native → anthropic`) instead of letting the near-miss become
+  (`plain â†’ json â†’ native â†’ anthropic`) instead of letting the near-miss become
   the final answer.
 - **Learned dialect.** Once a call parses, the working dialect is remembered per
-  `provider::model` and used first next time (Config → Labs → "Remember the
+  `provider::model` and used first next time (Config â†’ Labs â†’ "Remember the
   working dialect", default ON).
 
 New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
@@ -3365,12 +3369,12 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v309 — an apps notch under the header; API Lab opens fullscreen
+## v309 â€” an apps notch under the header; API Lab opens fullscreen
 
 - **New "apps" pull-tab** centred just under the header, dipping a little into the
   chat area. A `\___/` notch with two stacked lines (top longer), sized for a
   thumb. Tapping it drops a small menu.
-- **Brain Lab, API Lab and the Routing Chart moved into it** — out of the
+- **Brain Lab, API Lab and the Routing Chart moved into it** â€” out of the
   Agents-tab header (the two icons) and out of the header rail (the routing
   button), so a phone no longer has to hunt for them. The menu closes on an
   outside tap, on Esc, and when an item is chosen.
@@ -3380,12 +3384,12 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v308 — MCP on the graph: nodes, traffic, and editable access
+## v308 â€” MCP on the graph: nodes, traffic, and editable access
 
 - **MCP servers you call (out) and friends' clients connected to you (in) are
-  now nodes** on the topology — amber for a server, sky for a friend — with the
-  same clickable cards as everything else. Outgoing calls animate agent → server
-  → agent live (the tool layer emits the flow events); incoming friend traffic is
+  now nodes** on the topology â€” amber for a server, sky for a friend â€” with the
+  same clickable cards as everything else. Outgoing calls animate agent â†’ server
+  â†’ agent live (the tool layer emits the flow events); incoming friend traffic is
   polled from the server's audit log (`GET /api/mcp-server/activity`), so those
   beams tick in on the poll interval rather than frame-perfect (there is no push
   channel).
@@ -3395,10 +3399,10 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 - **Two extra tabs on every MCP card.** **Access** edits the node itself: a
   server's connection (command/args/env or URL/headers) plus a new **per-server
   tool allow/deny list** (deny is absolute; a non-empty allow list restricts to
-  it — enforced server-side in `Mcp::callTool`), and a friend's **scope**
+  it â€” enforced server-side in `Mcp::callTool`), and a friend's **scope**
   (read/write/exec) and IP allowlist. **Permissions** edits the app-wide shell
   **allow/deny lists, interpreter levels, auto-approve / auto-deny and the code
-  interpreter** — the same Config values, saved inline.
+  interpreter** â€” the same Config values, saved inline.
 - **Audit log is JSON now** (`mcp=<label> tool ok err args result`), so cards and
   traffic can be reconstructed; each line keeps its index as `seq` for polling.
 - New `ui/js/components/topology3d/mcpPanel.js`; changes in `topology.js`,
@@ -3407,36 +3411,36 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v307 — the graph's inline reply now shows the real tool work
+## v307 â€” the graph's inline reply now shows the real tool work
 
-- **Tool calls are shown verbatim in the topology's floating reply box** — each
+- **Tool calls are shown verbatim in the topology's floating reply box** â€” each
   call's name, its arguments (pretty-printed), its status and duration, and the
-  full tool output — followed by the model's closing answer. Reasoning, when the
+  full tool output â€” followed by the model's closing answer. Reasoning, when the
   provider streams it, is shown first. Everything is raw text, verbose on
   purpose: no boxes, no collapsing, no "tool called" placeholder.
 - `askAgentInline()` now returns `toolCalls` and `reasoning` alongside the text;
   `ask.js` composes them. The reply body scrolls (`min-height:0` + a styled
   scrollbar) once the content is taller than the box, and the view auto-scrolls
   to the newest content.
-- Only the closing answer is read aloud by the Voice toggle — never the tool
+- Only the closing answer is read aloud by the Voice toggle â€” never the tool
   dumps.
 
 ---
 
-## v306 — ask a model from its node card on the 3D graph
+## v306 â€” ask a model from its node card on the 3D graph
 
 - **The 3D node card gained an `ASK` button** (bottom-left of the footer). It
   opens a small prompt box docked just under the card, with a play-button send
-  (the same ▶ as the main composer) and a **Voice** toggle, default **on**, for
-  read-aloud. That toggle is its own preference — deliberately separate from the
+  (the same â–¶ as the main composer) and a **Voice** toggle, default **on**, for
+  read-aloud. That toggle is its own preference â€” deliberately separate from the
   main Config default of off.
 - **The answer appears in the graph**, in a semi-transparent floating box pinned
   to the top corner with the most room; it flips left/right as the node is
-  orbited. Raw text only (no markdown, code or tool cards) and an × to close.
+  orbited. Raw text only (no markdown, code or tool cards) and an Ã— to close.
 - **The exchange is isolated**: it never enters the transcript and never fans
   out, so the map's little chat can't disturb the main conversation. It does
   still emit the normal flow events, so the traffic animates on the graph
-  exactly as a composer prompt would — unlike the agent-list Ask, which stays
+  exactly as a composer prompt would â€” unlike the agent-list Ask, which stays
   silent on the map.
 - New module `ui/js/components/topology3d/ask.js` (the dock); `askAgentInline()`
   in chat.js; wiring in app.js, popup.js and topology3d/index.js; styles in
@@ -3444,12 +3448,12 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v305 — topology traffic lines: model colour, dots that keep flowing
+## v305 â€” topology traffic lines: model colour, dots that keep flowing
 
 - **Traffic between You and a model is drawn in that model's colour, both
   directions.** A request used to be painted in the user's red because the line
   took the sender's colour, so the model only looked like itself on the reply.
-  Agent-to-agent hops keep the sender → receiver gradient. Applied in both the
+  Agent-to-agent hops keep the sender â†’ receiver gradient. Applied in both the
   SVG chart and the 3D beams.
 - **The marching dots no longer stop at the "settle".** They used to freeze the
   moment an active line was demoted to the faint history record. They now march
@@ -3461,11 +3465,11 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
   timer, so a slow model saw its line fade while still generating. It now holds
   until `flow:respond` / `flow:fail`, capped at 120s; settle timers no longer
   fade a line that was refreshed back to active.
-- Cache-buster tags aligned to `APP_VERSION` (303 → 305).
+- Cache-buster tags aligned to `APP_VERSION` (303 â†’ 305).
 
 ---
 
-## v303 — exec results + bare-tag tool calls
+## v303 â€” exec results + bare-tag tool calls
 
 - **`exec` no longer reports `[exit undefined, undefinedms]`.** When the server
   answered with `{ error }`, a pending approval, or a partial body, the tool
@@ -3479,7 +3483,7 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v302 — routing/comms + sandbox fixes
+## v302 â€” routing/comms + sandbox fixes
 
 - **Inter-agent asks work again during a normal turn.** `_busy` now holds every
   agent in the user fan-out (added in v300 to stop always-on duplicate replies),
@@ -3503,13 +3507,13 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v301 — visible tool calls
+## v301 â€” visible tool calls
 
 - **Tool calls are now real transcript entries.** Each call is a collapsible
   block in the message: tool name, a one-line argument preview, running/done/
   error/approval status, duration, and expandable arguments + result. Live turns
   paint the same blocks while they work, then the final message keeps them, so a
-  tool request no longer appears as a bare `▸ running read_file…` line that
+  tool request no longer appears as a bare `â–¸ running read_fileâ€¦` line that
   vanishes or replaces the reply.
 - Tool calls survive a reload: they are stored on the local conversation message
   and in session dialogs as `tool_calls`, and restored by both the chat loader
@@ -3519,7 +3523,7 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v300 — direct-ask double reply + Windows exec
+## v300 â€” direct-ask double reply + Windows exec
 
 - **Ask button no longer answers twice.** `askAgentDirectly()` streamed into a
   live node and then appended the finished reply as a second message. It now
@@ -3544,7 +3548,7 @@ New `ui/js/toolManifest.js`; edits in `chat.js`, `harness.js`,
 
 ---
 
-## v299 — context assembler + native tool calling
+## v299 â€” context assembler + native tool calling
 
 - **Live-context compaction.** `utils.js` now estimates tokens for text, images
   and message lists, computes an input budget from the model window minus the
@@ -3576,7 +3580,7 @@ Files: `ui/js/components/sidebar.js`.
 
 ## 2. Cleanup
 
-- Removed the stray duplicate tree `src/src/` (unused — the autoloader only
+- Removed the stray duplicate tree `src/src/` (unused â€” the autoloader only
   reads `src/`) and the empty `assets/` folder.
 - Removed the `Access-Control-Allow-Origin: *` wildcard that `public/.htaccess`
   had reintroduced (the root `.htaccess` had deliberately dropped it).
@@ -3584,31 +3588,31 @@ Files: `ui/js/components/sidebar.js`.
 ## 3. Installers
 
 - **`start.bat` rewritten.** It broke whenever `php` was a full path with
-  spaces (e.g. `C:\Program Files\PHP\…`): unquoted `%PHP%` and `for /f` captures
+  spaces (e.g. `C:\Program Files\PHP\â€¦`): unquoted `%PHP%` and `for /f` captures
   mangled it. Now everything is quoted and output is captured via a temp file;
   it also checks for `serve.php` and says so clearly.
-- **New one-click Windows setup: `setup-xampp.bat` → `setup-xampp.ps1`.**
+- **New one-click Windows setup: `setup-xampp.bat` â†’ `setup-xampp.ps1`.**
   Downloads the latest XAMPP (from SourceForge's release API, with SHA-256
   verification), silently installs **Apache + PHP only** (no MySQL/Perl/etc.),
   links the folder into `htdocs\router`, points Apache at a free port, enables
   `.htaccess`, creates the access token, and opens the app. Idempotent; options
   `-Port`, `-XamppDir`, `-Repair`.
 
-## 4. Harness registry — auto-fit models to the right API/tool dialect
+## 4. Harness registry â€” auto-fit models to the right API/tool dialect
 
 - **`src/Harness.php`** (server) + **`ui/js/harness.js`** (client) are one
   registry that decides which **API dialect** a provider speaks (OpenAI-
   compatible, Anthropic Messages, Google, Ollama; plus Azure auth) from the
-  endpoint host → provider id → model hint, and which **tool-call dialect** a
+  endpoint host â†’ provider id â†’ model hint, and which **tool-call dialect** a
   model is taught from provider + model id.
 - `ModelManager` now delegates detection, auth, request body, response/usage/
   reasoning parsing and streaming to it; the OpenAI-compatible clones
-  (DeepSeek, xAI, Mistral, Cerebras, Groq, …) are classified correctly instead
+  (DeepSeek, xAI, Mistral, Cerebras, Groq, â€¦) are classified correctly instead
   of falling down the old "custom" path. `capMaxTokens` clamps known output
   ceilings (e.g. Gemini 8k) so an over-large `max_tokens` can't 400.
 - **Generated table:** `tools/gen-harness.php` writes `ui/js/harness.data.js`
   from `Harness.php` (families, aliases, host matchers, tool patterns, context
-  limits, default RPM). `--check` fails when stale — wire it to a pre-commit
+  limits, default RPM). `--check` fails when stale â€” wire it to a pre-commit
   hook so the two can't drift.
 
 ## 5. Throttle / limiter actually paces now
@@ -3616,9 +3620,9 @@ Files: `ui/js/components/sidebar.js`.
 - The rate governor was wired but mis-configured: a flat 20/min (and any stored
   `rateLimitRpm`) overrode everything, so a NVIDIA NIM key never paced at its
   real **40/min**.
-- Added per-host free-tier defaults (NVIDIA 40, Groq 30, OpenRouter 20, …,
-  local unpaced) and a precedence chain: **agent lock → provider rpm → explicit
-  global → host default**. Config → Pacing now reads **`0 = AUTO`**.
+- Added per-host free-tier defaults (NVIDIA 40, Groq 30, OpenRouter 20, â€¦,
+  local unpaced) and a precedence chain: **agent lock â†’ provider rpm â†’ explicit
+  global â†’ host default**. Config â†’ Pacing now reads **`0 = AUTO`**.
 - The `git`-style `limitsFor()` shows the effective per-key rate on agent cards.
 
 ## 6. Agent-card metrics (uptime / requests / tokens)
@@ -3627,8 +3631,8 @@ Files: `ui/js/components/sidebar.js`.
   showed "no usage yet". Now **every turn counts a request**, billed calls are
   counted separately, and when a provider streams no usage the completion is
   **estimated from the reply** (shown with a `~`).
-- New **token budget** (Config → Limits & Budgets, `0 = off`) and a per-agent
-  override in Brain Lab; the card then shows `1.2m/8m (15%) · 34 req · up 2h · 40/min`.
+- New **token budget** (Config â†’ Limits & Budgets, `0 = off`) and a per-agent
+  override in Brain Lab; the card then shows `1.2m/8m (15%) Â· 34 req Â· up 2h Â· 40/min`.
 
 ---
 
@@ -3636,24 +3640,24 @@ Files: `ui/js/components/sidebar.js`.
 
 Built to match the names/shapes models are actually trained on.
 
-- **`str_replace_editor`** — Claude/SWE-agent dialect (`view`/`create`/
+- **`str_replace_editor`** â€” Claude/SWE-agent dialect (`view`/`create`/
   `str_replace`/`insert`).
-- **`edit_file`** — Cursor/Aider search-replace (`old_string`/`new_string`).
-- **`apply_patch`** — Codex/GPT **V4A** patch: add / update / move / delete in
+- **`edit_file`** â€” Cursor/Aider search-replace (`old_string`/`new_string`).
+- **`apply_patch`** â€” Codex/GPT **V4A** patch: add / update / move / delete in
   one envelope. Every hunk must match its context exactly once, or the whole
   patch is refused.
-- **`multi_edit`** — several edits in one call, **all-or-nothing**: every target
+- **`multi_edit`** â€” several edits in one call, **all-or-nothing**: every target
   is staged in memory and written only if all edits succeed.
-- **`git`** — runs one git command, jailed and shell-free, with a subcommand
+- **`git`** â€” runs one git command, jailed and shell-free, with a subcommand
   allowlist and retargeting flags (`-c`, `--git-dir`, `--work-tree`, `--output`)
   refused. Read-only subcommands run without a prompt; writes ask.
-- **`git_commit`** — stages the given paths (or everything) and commits; a
+- **`git_commit`** â€” stages the given paths (or everything) and commits; a
   default author identity is supplied so it works on a fresh host.
-- **`http_request`** — real API calls (method, headers, body), SSRF-guarded.
-- **`run_code`** — Python/Node/bash snippets in the sandbox. Off by default
-  (Config → Permissions → *Code interpreter*); fresh process per call, but the
+- **`http_request`** â€” real API calls (method, headers, body), SSRF-guarded.
+- **`run_code`** â€” Python/Node/bash snippets in the sandbox. Off by default
+  (Config â†’ Permissions â†’ *Code interpreter*); fresh process per call, but the
   working directory persists between calls.
-- **`todo_write`** — a session task list; **`think`** — a private scratchpad.
+- **`todo_write`** â€” a session task list; **`think`** â€” a private scratchpad.
 
 ## 8. MCP client
 
@@ -3662,16 +3666,16 @@ Built to match the names/shapes models are actually trained on.
 - API: `/mcp/servers`, `/mcp/status`, `/mcp/tools`, `/mcp/call`. Agents get
   **`mcp_list`** and **`mcp_call`**; a model can call MCP tools but can never
   add or change a server.
-- **Config → MCP Client** section to add/remove servers (name, stdio/http,
+- **Config â†’ MCP Client** section to add/remove servers (name, stdio/http,
   command+args or URL), Save, and it probes each server so a broken command
   shows up immediately. Servers are also editable under `mcp.servers` in
   `storage/config.json`.
 
 ## 9. Tracing / observability
 
-- **`ui/js/trace.js`** — a bounded ring buffer of model turns and tool calls
+- **`ui/js/trace.js`** â€” a bounded ring buffer of model turns and tool calls
   (time, agent, model/tool, ms, ok/error, tokens).
-- Hooked at the two choke points (`runTool`, `_recordUsage`); **Config → TRACE**
+- Hooked at the two choke points (`runTool`, `_recordUsage`); **Config â†’ TRACE**
   opens a "Run trace" viewer with totals and a newest-first table. Session-only
   by design.
 
@@ -3684,13 +3688,13 @@ Built to match the names/shapes models are actually trained on.
 
 ---
 
-## 11. MCP server — this app as a server friends can connect to
+## 11. MCP server â€” this app as a server friends can connect to
 
 - **The mirror of the MCP client.** `src/McpServer.php` speaks JSON-RPC 2.0
   over HTTP at **`POST /api/mcp-server`**, so another machine's MCP client
   (a friend's local model, Claude Desktop, Cursor) can call tools that run
   **here**. `initialize` / `tools/list` / `tools/call` / `ping` are implemented.
-- **Per-friend tokens with scopes.** Config → **MCP Server** section: enable,
+- **Per-friend tokens with scopes.** Config â†’ **MCP Server** section: enable,
   set a scratch folder, edit the protected-path list, and add a token per
   friend with **read / write / exec** checkboxes, an optional IP allowlist, and
   a one-click revoke. The RPC route authenticates with `Authorization: Bearer`
@@ -3698,31 +3702,31 @@ Built to match the names/shapes models are actually trained on.
   behind the web token.
 - **Scope is a ceiling, Sandbox is the floor.** A token only decides *which*
   tool it may reach; the call still runs through every control you already
-  have — `exec_enabled`, `exec_allow`/`exec_deny`, interpreter levels, the file
+  have â€” `exec_enabled`, `exec_allow`/`exec_deny`, interpreter levels, the file
   jail, `code_enabled`, and the approval queue. An un-allowed command from a
   friend lands in **your** Pending-approvals list and their call returns
   "waiting for the operator".
 - **Protected paths.** A default-filled, fully editable deny-list (`storage/`,
-  `.git`, `.env*`, `*.pem`, `*.key`, dotfiles…) enforced in `Sandbox::jail()`,
+  `.git`, `.env*`, `*.pem`, `*.key`, dotfilesâ€¦) enforced in `Sandbox::jail()`,
   so even if the root is the app tree, the access token and provider keys
-  cannot be read. Clear the list to turn protection off — nothing is permanent.
+  cannot be read. Clear the list to turn protection off â€” nothing is permanent.
 - **Scratch root.** Friends work in their own folder (`mcp_server.root`); a
   deny-all `.htaccess` is dropped in it so files they write are never served
   over the web.
-- **The MCP client got headers.** `Config → MCP Client` now round-trips
+- **The MCP client got headers.** `Config â†’ MCP Client` now round-trips
   `command`/`args`/`url` and adds a **headers** box, so a friend who also runs
-  a copy can add your server with `Authorization: Bearer …` and use your tools
+  a copy can add your server with `Authorization: Bearer â€¦` and use your tools
   through `mcp_list` / `mcp_call`.
-- **`FRIENDS.md`** — a one-page "hand this to your friend" connect guide
+- **`FRIENDS.md`** â€” a one-page "hand this to your friend" connect guide
   (remote HTTP, the `mcp-remote` stdio bridge, or their own copy).
 - **Audit:** every call appends one line to `storage/mcp.log`.
 
 ---
 
-## 12. "No one has memory" — three fixes
+## 12. "No one has memory" â€” three fixes
 
 - **Tool calls were being narrated, not sent.** With the global pre-prompt
-  armed ("reply with ONLY text … OR 9 words"), models said *"I'll use the
+  armed ("reply with ONLY text â€¦ OR 9 words"), models said *"I'll use the
   remember tool"* and emitted no call, so nothing saved. The tool instructions
   now state plainly that a tool call is the **one exception** to any brevity /
   "text only" rule, and the tool loop adds a **narration rescue**: if a reply
@@ -3753,3 +3757,4 @@ Run from the repo root (PHP 7.4+; Node only for the JS one):
 
 Note: the code interpreter and `git` use the same fixed POSIX `PATH` as `exec`,
 so they resolve normally on a Linux/Apache host.
+
