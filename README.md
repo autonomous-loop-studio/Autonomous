@@ -20,10 +20,9 @@ team of agents is running.
 
 ![Autonomous Loop Studio — a self-hosted AI agent console in plain PHP](https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/banner-auton-1.gif)
 
-*Two runs of the same twelve-step training drill to auto fit the harness. The first run ends with twelve
-calls, one successful retry, the error visible in the transcript. The harness has learned from its
-successful retry. With training mode back on, the second run is completed without error. The harness has
-been successfully custom-fitted, and your model is now an agent.*
+<p align="center"><em>Any tier, any model: a fleet map with local weights in LM Studio and Ollama running
+beside free tiers on Groq and OpenAI, each agent bound to whichever endpoint answers. Every provider is
+paced to its own real ceiling, and the harness fits each model's tool dialect as it goes.</em></p>
 
 ![PHP](https://img.shields.io/badge/PHP-8.x-777BB4?logo=php&logoColor=white)
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
@@ -118,12 +117,12 @@ Ollama, LM Studio or vLLM on your own box there is nothing to pace at all.
 
 **[The drill, recorded](screenshots/training-mode.gif)** — a local model running the training drill
 against a real folder. The attempt before this one repeated `list_dir`, `grep_code` and `exec`, and
-said so in the transcript; asked to try again it ran clean, and these are the closing calls of that
-run — each landing once, in order, with its own timing:
+said so in the transcript; asked to try again it ran clean. Then two models take the same drill first-pass,
+side by side:
 
-<p><a href="screenshots/training-mode-poster.png"><img src="screenshots/training-mode.gif" width="880" alt="A local agent running the training drill — its closing tool calls landing once each, in order, each with its own timing."></a></p>
+<p><img src="https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/head2head.gif" width="880" alt="Qwen3.5-4B and Nemotron-3-Ultra-550B running the Browser drill side by side; both finish clean, with Qwen's completion card appearing first."></p>
 
-*Click it for the full-size still.*
+*Qwen3.5-4B and Nemotron-3-Ultra-550B — both clean, Qwen's completion card first.*
 
 **[The whole 30 seconds, unedited ↗](https://github.com/autonomous-loop-studio/Autonomous/releases/download/v447/Training-Mode.mp4)** — the failed first pass, the correction, the `ok`, and the clean run. mp4, 43 MB — it downloads rather than streaming in the browser.
 
@@ -261,6 +260,10 @@ Jump straight to a section — every heading on this page is linkable; these are
 > local Windows PHP setups
 > either accept that limit or expect you to install and hand-edit Apache/FPM
 > yourself. *
+
+<p><img src="https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/install.gif" width="880" alt="The Windows one-click install, recorded: clone from GitHub, start.bat checks PHP and writes the access token, then Apache starts and the app opens."></p>
+
+*The one-click install, recorded: clone the folder, run `start.bat`, and it checks PHP, writes your access token and starts Apache — no database, no hand-edited config.*
 
 ### 🐧 Linux / macOS
 ```bash
@@ -1292,6 +1295,13 @@ Free, quantised models that used to burn **6–8 calls** guessing now get it rig
 ![Training mode armed — the dumbbell button, the drill popup and the fleet working it](screenshots/training-mode.png)
 
 Every agent meets every provider through the same door 🚪: the **harness** decides *how* to call it and *which tool dialect* to teach it — automatically, on every request. When you'd rather choose yourself, two dropdowns in 🧠 Brain Lab pin either one per agent. And 🏋️ **Training mode** is where the fleet proves it can use the tools at all: one paced drill, every active agent, all at once. This section is the full manual for all three — the auto-fit, the manual pins, and the drill. 📖
+
+<p>
+<img src="https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/notepad.gif" width="49%" alt="The Frontier drill: Notepad opened on the desktop, Hello! typed in, then the text zoomed up large.">
+<img src="https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/captcha.gif" width="49%" alt="The Browser drill: training typed into the name field on the shipped local page, then Hello, training after Say hello.">
+</p>
+
+*Left: the six-step Frontier drill on the real desktop. Right: the nine-step Browser drill on the shipped local page.*
 
 <details>
 <summary>Detection order, manual pins and the six- to seventeen-step drills</summary>

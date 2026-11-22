@@ -82,6 +82,8 @@
     .poster-tall{display:block}
   }
   figcaption{color:var(--dim); font-size:12.5px; margin-top:9px}
+  figcaption strong,figcaption b{color:var(--text); font-weight:600}
+  figcaption.feature-note{font-size:13.5px; line-height:1.7; color:var(--muted); max-width:74ch; margin-inline:auto}
 
   section{padding:clamp(34px,6vw,52px) 0; border-top:1px solid var(--line); scroll-margin-top:12px}
   h2{font-size:clamp(20px,4.4vw,27px); letter-spacing:-.02em; margin:0 0 8px; text-wrap:balance}
@@ -208,7 +210,7 @@
     <div class="shot"><picture>
         <img src="screenshots/banner-auton-1.gif" width="880" height="368" alt="A local agent's first run through the training drill stopping on a failed edit call, then — training mode back on — taking off and running every step of the drill in order, its closing tool calls landing in a few hundred milliseconds each.">
       </picture></div>
-    <figcaption>Two runs of the same twelve-step training drill to auto fit the harness. The first run ends with twelve calls, one successful retry, the error visible in the transcript. The harness has learned from its successful retry. With training mode back on, the second run is completed without error. The harness has been successfully custom-fitted, and your model is now an agent.</figcaption>
+    <figcaption class="feature-note">Your own fleet for $0, <strong>universally compatible</strong> with any local endpoint, provider, model or API, even when wrapped in cURL. Turn a free-tier frontier demo’s cURL endpoint into a <strong>fully autonomous agent</strong> complete with tools, persistent hive-mind shared memory and a browser they can actually drive. Specially designed tools and architecture keep you in the game. Stay below rate limits, never above. <strong>Built-in pacer / throttle</strong> keeps your swarm’s requests just below the limit. A 429 error no longer kills the loop. The system just <strong>queues</strong> the request(s) and out-waits the rate limit. Any pre-existing data that would normally be parsed by an agent is now parsed by the program itself. Instead of taking minutes to stream back, one word at a time, it’s <strong>instantaneous</strong>. A page’s source code, file searches or a 400k-line log file, saving your agent’s context window and your token limit. <strong>“Training Mode”</strong> auto-fits the agent’s harness through <strong>brute-force drills</strong>. The program is self-evolving, learning dialect, it remembers the syntax of the successful tool calls for the agents, per agent. <strong>“Auto near-miss corrections”</strong> and automatic retries turn even a 3B local model into an agent with frontier capabilities. <strong>Full-Duplex MCP protocols</strong> with passthrough options and built-in reverse proxy tunnels work as global mesh networks where friends can share agents and resources.</figcaption>
   </figure>
 </div>
 
@@ -242,9 +244,8 @@
       </div>
     </div>
     <p class="after">
-      Free tiers have daily caps — pacing smooths bursts, it does not make them infinite. And
-      "always on" means the host stays awake: the tab-hidden worker, or a machine that does not
-      sleep. Against Ollama, LM Studio or vLLM on your own box, there is nothing to pace at all.
+     "Always on" means the host stays awake: the tab-hidden worker, or a machine that does not
+      sleep and with Ollama, LM Studio or vLLM on your own box, there is nothing to pace at all.
     </p>
   </div>
 </section>
@@ -252,7 +253,7 @@
 <section id="what">
   <div class="wrap">
     <h2>What it is</h2>
-    <p class="sub">A console, not a chat window. Agents, tools, routing and a map, in one folder you own.</p>
+    <p class="sub">A console, not a chat window. Agents, tools, routing chart with logic nodes and a map, in one folder you own.</p>
     <div class="grid">
       <div class="feature">
         <span class="ico">🤖</span>
@@ -425,14 +426,14 @@
     looked close enough. The approval prompts on the writing steps are part of the drill: waiting for
     one is a step, not an interruption.</p>
     <p class="para">Two shorter drills leave the sandbox: <b>Frontier</b> is six real-desktop steps — find
-    Notepad, open it, type “Hello!”, and read the window back to prove it landed — and <b>Browser</b> is nine steps against the local drill page:
+    Notepad, open it, type a simple message, and read the window back to prove it landed — and <b>Browser</b> is nine steps against the local drill page:
     open it, read the heading, type “training”, click <b>Say hello</b>, wait, then read “Hello, training”
-    back. Browser needs Config → Labs → Browser switched on and Chrome or Edge installed.</p>
+    back. Browser needs Config → Labs → Browser switched on and Chrome or Edge installed. Three levels of captcha training and a custom drill design feature where you can make your own.</p>
     <figure>
       <div class="shot"><picture>
           <img src="screenshots/notepad.gif" width="880" height="495" alt="Notepad opened on the desktop, Hello! typed in, then the text zoomed up large.">
         </picture></div>
-      <figcaption>The six-step Frontier drill: Notepad opens, “Hello!” is typed on screen, then the window is read back to confirm the text and the text zooms up.</figcaption>
+      <figcaption>The six-step Frontier drill: Notepad opens, a message is typed on screen, then the window is read back to confirm the text and the text zooms up.</figcaption>
     </figure>
     <figure>
       <div class="shot"><picture>
@@ -468,8 +469,7 @@
     <h3 class="mini">Head-to-head — same drill, two models</h3>
     <p class="para">One first run each, same app, same local page. <b>Qwen3.5-4B</b> and
     <b>Nemotron-3-Ultra-550B</b> both finished the Browser drill with <b>1 clean pass and 0 failed
-    attempts</b>; Qwen reached its clean-pass card first. The clip is the full first-pass race at
-    4× speed, with a short hold on the final state.</p>
+    attempts</b>; Qwen reached its clean-pass card first. The clip is the full first-pass race, with a short hold on the final state.</p>
     <figure>
       <div class="shot"><a class="poster-wide" href="screenshots/Head-to-Head-Browser.mp4" aria-label="Play the 25-second head-to-head teaser"><picture>
           <img src="screenshots/head2head.gif" width="880" height="495" loading="lazy" alt="Qwen3.5-4B and Nemotron-3-Ultra-550B running the Browser drill side by side; both finish clean, with Qwen's completion card appearing first.">
@@ -540,7 +540,7 @@ cd Autonomous
     <h2>The point: the boring host is enough</h2>
     <div class="why">
       <div>
-        <p>Almost everything in this category assumes Docker, or a Python toolchain, or a VPS you
+        <p>Almost everything in this category assumes Docker, a Python toolchain, or a VPS you
         rent by the month. This assumes <strong>the PHP you already have</strong>.</p>
         <p>That is not a stunt. It changes who can run it: the shared host you pay $3 for, the
         Windows machine in the office, the laptop in the drawer. You deploy by copying a folder, and
