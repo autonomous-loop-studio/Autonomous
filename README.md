@@ -18,7 +18,7 @@ to a clean score: fixed drills from six steps to seventeen, or one you write you
 One folder of PHP and static files — drop it on the host you already pay for, double-click, and a
 team of agents is running.
 
-![Autonomous Loop Studio — a self-hosted AI agent console in plain PHP](screenshots/auto-harness.gif)
+![Autonomous Loop Studio — a self-hosted AI agent console in plain PHP](https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/banner-auton-1.gif)
 
 *Two runs of the same twelve-step training drill to auto fit the harness. The first run ends with twelve
 calls, one successful retry, the error visible in the transcript. The harness has learned from its
