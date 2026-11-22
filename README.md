@@ -21,19 +21,19 @@ team of agents is running.
 ![Autonomous Loop Studio — a self-hosted AI agent console in plain PHP](https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/banner-auton-1.gif)
 
 <p align="center">
-Your own fleet for $0, <strong>universally compatible</strong> with any local endpoint, provider, model or API, even when<br>
-wrapped in cURL. Turn a free-tier frontier demo’s cURL endpoint into a <strong>fully autonomous agent</strong> complete<br>
-with tools, persistent hive-mind shared memory and a browser they can actually drive. Specially designed<br>
-tools and architecture keep you in the game. Stay below rate limits, never above.<br>
-<strong>Built-in pacer / throttle</strong> keeps your swarm’s requests just below the limit. A 429 error no longer kills<br>
-the loop. The system just <strong>queues</strong> the request(s) and out-waits the rate limit. Any pre-existing data that<br>
-would normally be parsed by an agent is now parsed by the program itself. Instead of taking minutes to<br>
-stream back, one word at a time, it’s <strong>instantaneous</strong>. A page’s source code, file searches or a 400k-line<br>
-log file, saving your agent’s context window and your token limit. <strong>“Training Mode”</strong> auto-fits the agent’s<br>
-harness through <strong>brute-force drills</strong>. The program is self-evolving, learning dialect, it remembers the<br>
-syntax of the successful tool calls for the agents, per agent. <strong>“Auto near-miss corrections”</strong> and<br>
-automatic retries turn even a 3B local model into an agent with frontier capabilities.<br>
-<strong>Full-Duplex MCP protocols</strong> with passthrough options and built-in reverse proxy tunnels work as global<br>
+Your own fleet for $0, <strong>universally compatible</strong> with any local endpoint, provider, model or API, even when
+wrapped in cURL. Turn a free-tier frontier demo’s cURL endpoint into a <strong>fully autonomous agent</strong> complete
+with tools, persistent hive-mind shared memory and a browser they can actually drive. Specially designed
+tools and architecture keep you in the game. Stay below rate limits, never above.
+<strong>Built-in pacer / throttle</strong> keeps your swarm’s requests just below the limit. A 429 error no longer kills
+the loop. The system just <strong>queues</strong> the request(s) and out-waits the rate limit. Any pre-existing data that
+would normally be parsed by an agent is now parsed by the program itself. Instead of taking minutes to
+stream back, one word at a time, it’s <strong>instantaneous</strong>. A page’s source code, file searches or a 400k-line
+log file, saving your agent’s context window and your token limit. <strong>“Training Mode”</strong> auto-fits the agent’s
+harness through <strong>brute-force drills</strong>. The program is self-evolving, learning dialect, it remembers the
+syntax of the successful tool calls for the agents, per agent. <strong>“Auto near-miss corrections”</strong> and
+automatic retries turn even a 3B local model into an agent with frontier capabilities.
+<strong>Full-Duplex MCP protocols</strong> with passthrough options and built-in reverse proxy tunnels work as global
 mesh networks where friends can share agents and resources.
 </p>
 
