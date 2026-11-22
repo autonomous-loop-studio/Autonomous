@@ -20,9 +20,22 @@ team of agents is running.
 
 ![Autonomous Loop Studio — a self-hosted AI agent console in plain PHP](https://raw.githubusercontent.com/autonomous-loop-studio/Autonomous/media/media-source/banner-auton-1.gif)
 
-<p align="center"><em>Any tier, any model: a fleet map with local weights in LM Studio and Ollama running
-beside free tiers on Groq and OpenAI, each agent bound to whichever endpoint answers. Every provider is
-paced to its own real ceiling, and the harness fits each model's tool dialect as it goes.</em></p>
+<p align="center">
+Your own fleet for $0, universally compatible with any local endpoint, provider, model or API, even when<br>
+wrapped in cURL. Turn a free-tier frontier demo’s cURL endpoint into a fully autonomous agent complete<br>
+with tools, persistent hive-mind shared memory and a browser they can actually drive. Specially designed<br>
+tools and architecture keep you in the game. Stay below rate limits, never above. Built-in pacer /<br>
+throttle keeps your swarm’s requests just below the limit. A 429 error no longer kills the loop. The<br>
+system just queues the request(s) and out-waits the rate limit. Any pre-existing data that would<br>
+normally be parsed by an agent is now parsed by the program itself. Instead of taking minutes to stream<br>
+back, one word at a time, it’s instantaneous. A page’s source code, file searches or a 400k-line log<br>
+file, saving your agent’s context window and your token limit. “Training Mode” auto-fits the agent’s<br>
+harness through brute-force drills. The program is self-evolving, learning dialect, it remembers the<br>
+syntax of the successful tool calls for the agents, per agent. “Auto near-miss corrections” and<br>
+automatic retries turn even a 3B local model into an agent with frontier capabilities. Full-Duplex MCP<br>
+protocols with passthrough options and built-in reverse proxy tunnels work as global mesh networks where<br>
+friends can share agents and resources.
+</p>
 
 ![PHP](https://img.shields.io/badge/PHP-8.x-777BB4?logo=php&logoColor=white)
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
