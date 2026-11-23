@@ -31,11 +31,11 @@
 //
 // Nothing here runs arbitrary code or shells out.
 
-import { store } from './store.js?v=509';
-import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=509';
-import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=509';
-import { settingFor } from './agentConfig.js?v=509';
-import { trace } from './trace.js?v=509';
+import { store } from './store.js?v=511';
+import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=511';
+import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=511';
+import { settingFor } from './agentConfig.js?v=511';
+import { trace } from './trace.js?v=511';
 
 const NOTES_KEY = 'router_notes';
 const CUSTOM_TOOL_NAME_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -1366,7 +1366,8 @@ export function bindSandboxTools(api) {
     const pattern = pathText(arg);
     if (pattern == null) return 'error: grep_code needs "pattern" as a plain string, e.g. {"pattern":"training"} — retry the step with that shape';
     const res = await api.sandbox('grep', { pattern, max_matches: 60, scope: scopeOf(ctx) });
-    if (!res.count) return `no matches for /${res.pattern}/ in ${res.files_scanned} files`;
+    if (res && res.error) return `error: ${res.error}`;
+    if (!res.count) return `no matches for /${res.pattern || pattern}/ in ${res.files_scanned || 0} files`;
     return `${res.count} matches:\n` + lines(res.matches.map(m =>
       `${m.rel}:${m.line}: ${m.text}`));
   };

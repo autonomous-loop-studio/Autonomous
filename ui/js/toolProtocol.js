@@ -42,4 +42,4 @@ export {
   dialectCloneInheritEnabled,
   copyDialectMemo,
   dialectTelemetryEnabled,
-} from './harness.js?v=509';
+} from './harness.js?v=511';

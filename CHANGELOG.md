@@ -15,9 +15,15 @@ usual file deploy.
 reads and compares alongside that cache-buster â€” see the first entry below.
 
 ---
-## Unreleased - Linux parity for Programs and Training
+## 🏷 v511 — Linux parity, captcha image, browser viewport, tooling
 
-* Programs: typing is no longer Windows-only; Linux/macOS use an available keystroke injector (xdotool/ydotool/wtype/osascript) and POSIX launches detach via setsid/nohup. Frontier drill grades on typed arguments so Linux agents can pass without a text-control read-back. Storage permission helper added to install/update flow.
+* Programs: typing is no longer Windows-only; Linux/macOS use an available keystroke injector (xdotool/ydotool/wtype/osascript) and POSIX launches detach via setsid/nohup. Frontier drill grades on typed arguments so Linux agents can pass without a text-control read-back.
+* Captcha Lev.2 now uses a 4x4 image grid (captcha.jpg) with boxes 5 and 6 as targets.
+* Captcha Lev.3 stop-sign tiles use inline SVG so they render on any server charset.
+* Built-in browser viewport now fits on mobile (max-height/object-fit, centered).
+* grep_code surfaces server errors instead of masking them.
+* Storage permission helpers for Windows and Linux; install-update.php prints copy-paste fix commands.
+* Version bumped to 511 (cache buster updated: VERSION 509 → 511, APP_VERSION 509 → 511, every ?v= under ui/** and ide/**, both index.html files and ide/index.php).
 
 ## ðŸ‹ v501 â€” Captcha drills, LAN TTS, and a smarter forced-tool-choice memory
 

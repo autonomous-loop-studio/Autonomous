@@ -7,17 +7,17 @@
 // AGENTEDITOR.JS — Agent CRUD modal
 // ============================================
 
-import { store } from '../store.js?v=509';
-import { persistence } from '../persistence.js?v=509';
-import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=509';
-import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=509';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=509';
-import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=509';
-import { sandboxRootFor } from '../agentConfig.js?v=509';
-import { learnedDialect, forgetDialect, memoProvenance, protocolLabel } from '../harness.js?v=509';
-import { audio } from '../audio.js?v=509';
-import { api } from '../api.js?v=509';
-import * as memory from '../memory.js?v=509';
+import { store } from '../store.js?v=511';
+import { persistence } from '../persistence.js?v=511';
+import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=511';
+import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=511';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=511';
+import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=511';
+import { sandboxRootFor } from '../agentConfig.js?v=511';
+import { learnedDialect, forgetDialect, memoProvenance, protocolLabel } from '../harness.js?v=511';
+import { audio } from '../audio.js?v=511';
+import { api } from '../api.js?v=511';
+import * as memory from '../memory.js?v=511';
 
 /** Toast wording per recognized snippet language. */
 const KIND_LABEL = { curl: 'Curl', python: 'Python', node: 'Node', sdk: 'SDK', json: 'JSON API' };

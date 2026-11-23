@@ -7,24 +7,24 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=509';
-import { K } from '../storage.js?v=509';
-import { persistence } from '../persistence.js?v=509';
-import { api } from '../api.js?v=509';
-import { isNoTokenError } from '../apiError.js?v=509';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=509';
-import { errText } from '../api.js?v=509';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=509';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=509';
-import { snapshot } from '../rateGovernor.js?v=509';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy, hyperBruteEnabled } from '../training.js?v=509';
-import { resetBrowserEnabled } from '../toolManifest.js?v=509';
-import { listDialectMemos, forgetDialect, protocolLabel, dialectDurableSettings } from '../harness.js?v=509';
-import { perf } from '../perf.js?v=509';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=509';
-import { audio } from '../audio.js?v=509';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=509';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=509';
+import { store } from '../store.js?v=511';
+import { K } from '../storage.js?v=511';
+import { persistence } from '../persistence.js?v=511';
+import { api } from '../api.js?v=511';
+import { isNoTokenError } from '../apiError.js?v=511';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=511';
+import { errText } from '../api.js?v=511';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=511';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=511';
+import { snapshot } from '../rateGovernor.js?v=511';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy, hyperBruteEnabled } from '../training.js?v=511';
+import { resetBrowserEnabled } from '../toolManifest.js?v=511';
+import { listDialectMemos, forgetDialect, protocolLabel, dialectDurableSettings } from '../harness.js?v=511';
+import { perf } from '../perf.js?v=511';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=511';
+import { audio } from '../audio.js?v=511';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=511';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=511';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open
@@ -1380,6 +1380,7 @@ export class Sidebar {
     const tm = store.get('settings.trainingMode') || {};
     store.set('settings.trainingMode', { ...tm, active: false, drillResumes: 0, drillFails: 0 });
     store.set('trainingStuck', {});
+    store.set('trainingBrute', {});
     persistence.set('settings', store.get('settings'));
     store.emit('toast', { message: note || 'Training mode off — full rate restored', type: note ? 'success' : 'info' });
     store.emit('training:changed', { active: false });
