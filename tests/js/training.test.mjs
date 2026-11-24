@@ -502,7 +502,7 @@ eq(frontierVerdict.totalSteps, 6, 'frontier verdict uses the 6-step table');
 const browserCalls = [
   { tool: 'think', arg: 'plan', status: 'ok' },
   { tool: 'todo_write', arg: { todos: [] }, status: 'ok' },
-  { tool: 'browser_open', arg: { url: 'http://127.0.0.1:8080/router/ui/drill/browser.html', headless: false }, status: 'ok', result: 'Opened http://127.0.0.1:8080/router/ui/drill/browser.html — Browser drill (visible window)' },
+  { tool: 'browser_open', arg: { url: 'http://127.0.0.1:8080/router/ui/drill/browser.html', headless: false }, status: 'ok', result: 'Opened http://127.0.0.1:8080/router/ui/drill/browser.html — Browser drill (visible window, ready)' },
   { tool: 'browser_read', arg: {}, status: 'ok', result: 'Browser drill\nYour name\nSay hello\nWaiting for a name.' },
   { tool: 'browser_type', arg: { selector: '#drill-name', text: 'training' }, status: 'ok', result: 'Typed 8 character(s)' },
   { tool: 'browser_click', arg: { selector: '#drill-submit' }, status: 'ok', result: 'Clicked #drill-submit' },

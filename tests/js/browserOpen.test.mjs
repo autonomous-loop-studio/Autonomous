@@ -45,13 +45,13 @@ reset();
 const first = await open({ url: 'http://127.0.0.1:8080/router/ui/drill/browser.html' });
 ok(calls.some(c => c[0] === 'launch' && c[1] === true),
   'browser_open launches headless when no headless flag is given');
-ok(first.includes('(headless — no window to watch)'), 'the result says the window is headless');
+ok(first.includes('(headless — no window to watch, ready)'), 'the result says the window is headless');
 
 reset({ running: true, headless: true });
 const relaunched = await open({ url: 'http://127.0.0.1:8080/router/ui/drill/browser.html', headless: false });
 ok(calls.some(c => c[0] === 'launch' && c[1] === false),
   'asking for visible restarts an already-running headless browser');
-ok(relaunched.includes('(visible window)'), 'the restart reports a visible window');
+ok(relaunched.includes('(visible window, ready)'), 'the restart reports a visible window');
 
 reset({ running: true, headless: true });
 const explicitHeadless = await open({ url: 'http://127.0.0.1:8080/router/ui/drill/browser.html', headless: true });
@@ -63,13 +63,13 @@ ok(explicitHeadless.includes('headless — no window to watch'),
 reset({ running: true, headless: false });
 const alreadyVisible = await open({ url: 'http://127.0.0.1:8080/router/ui/drill/browser.html' });
 ok(!calls.some(c => c[0] === 'launch'), 'a visible browser is reused');
-ok(alreadyVisible.includes('(visible window)'), 'and still reports the visible mode');
+ok(alreadyVisible.includes('(visible window, ready)'), 'and still reports the visible mode');
 
 reset();
 const background = await open({ url: 'http://127.0.0.1:8080/router/ui/drill/browser.html', headless: true });
 ok(calls.some(c => c[0] === 'launch' && c[1] === true),
   'headless:true still launches the background mode');
-ok(background.includes('(headless — no window to watch)'),
+ok(background.includes('(headless — no window to watch, ready)'),
   'the background mode is named in the result');
 
 console.log(`\n${pass} passed, ${fail} failed`);

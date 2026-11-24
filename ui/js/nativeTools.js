@@ -138,7 +138,10 @@ export const TOOL_SCHEMAS = {
     enter: bool('Press Enter after typing'),
   }, ['text']),
   browser_read: obj(),
-  browser_wait: obj({ ms: num('Milliseconds to wait for the page to settle') }),
+  browser_wait: obj({
+    ms: num('Milliseconds to wait for the page to settle (omit to wait for readiness)'),
+    ready: bool('Wait for the page to finish loading/hydrating instead of a fixed time'),
+  }),
   ide_open: obj({
     path: str('File to open in the operator\u2019s IDE screen'),
     line: num('Line to jump to (optional)'),

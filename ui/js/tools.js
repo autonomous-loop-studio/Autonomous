@@ -535,8 +535,9 @@ export const TOOL_REGISTRY = {
   },
   browser_wait: {
     label: 'browser_wait',
-    arg: '{"ms":1500}',
-    describe: 'In the built-in browser, wait N milliseconds for the page to settle.',
+    arg: '{"ready":true} or {"ms":1500}',
+    describe: 'In the built-in browser, wait for the page to finish loading/hydrating (ready:true) '
+      + 'or a fixed number of milliseconds (ms). Prefer ready:true over guessing a wait time.',
     run: () => 'browser tools are not bound yet',
   },
 
@@ -1276,6 +1277,20 @@ export function bindSandboxTools(api) {
   setSandboxClient(api);
   const lines = rows => rows.map(r => (typeof r === 'string' ? r : r.join(' '))).join('\n');
   const scopeOf = ctx => (ctx && ctx.sandboxRoot) || undefined;
+  const waitForBrowserReady = async (client) => {
+    if (!client || typeof client.browserEval !== 'function') return;
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline) {
+      let state = '';
+      try {
+        const r = await client.browserEval('document.readyState');
+        state = String((r && r.result) || '').trim().toLowerCase();
+      } catch { break; }
+      if (state === 'complete') break;
+      await new Promise(r => setTimeout(r, 150));
+    }
+    await new Promise(r => setTimeout(r, 250));
+  };
 
   TOOL_REGISTRY.web_search.run = async (arg) => {
     const res = await api.sandbox('search', { query: String(arg ?? ''), limit: 8 });
@@ -1676,8 +1691,9 @@ export function bindSandboxTools(api) {
       st = await api.browserLaunch(wantHeadless);
     }
     const info = await api.browserNavigate(url);
+    await waitForBrowserReady(api);
     const mode = st.headless ? 'headless — no window to watch' : 'visible window';
-    return `Opened ${info.url || url}${info.title ? ` — ${info.title}` : ''} (${mode})`;
+    return `Opened ${info.url || url}${info.title ? ` — ${info.title}` : ''} (${mode}, ready)`;
   };
 
   TOOL_REGISTRY.browser_click.run = async (arg) => {
@@ -1731,7 +1747,13 @@ export function bindSandboxTools(api) {
 
   TOOL_REGISTRY.browser_wait.run = async (arg) => {
     const a = (arg && typeof arg === 'object' && !Array.isArray(arg)) ? arg : { ms: arg };
-    const ms = Math.max(0, Math.min(30000, parseInt(a.ms, 10) || 1000));
+    const wantsReady = a.ready === true || a.ready === 'true'
+      || (a.ms === undefined && a.milliseconds === undefined && a.delay === undefined);
+    if (wantsReady) {
+      await waitForBrowserReady(api);
+      return 'Ready — page loaded and hydrated';
+    }
+    const ms = Math.max(0, Math.min(30000, parseInt(a.ms ?? a.milliseconds ?? a.delay, 10) || 1000));
     await new Promise((r) => setTimeout(r, ms));
     return `Waited ${ms}ms`;
   };
@@ -2267,8 +2289,8 @@ export function toolInstructions(enabledTools, sandboxRoot, protocol = 'json') {
       'You CAN automate a browser. The built-in browser (browser_open / browser_click / browser_type / '
       + 'browser_read / browser_wait) drives a REAL Chrome/Edge window the operator can watch — you do NOT '
       + 'need Playwright, Selenium, Puppeteer or a browser extension, and you should never tell the user you '
-      + 'lack browser access. Workflow: browser_open a URL, browser_read to see the page, browser_click / '
-      + 'browser_type to act (target fields with a CSS selector), then browser_read again to check the result.'
+      + 'lack browser access. Workflow: browser_open a URL (returns only once the page is ready), browser_read to see the page, browser_click / '
+      + 'browser_type to act (target fields with a CSS selector), then browser_wait with ready:true and browser_read again to check the result.'
     );
   }
   if (names.some(t => String(t).startsWith('window_'))) {
