@@ -35,10 +35,10 @@ namespace Src;
 class Update
 {
     /** Refuse anything bigger than this before touching the disk. */
-    const MAX_ARCHIVE_BYTES = 256 * 1024 * 1024;
+    const MAX_ARCHIVE_BYTES = 1024 * 2048 * 2048;
 
     /** A real repo has ~400 files; this is the ceiling for a hostile one. */
-    const MAX_ENTRIES = 100000;
+    const MAX_ENTRIES = 200000000;
 
     /** The published tree. codeload is GitHub's archive host (no API redirect). */
     const DEFAULT_SOURCE = 'https://codeload.github.com/MBHudson/Autonomous/zip/refs/heads/master';
