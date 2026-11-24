@@ -7,17 +7,18 @@
 // AGENTEDITOR.JS — Agent CRUD modal
 // ============================================
 
-import { store } from '../store.js?v=511';
-import { persistence } from '../persistence.js?v=511';
-import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=511';
-import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=511';
-import { parseSnippet, snippetKind } from '../snippetParser.js?v=511';
-import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=511';
-import { sandboxRootFor } from '../agentConfig.js?v=511';
-import { learnedDialect, forgetDialect, memoProvenance, protocolLabel } from '../harness.js?v=511';
-import { audio } from '../audio.js?v=511';
-import { api } from '../api.js?v=511';
-import * as memory from '../memory.js?v=511';
+import { store } from '../store.js?v=512';
+import { persistence } from '../persistence.js?v=512';
+import { esc, uuid, makeAgentCode, agentCode, asText, agentToolState } from '../utils.js?v=512';
+import { parseCurl, bearerFromHeaders, parseJsonLenient } from '../curlParser.js?v=512';
+import { parseSnippet, snippetKind } from '../snippetParser.js?v=512';
+import { TOOL_REGISTRY, defaultTools, sandboxBindingReport, bindSandboxNow, DISPLAY_TOOLS } from '../tools.js?v=512';
+import { sandboxRootFor } from '../agentConfig.js?v=512';
+import { learnedDialect, forgetDialect, memoProvenance, protocolLabel, detectFamily } from '../harness.js?v=512';
+import { nativeToolDefs, nativeToolChoice } from '../nativeTools.js?v=512';
+import { audio } from '../audio.js?v=512';
+import { api } from '../api.js?v=512';
+import * as memory from '../memory.js?v=512';
 
 /** Toast wording per recognized snippet language. */
 const KIND_LABEL = { curl: 'Curl', python: 'Python', node: 'Node', sdk: 'SDK', json: 'JSON API' };
@@ -68,10 +69,16 @@ export class AgentEditor {
     // The deny list is applied on top, so a tool hidden by the policy editor
     // cannot be re-enabled here even by accident.
     const denied = this._deniedTools();
-    const chosen = (Array.isArray(agent?.tools) ? agent.tools : defaultTools())
-      .filter(t => !denied.includes(t));
+    const autoOn = !!agent?.autoDetectTools;
     const entries = Object.entries(TOOL_REGISTRY)
       .filter(([id]) => !memory.MEMORY_TOOLS.includes(id) && !denied.includes(id));
+    // Auto-detect (real): prefer the saved result of the last probe (stored in
+    // agent.tools) over a blind "enable everything". A new agent with no saved
+    // tools yet defaults to the full set until a probe runs.
+    const chosen = autoOn
+      ? (Array.isArray(agent?.tools) ? agent.tools : entries.map(([id]) => id))
+      : (Array.isArray(agent?.tools) ? agent.tools : defaultTools())
+          .filter(t => !denied.includes(t));
     const option = ([id, def]) => `
                   <label class="tool-option">
                     <input type="checkbox" value="${esc(id)}" ${chosen.includes(id) ? 'checked' : ''}>
@@ -86,9 +93,20 @@ export class AgentEditor {
                 </div>
                 <div class="tool-group-tools">${list.map(option).join('')}</div>
               </div>` : '');
-    return group('Show to the operator',
-      'ends the turn — shown to you, never paid for',
-      entries.filter(([id]) => DISPLAY_TOOLS.includes(id)))
+    const autoToggle = `<div class="tool-auto-detect" style="margin:6px 0 10px;">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="agentAutoDetectTools" ${autoOn ? 'checked' : ''}>
+        <span>Auto-detect tools (experimental, default off)</span>
+      </label>
+      <div class="tool-hint" style="font-size:11px;opacity:.7;margin-top:2px;">
+        When on, tools are detected from the model (dialect memo, then a probe).
+        Off by default; manual checkboxes apply when off.
+      </div>
+    </div>`;
+    return autoToggle
+      + group('Show to the operator',
+        'ends the turn — shown to you, never paid for',
+        entries.filter(([id]) => DISPLAY_TOOLS.includes(id)))
       + group('Work on it',
         'the result comes back, and is paid for on every step after',
         entries.filter(([id]) => !DISPLAY_TOOLS.includes(id)));
@@ -478,6 +496,15 @@ export class AgentEditor {
       document.getElementById('agentTools')?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         cb.checked = checked;
       });
+    });
+
+    // Real auto-detect: when the toggle is turned on, probe the model with a
+    // minimal tool call and tick the tools only if the model actually returns
+    // one. Falls back to the learned dialect memo, then to "enable all" when
+    // no probe is possible (no credentials / network error).
+    document.getElementById('agentAutoDetectTools')?.addEventListener('change', async (e) => {
+      if (!e.target.checked) return;
+      await this._runAutoDetect();
     });
 
     // Copy the currently selected tools to every agent
@@ -937,6 +964,139 @@ export class AgentEditor {
     });
   }
 
+  // Inspect a relay response for evidence of a tool call, parsing structured
+  // fields (tool_calls / function_call / choices) first and only then falling
+  // back to markers in the extracted text. Returns true only on positive
+  // evidence; never treats a missing field as "no support".
+  _probeHasToolCall(res) {
+    if (!res || typeof res !== 'object') return false;
+    // Top-level structured tool calls.
+    if (Array.isArray(res.toolCalls) && res.toolCalls.length) return true;
+    if (Array.isArray(res.tool_calls) && res.tool_calls.length) return true;
+    if (res.function_call && typeof res.function_call === 'object') return true;
+    // choices[] (OpenAI-style) with tool_calls / function_call on the message.
+    const choices = Array.isArray(res.choices) ? res.choices : [];
+    for (const c of choices) {
+      const msg = (c && (c.message || c.delta)) || c || {};
+      if (Array.isArray(msg.tool_calls) && msg.tool_calls.length) return true;
+      if (msg.function_call && typeof msg.function_call === 'object') return true;
+      if (Array.isArray(c?.tool_calls) && c.tool_calls.length) return true;
+    }
+    // Fall back to markers in the extracted text content / reasoning. The
+    // one-shot relay returns the assistant text, so a text-dialect model's
+    // reply is the only signal available there.
+    const text = [res.content, res.reasoning]
+      .filter(v => typeof v === 'string').join('\n');
+    return /tool_calls|function_call|<function_calls|<invoke\s|\{\s*"tool"\s*:/.test(text);
+  }
+
+  async _runAutoDetect() {
+    const cb = document.getElementById('agentAutoDetectTools');
+    const toolsBox = document.getElementById('agentTools');
+    const provider = document.getElementById('agentProvider')?.value || '';
+    const model = document.getElementById('agentModel')?.value?.trim() || '';
+    const endpoint = document.getElementById('agentEndpoint')?.value?.trim() || '';
+    const keyOverride = document.getElementById('agentKeyOverride')?.value?.trim() || '';
+    // Resolve API key: override first, else from providers list.
+    let apiKey = keyOverride;
+    if (!apiKey) {
+      const providers = (store.get('providers') || []);
+      const prov = providers.find(p => p.id === provider);
+      apiKey = prov?.api_key || '';
+    }
+
+    // First, consult the learned dialect memo (real detection already done
+    // during prior turns/training).
+    const memo = learnedDialect(provider, model, this.editingId || null);
+    if (memo) {
+      toolsBox?.querySelectorAll('input[type="checkbox"]').forEach(c => { c.checked = true; });
+      try { store.emit('toast', { message: 'Auto-detect: model supports tool calls (' + memo + ')', type: 'success' }); } catch {}
+      return;
+    }
+
+    // No memo yet: probe the model if we have the credentials.
+    if (!endpoint || !model) {
+      toolsBox?.querySelectorAll('input[type="checkbox"]').forEach(c => { c.checked = true; });
+      try { store.emit('toast', { message: 'Auto-detect: no endpoint/model to probe; enabling all tools', type: 'info' }); } catch {}
+      return;
+    }
+
+    // Mark detecting.
+    try { store.emit('toast', { message: 'Auto-detect: probing model…', type: 'info' }); } catch {}
+        const family = detectFamily({ provider, endpoint, model });
+    const nativeDefs = nativeToolDefs(
+      [{ name: 'echo', description: 'Echo a string' }],
+      family,
+    );
+    const spec = {
+      provider,
+      endpoint,
+      api_key: apiKey,
+      model,
+      messages: [{ role: 'user', content: 'Call the echo tool with the argument "ping".' }],
+      tools: nativeDefs,
+      temperature: 0,
+      max_tokens: 64,
+    };
+    if (family === 'google') {
+      spec.tool_config = { functionCallingConfig: { mode: 'ANY', allowedFunctionNames: ['echo'] } };
+    } else {
+      const choice = nativeToolChoice(family, 'echo');
+      if (choice) spec.tool_choice = choice;
+    }
+        let detected = false;
+    let errored = false;
+    let errMsg = 'network';
+    let unsupportedToolChoice = false;
+    try {
+      const streamRes = await api.relayStream(spec, {});
+      // relayStream throws on HTTP/relay errors; reaching here means the
+      // stream completed. A tool call shows up in toolCalls.
+      if (streamRes && Array.isArray(streamRes.toolCalls) && streamRes.toolCalls.length) {
+        detected = true;
+      } else {
+        // Fall back to structured/text markers in case the provider returned
+        // a tool call only in content (some text-dialect models).
+        detected = this._probeHasToolCall(streamRes || {});
+      }
+    } catch (err) {
+      errored = true;
+      detected = false;
+      errMsg = (err && err.message) ? err.message : 'network';
+      if (/tool[_ ]?choice|unsupported.*tool/i.test(String(errMsg))) {
+        unsupportedToolChoice = true;
+      }
+      // Relay-level structured error frames may carry status/retryable.
+      if (err && (err.status === 400) && /tool/i.test(String(errMsg))) {
+        unsupportedToolChoice = true;
+      }
+    }
+
+    if (errored) {
+      // Relay error or unsupported tool_choice: 'unknown', not 'disabled'.
+      // Leave the current selection untouched.
+      const label = unsupportedToolChoice ? 'unsupported tool_choice' : errMsg;
+      try { store.emit('toast', { message: 'Auto-detect: probe inconclusive (' + label + '); keeping current selection', type: 'warn' }); } catch {}
+      return;
+    }
+
+    if (toolsBox) {
+      toolsBox.querySelectorAll('input[type="checkbox"]').forEach(c => { c.checked = detected; });
+    }
+    try {
+      store.emit('toast', {
+        message: detected ? 'Auto-detect: model supports tool calls — tools enabled'
+                          : 'Auto-detect: no tool call returned — tools disabled',
+        type: detected ? 'success' : 'warn',
+      });
+    } catch {}
+    // If the probe was inconclusive (network error) but a negative memo exists,
+    // keep tools disabled; otherwise leave the optimistic default.
+    if (!detected && cb) {
+      // leave toggle state as the user set it; tools already updated above
+    }
+  }
+
   _save() {
     const name = document.getElementById('agentName').value.trim();
     if (!name) {
@@ -981,6 +1141,7 @@ export class AgentEditor {
     const keyOverride = document.getElementById('agentKeyOverride').value.trim();
     const curlTemplate = document.getElementById('agentCurlTemplate').value.trim();
     const curlTemplateAuto = document.getElementById('agentCurlAuto').classList.contains('active');
+    const autoDetectTools = !!document.getElementById('agentAutoDetectTools')?.checked;
 
     // Custom model names are stored onto the provider's model list
     // so they keep showing up as suggestions.
@@ -1007,7 +1168,7 @@ export class AgentEditor {
         const overrides = { ...(agents[idx].overrides || {}) };
         if (contextWindow > 0) overrides.contextWindow = contextWindow;
         else delete overrides.contextWindow;
-        agents[idx] = { ...agents[idx], code: agentCode(agents[idx]), name, role, provider, model, color, systemPrompt, temperature, maxTokens, overrides, active, endpoint, keyOverride, curlTemplate, curlTemplateAuto, tools, memory: memoryOn, voice, pitch, label, alwaysOn, alwaysOnGoal };
+        agents[idx] = { ...agents[idx], code: agentCode(agents[idx]), name, role, provider, model, color, systemPrompt, temperature, maxTokens, overrides, active, endpoint, keyOverride, curlTemplate, curlTemplateAuto, tools, autoDetectTools, memory: memoryOn, voice, pitch, label, alwaysOn, alwaysOnGoal };
       }
       store.emit('toast', { message: 'Agent updated', type: 'success' });
     } else {
@@ -1030,6 +1191,7 @@ export class AgentEditor {
         curlTemplate,
         curlTemplateAuto,
         tools,
+        autoDetectTools,
         memory: memoryOn,
         voice,
         pitch,

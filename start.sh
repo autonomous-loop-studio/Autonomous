@@ -199,4 +199,4 @@ if command -v open >/dev/null 2>&1; then
 elif command -v xdg-open >/dev/null 2>&1; then
   xdg-open "$URL" >/dev/null 2>&1 &      # Linux
 fi
-exec php ${PHPARGS[@]+"${PHPARGS[@]}"} -S "127.0.0.1:${PORT}" serve.php
+exec php ${PHPARGS[@]+"${PHPARGS[@]}"} -S "0.0.0.0:${PORT}" serve.php

@@ -186,18 +186,28 @@ class Backup
         if (!is_array($backup) || ($backup['app'] ?? null) !== 'router-studio') {
             return ['error' => 'Not an Autonomous Loop Studio backup file'];
         }
+        // Older copies wrote backups without a backupVersion (or with version 1);
+        // those are still restorable because absent sections are skipped rather
+        // than blanked. Record the version so the caller can warn about a very
+        // old file, but never refuse on it.
+        $backupVersion = isset($backup['backupVersion']) ? (int) $backup['backupVersion'] : 1;
+        if ($backupVersion < 1) {
+            $backupVersion = 1;
+        }
         $parsed = self::parseList($only === null ? null : $only);
         if ($parsed['unknown']) {
             return ['error' => 'Unknown backup section(s): ' . implode(', ', $parsed['unknown'])];
         }
         $restore = [];
         $skipped = [];
+        $compatibility = $backupVersion >= 2 ? 'current' : 'legacy';
         foreach ($parsed['sections'] as $id) {
             $reason = self::missingReason($backup, $id);
             if ($reason === null) $restore[] = $id;
             else $skipped[] = ['section' => $id, 'reason' => $reason];
         }
-        return ['restore' => $restore, 'skipped' => $skipped];
+        return ['restore' => $restore, 'skipped' => $skipped,
+            'backupVersion' => $backupVersion, 'compatibility' => $compatibility];
     }
 
     /** Why section $id cannot be restored from $backup, or null when it can. */
@@ -297,6 +307,7 @@ class Backup
         if (isset($plan['error'])) return $plan;
         $restore = $plan['restore'];
         $skipped = $plan['skipped'];
+        $backupVersion = (int) ($plan['backupVersion'] ?? 1);
         $restored = [];
 
         // State slots: merge, never replace.
@@ -393,6 +404,8 @@ class Backup
             'success' => true,
             'restored' => array_values(array_unique($restored)),
             'skipped' => $skipped,
+            'backupVersion' => $backupVersion ?? 1,
+            'compatibility' => ($backupVersion ?? 1) >= 2 ? 'current' : 'legacy',
             'rev' => $rev,
             'config_saved' => $configSaved,
             'kept_local' => $keptLocal,

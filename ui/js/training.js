@@ -19,7 +19,7 @@
 // the todo list. The operator ends the drill with Stop on the same button; a
 // 100% clean pass ends the run on its own (see trainingCleanTarget).
 
-import { store } from './store.js?v=511';
+import { store } from './store.js?v=512';
 
 /** Fraction of the normal request rate agents get while training. */
 export const TRAINING_THROTTLE = 0.5;
@@ -147,6 +147,35 @@ export function todoPlanIsCurrent(agentId, mode = undefined, verdicts = undefine
  * Shared by desktop and mobile so both clients behave the same; mirrors the
  * history scrub in chat.js `_historyFor`.
  */
+export function scrubDrillArg(arg, agent, difficulty = 'hard') {
+  if (!agent) return arg;
+  try {
+    const current = trainingFileNow(agent, difficulty);
+    const family = String(current).replace(/-p\d+\.txt$/i, '');
+    if (!family || family === current) return arg;
+    const escaped = family.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`${escaped}-p\\d+\\.txt`, 'gi');
+    if (typeof arg === 'string') {
+      if (!re.test(arg)) return arg;
+      re.lastIndex = 0;
+      return arg.replace(re, current);
+    }
+    if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
+      const out = { ...arg };
+      let changed = false;
+      for (const key of ['path', 'file', 'file_path', 'filepath', 'target_file', 'filename']) {
+        if (typeof out[key] === 'string' && re.test(out[key])) {
+          re.lastIndex = 0;
+          out[key] = out[key].replace(re, current);
+          changed = true;
+        }
+      }
+      return changed ? out : arg;
+    }
+    return arg;
+  } catch { return arg; }
+}
+
 export function scrubDrillFile(text, agent, difficulty = 'hard') {
   const src = String(text ?? '');
   if (!src || !agent) return src;
@@ -1263,9 +1292,12 @@ export function drillStepRefusal(tool, agent, verdict, difficulty = undefined) {
   const housekeeping = name === 'todo_write'
     ? ' A todo update is allowed only after a step has passed; step 1 comes first.'
     : '';
-  return (inDrill
+  const refusal = (inDrill
     ? `${where}.${exact} Do not redo an earlier step or jump ahead; the drill runs in order.`
     : `${where}.${exact} ${tool} is not part of this drill — work only the listed steps.`) + housekeeping;
+  // Diagnostic only: record why a step was refused without changing the result.
+  try { console.debug('[drill] step refusal', { tool: name, agent: agent && agent.id, step: step + 1, total: tasks.length, next: next && next.tool, complete }); } catch { /* ignore */ }
+  return refusal;
 }
 
 /**

@@ -1055,3 +1055,112 @@
 html.d26.d26-flat .d26-card { background: var(--d26-glass-solid); }
 html.d26.d26-flat .t3d-popup,
 html.d26.d26-flat .t3d-ask-reply { background: #070b13; }
+
+/* ==========================================================================
+   GLASS-LITE — mobile skin for the Desktop 2026 interface
+   -------------------------------------------------------------------------- 
+   On windows below 1025px the spatial shell (rail, floor, flyouts, chat
+   width) is not used; the slide-over drawer layout from layout.css owns the
+   page. When the operator picked Desktop 2026 we still wear the glass MATERIAL
+   here, so the look carries over to phones without the parts that need width.
+   Scoped to html.d26-lite, which desktop2026.js only sets in that case.
+   ========================================================================== */
+
+html.d26-lite {
+  --d26-edge: rgba(255, 255, 255, 0.08);
+  --d26-glass: linear-gradient(160deg, rgba(18, 25, 38, 0.78), rgba(5, 8, 13, 0.88));
+  --d26-glass-solid: linear-gradient(160deg, rgba(16, 22, 34, 0.95), rgba(5, 8, 13, 0.98));
+  --d26-r: 12px;
+  --d26-blur: 8px;
+  --d26-glow: 1;
+  --d26-motion: 1;
+}
+
+/* Header: see-through scrim over the map, same as desktop but lighter. */
+html.d26-lite .header {
+  background: linear-gradient(to bottom, rgba(2, 4, 8, 0.86), rgba(2, 4, 8, 0.45) 70%, transparent);
+  border-bottom: 1px solid var(--d26-edge, rgba(255,255,255,0.06));
+  backdrop-filter: blur(calc(var(--d26-blur, 1px) * 1));
+  -webkit-backdrop-filter: blur(calc(var(--d26-blur, 1px) * 1));
+}
+
+/* Slide-over drawers: frosted glass panels. */
+html.d26-lite .sidebar,
+html.d26-lite .right-panel {
+  background: var(--d26-glass, rgba(8, 12, 19, 0.92));
+  border: 1px solid var(--d26-edge, rgba(255,255,255,0.06));
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(calc(var(--d26-blur, 1px) * 1.2));
+  -webkit-backdrop-filter: blur(calc(var(--d26-blur, 1px) * 1.2));
+  border-radius: 0 var(--d26-r, 12px) var(--d26-r, 12px) 0;
+}
+
+html.d26-lite .right-panel {
+  border-radius: var(--d26-r, 12px) 0 0 var(--d26-r, 12px);
+}
+
+/* Expanded (full-window) topology must escape the mobile drawer width,
+   otherwise the map stays a 300px sliver hugging the left edge. */
+html.d26-lite .right-panel.topo-expanded {
+  width: auto !important;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 0;
+  transform: none !important;
+  z-index: 800;
+}
+
+/* Chat input area: frosted. */
+html.d26-lite .chat-input-area {
+  background: linear-gradient(to top, rgba(2, 4, 8, 0.88), rgba(2, 4, 8, 0.45));
+  border-top: 1px solid var(--d26-edge, rgba(255,255,255,0.06));
+  backdrop-filter: blur(calc(var(--d26-blur, 1px) * 0.8));
+  -webkit-backdrop-filter: blur(calc(var(--d26-blur, 1px) * 0.8));
+}
+
+/* Modals / popups. */
+html.d26-lite .modal,
+html.d26-lite .t3d-popup {
+  background: var(--d26-glass-solid, rgba(8, 12, 19, 0.96));
+  border: 1px solid var(--d26-edge, rgba(255,255,255,0.06));
+  backdrop-filter: blur(calc(var(--d26-blur, 1px) * 1.4));
+  -webkit-backdrop-filter: blur(calc(var(--d26-blur, 1px) * 1.4));
+  border-radius: var(--d26-r, 12px);
+}
+
+/* Flat mode (blur slider at 0, or save-data / low memory): drop the layer. */
+html.d26-lite.d26-flat .header,
+html.d26-lite.d26-flat .sidebar,
+html.d26-lite.d26-flat .right-panel,
+html.d26-lite.d26-flat .chat-input-area,
+html.d26-lite.d26-flat .modal,
+html.d26-lite.d26-flat .t3d-popup {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.d26-lite.d26-flat .sidebar,
+html.d26-lite.d26-flat .right-panel {
+  background: var(--d26-glass-solid, rgba(8, 12, 19, 0.96));
+}
+
+/* Small-phone tier: tighter spacing, larger touch targets, lower blur. */
+@media (max-width: 480px) {
+  html.d26-lite .header { padding: 0 8px; }
+  html.d26-lite .header-toggle,
+  html.d26-lite .mobile-nav-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  html.d26-lite .sidebar,
+  html.d26-lite .right-panel {
+    width: min(300px, 92vw) !important;
+  }
+  html.d26-lite .chat-input-area { padding: 6px 8px; }
+}
+
+/* Respect reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  html.d26-lite .header::after { animation: none !important; }
+}

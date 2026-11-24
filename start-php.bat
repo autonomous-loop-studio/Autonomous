@@ -137,7 +137,7 @@ if not "%NEWTOKEN%"=="TOKEN=exists" (
 echo Loop Studio at http://127.0.0.1:%PORT%/  ^(close this window to stop it^)
 echo ^(Windows PHP is single-threaded: for parallel agents, use start.bat^)
 start "" "http://127.0.0.1:%PORT%/"
-"%PHP%" %PHPARGS% -S 127.0.0.1:%PORT% serve.php
+"%PHP%" %PHPARGS% -S 0.0.0.0:%PORT% serve.php
 exit /b %errorlevel%
 
 rem =======================================================================

@@ -7,14 +7,14 @@
 // MESSAGE.JS — Message renderer
 // ============================================
 
-import { esc, formatTime, copyToClipboard, asText, reasoningOpenByDefault, isReasoningEcho, toolValueText, renderLimitFor, toolCallSummary, scrollFollowWanted } from '../utils.js?v=511';
-import { renderMarkdown } from '../markdown.js?v=511';
-import { CodeBlock, splitFences } from './codeBlock.js?v=511';
-import { createAvatar } from './avatar.js?v=511';
-import { store } from '../store.js?v=511';
-import { persistence } from '../persistence.js?v=511';
-import { audio, AudioController } from '../audio.js?v=511';
-import { numberedRows } from './lineNumbers.js?v=511';
+import { esc, formatTime, copyToClipboard, asText, reasoningOpenByDefault, isReasoningEcho, toolValueText, renderLimitFor, toolCallSummary, scrollFollowWanted } from '../utils.js?v=512';
+import { renderMarkdown } from '../markdown.js?v=512';
+import { CodeBlock, splitFences } from './codeBlock.js?v=512';
+import { createAvatar } from './avatar.js?v=512';
+import { store } from '../store.js?v=512';
+import { persistence } from '../persistence.js?v=512';
+import { audio, AudioController } from '../audio.js?v=512';
+import { numberedRows } from './lineNumbers.js?v=512';
 
 
 

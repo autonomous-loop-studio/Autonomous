@@ -27,6 +27,15 @@ storage/drills/
 # Agent sandbox working files.
 sandbox/*
 !sandbox/.gitkeep
+# Keep the training + training-runs folders themselves (empty), but not their contents.
+!sandbox/training/
+!sandbox/training/.gitkeep
+sandbox/training/*
+!sandbox/training/.gitkeep
+!sandbox/training-runs/
+!sandbox/training-runs/.gitkeep
+sandbox/training-runs/*
+!sandbox/training-runs/.gitkeep
 
 # Local-only files
 .htpasswd
@@ -99,5 +108,5 @@ storage/tunnels.json
 storage/ide/
 # Drill pass files the IDE drill writes into the project root, and the
 # date-stamped folders Start moves them into.
-training/
-training-runs/
+/training/
+/training-runs/

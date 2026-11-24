@@ -36,6 +36,7 @@ const {
   drillPassFile, drillWriteRefusal, drillStepRefusal,
   trainingTaskExample, trainingToolScope, trainingNow, callSignature, drillRepeatNotice, drillFailureNotice,
   drillSameErrorNotice, sameErrorHintEnabled, trainingThrottleEnabled, hyperBruteEnabled, normaliseErrorText,
+  scrubDrillArg,
   BRUTE_SHAPES, BRUTE_CONFIRM, bruteNextShape, bruteNew, brutePinFor, bruteFail, bruteWin,
   trainingAccuracy, todoPlanIsCurrent, DRILL_REPEAT_HINT, DRILL_REPEAT_LIMIT, SAME_ERROR_HINT,
 } = await import(`../../ui/js/training.js?v=${version}`);
@@ -423,7 +424,7 @@ ok(!stubVerdict.complete && stubVerdict.failures >= 1,
   ok(redo.includes('step 7/8'), 'a redo is refused with the current position');
   ok(redo.includes('show_file'), 'and names the call the drill waits for');
   ok(redo.includes('Do not redo'), 'and says the drill runs in order');
-  eq(drillStepRefusal('todo_write', agent, at6), '', 'a todo status update is allowed');
+  ok(drillStepRefusal('todo_write', agent, at6).includes('show_file'), 'a todo update is refused while another step is awaited');
   eq(drillStepRefusal('read_file', agent, at6), '', 'read-only inspection is a scratchpad at any step');
   eq(drillStepRefusal('think', agent, at6), '',
     'a think scratchpad is allowed even when another step is awaited');
@@ -432,7 +433,7 @@ ok(!stubVerdict.complete && stubVerdict.failures >= 1,
   const firstSkip = drillStepRefusal('todo_write', agent, at0);
   ok(firstSkip.includes('step 1/8') && firstSkip.includes('think'),
     'a todo update cannot skip step 1');
-  ok(firstSkip.includes('only after a step has passed'),
+  ok(firstSkip.includes('runs only when the drill is waiting for todo_write'),
     'and it says when a todo update is allowed');
   ok(drillStepRefusal('exec', agent, at6).includes('not part of this drill'),
     'a tool outside the drill is refused');
@@ -1003,6 +1004,19 @@ eq(now.task.tool, 'fetch_url', 'the live position names the awaited tool');
 eq(now.step, 2, 'the live position carries the zero-based step');
 eq(now.total, 8, 'the live position carries the pass length');
 ok(now.task.example.includes('fetch_url'), 'the live position carries the call example');
+// scrubDrillArg rewrites a wrong-pass drill file path to the current pass.
+{
+  const prev = store.get('settings.trainingMode');
+  store.set('settings.trainingMode', { active: true, startedAt: 7, difficulty: 'hard', pass: 1 });
+  const agent = { id: 'agent_scrub' };
+  const current = trainingFileNow(agent, 'hard');
+  const wrong = current.replace(/-p1\.txt$/, '-p2.txt');
+  eq(scrubDrillArg(wrong, agent, 'hard'), current, 'a string arg is scrubbed to the current pass');
+  eq(scrubDrillArg({ path: wrong }, agent, 'hard').path, current, 'an object arg is scrubbed to the current pass');
+  eq(scrubDrillArg('https://example.com/x.txt', agent, 'hard'), 'https://example.com/x.txt', 'a non-drill path is left alone');
+  store.set('settings.trainingMode', prev);
+}
+
 store.set('trainingVerdicts', {});
 store.set('settings.trainingMode', { active: false, startedAt: 0 });
 

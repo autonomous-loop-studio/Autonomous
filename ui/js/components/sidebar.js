@@ -7,24 +7,24 @@
 // SIDEBAR.JS — Sidebar tabs controller
 // ============================================
 
-import { store } from '../store.js?v=511';
-import { K } from '../storage.js?v=511';
-import { persistence } from '../persistence.js?v=511';
-import { api } from '../api.js?v=511';
-import { isNoTokenError } from '../apiError.js?v=511';
-import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=511';
-import { errText } from '../api.js?v=511';
-import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=511';
-import { refreshAgentClocks, initClocks } from '../agentClock.js?v=511';
-import { snapshot } from '../rateGovernor.js?v=511';
-import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy, hyperBruteEnabled } from '../training.js?v=511';
-import { resetBrowserEnabled } from '../toolManifest.js?v=511';
-import { listDialectMemos, forgetDialect, protocolLabel, dialectDurableSettings } from '../harness.js?v=511';
-import { perf } from '../perf.js?v=511';
-import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=511';
-import { audio } from '../audio.js?v=511';
-import { localEndpoints, hostOf } from '../localEndpoints.js?v=511';
-import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=511';
+import { store } from '../store.js?v=512';
+import { K } from '../storage.js?v=512';
+import { persistence } from '../persistence.js?v=512';
+import { api } from '../api.js?v=512';
+import { isNoTokenError } from '../apiError.js?v=512';
+import { esc, escAttr, timeAgo, agentCode, copyToClipboard, downloadFile, DEFAULT_HISTORY_TURNS } from '../utils.js?v=512';
+import { errText } from '../api.js?v=512';
+import { TOOL_REGISTRY, sandboxBindingReport, bindSandboxNow } from '../tools.js?v=512';
+import { refreshAgentClocks, initClocks } from '../agentClock.js?v=512';
+import { snapshot } from '../rateGovernor.js?v=512';
+import { trainingStepList, trainingKickoffFor, drillVerdictText, reachedCleanTarget, trainingCleanTarget, trainingDifficulty, trainingDifficultyLabel, trainingDifficultyHint, trainingTasksFor, normalizeCustomSteps, CUSTOM_STEP_MAX, showsEveryPass, trainingFileFor, formatPassLine, trainingAccuracy, hyperBruteEnabled } from '../training.js?v=512';
+import { resetBrowserEnabled } from '../toolManifest.js?v=512';
+import { listDialectMemos, forgetDialect, protocolLabel, dialectDurableSettings } from '../harness.js?v=512';
+import { perf } from '../perf.js?v=512';
+import { normalizeIface, IFACE_EVENT } from '../ifaceMode.js?v=512';
+import { audio } from '../audio.js?v=512';
+import { localEndpoints, hostOf } from '../localEndpoints.js?v=512';
+import { BACKUP_SECTIONS, sanitizeBackupName, defaultBackupName, summarizeBackup, backupTokenDiffers } from '../backupSections.js?v=512';
 
 // Config section open/closed state. Session-only on purpose: a fresh load
 // always starts with every section collapsed, and the ones you open stay open

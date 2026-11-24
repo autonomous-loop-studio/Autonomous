@@ -209,6 +209,45 @@ class Install
     public static function preflight()
     {
         $problems = array();
+
+        // Hostile-host checks first: a machine that cannot run this PHP at all
+        // should never reach the plan checks below. Each message names the fix
+        // (version, extension, folder) instead of surfacing a PHP notice later.
+        if (version_compare(PHP_VERSION, '8.0.0', '<')) {
+            $problems[] = 'PHP 8.0 or newer is required; this server runs PHP '
+                . PHP_VERSION . '. Upgrade PHP or point the launcher at a newer binary.';
+        }
+        // Network-facing extensions (curl, openssl, ...) are checked where they
+        // are actually needed (api/index.php) and reported there with the exact
+        // fix. The installer itself only needs a working PHP and a writable
+        // tree, so it must not refuse to run on a host that merely lacks curl.
+        // The app folder itself must be writable by the web user on a hostile
+        // host (root-owned files, a read-only mount). Probe it first so the
+        // refusal names the folder rather than a half-finished install.
+        $rootProbe = self::appDir() . '/.router-write-probe';
+        if (@file_put_contents($rootProbe, 'probe') === false) {
+            $problems[] = 'The web server cannot write to the app folder (' . self::appDir()
+                . '), so it cannot replace app files. On Linux run: sudo chown -R '
+                . 'www-data:www-data ' . self::appDir() . ' (or the account your '
+                . 'web server runs as), then retry. Or run ' . self::TERMINAL_COMMAND
+                . ' from a terminal with your own account.';
+        } else {
+            @unlink($rootProbe);
+        }
+        // storage/ must be creatable/writable: sessions, keys and the token live
+        // there, and a read-only storage/ makes every save silently disappear.
+        $storageDir = self::appDir() . '/storage';
+        if (!is_dir($storageDir)) {
+            if (!@mkdir($storageDir, 0755, true) && !is_dir($storageDir)) {
+                $problems[] = 'Cannot create ' . $storageDir . '. The web server needs '
+                    . 'write access to the app folder to create it. Fix permissions, then retry.';
+            }
+        } elseif (!is_writable($storageDir)) {
+            $problems[] = 'storage/ is not writable by the web server (' . $storageDir
+                . '). Sessions, keys and the access token cannot be saved. Fix '
+                . 'permissions (chmod -R u+w storage, or chown to the web-server user).';
+        }
+
         $plan = self::plan();
         $staged = $plan ? self::stagedRoot($plan) : null;
 

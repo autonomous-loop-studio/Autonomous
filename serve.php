@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// serve.php — run Loop Studio with no web server:  php -S 127.0.0.1:8080 serve.php
+// serve.php — run Loop Studio with no web server:  php -S 0.0.0.0:8080 serve.php
 //
 // Two jobs in one file, split by SAPI so they can never cross:
 //   * CLI ("php serve.php --check ..."): first-run helpers for the launchers.

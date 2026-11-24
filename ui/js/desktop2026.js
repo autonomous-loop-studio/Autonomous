@@ -30,10 +30,10 @@
 //    above the apps drop-down; panels tuck away while a node card is open
 //  - chat: drag-to-widen, expand-to-screen, adjustable background alpha
 
-import { store } from './store.js?v=511';
-import { persistence } from './persistence.js?v=511';
-import { planDrawer } from './drawerState.js?v=511';
-import { resolveIface, normalizeIface, IFACE_EVENT } from './ifaceMode.js?v=511';
+import { store } from './store.js?v=512';
+import { persistence } from './persistence.js?v=512';
+import { planDrawer } from './drawerState.js?v=512';
+import { resolveIface, normalizeIface, IFACE_EVENT } from './ifaceMode.js?v=512';
 
 const MQ = window.matchMedia('(min-width: 1025px)');
 const root = document.documentElement;
@@ -44,6 +44,7 @@ const STACK_RIGHT = 76 + 324;           // --d26-stack-l + --d26-stack-w
 const CARD_SEL = '.agent-row, .agent-editor, .provider-card, .provider-row, .provider-editor, .proxy-row, .cfg-section, .cfg-cluster';
 
 let on = false;
+let lite = false;   // glass-lite skin on narrow windows (mobile)
 let swirling = false;
 let fly = null;                         // { section, body, head }
 let closing = null;                     // section whose drawer is retracting
@@ -66,6 +67,13 @@ function ifaceMode() { return normalizeIface(store.get('settings.interfaceMode')
  */
 function wantsSkin() { return resolveIface({ mode: ifaceMode(), wide: MQ.matches }) === 'desktop'; }
 
+/**
+ * Glass-lite: the operator picked Desktop 2026 but the window cannot hold the
+ * spatial shell. We still wear the glass MATERIAL on the existing mobile drawer
+ * layout, so the look carries over to phones without the rail/floor/flyouts.
+ */
+function wantsLite() { return !MQ.matches; }
+
 // ---------------------------------------------------------------- settings
 function setting(key, dflt) {
   const v = store.get('settings.' + key);
@@ -81,7 +89,7 @@ function ensureCss() {
   if (document.querySelector('link[data-d26]')) return;
   const l = document.createElement('link');
   l.rel = 'stylesheet';
-  l.href = 'ui/css/desktop2026.css?v=511';
+  l.href = 'ui/css/desktop2026.css?v=513';
   l.dataset.d26 = '1';
   document.head.appendChild(l);
 }
@@ -360,12 +368,13 @@ function injectDesktopConfig(body) {
 const SKIN_ONLY = ['d26AutoHide', 'd26ChatAlpha', 'd26BlurRange', 'd26GlowRange', 'd26MotionRange', 'd26FloorToggle'];
 
 function syncSkinOnly() {
+  const glassActive = on || lite;
   SKIN_ONLY.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.disabled = !on;
+    if (el) el.disabled = !glassActive;
   });
   const note = document.getElementById('d26SkinNote');
-  if (note) note.hidden = !!on;
+  if (note) note.hidden = !!glassActive;
   syncFloorControls();
 }
 
@@ -756,8 +765,9 @@ function applyAlpha(a = chatAlpha()) {
 // setting that keeps the look.
 const BLUR_PX_DEFAULT = 1;
 function blurPx() {
-  const v = Number(setting('d26Blur', BLUR_PX_DEFAULT));
-  return Number.isFinite(v) ? Math.min(24, Math.max(0, v)) : BLUR_PX_DEFAULT;
+  const dflt = lite ? 8 : BLUR_PX_DEFAULT;
+  const v = Number(setting('d26Blur', dflt));
+  return Number.isFinite(v) ? Math.min(24, Math.max(0, v)) : dflt;
 }
 function glowPct() {
   const v = Number(setting('d26Glow', 100));
@@ -1196,6 +1206,51 @@ function deactivate() {
   requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
 }
 
+// ------------------------------------------------------- glass-lite (mobile)
+function activateLite() {
+  if (lite) return;
+  lite = true;
+  ensureCss();
+  root.classList.add('d26', 'd26-lite');
+  applyAlpha();
+  applyBlur();
+  applyGlow();
+  applyMotion();
+  syncPill();
+  syncSkinOnly();
+  applyLiteDegrade();
+}
+
+function deactivateLite() {
+  if (!lite) return;
+  lite = false;
+  root.classList.remove('d26-lite');
+  if (!on) root.classList.remove('d26');
+  root.style.removeProperty('--d26-chat-alpha');
+  root.style.removeProperty('--d26-blur');
+  root.style.removeProperty('--d26-glow');
+  root.style.removeProperty('--d26-motion');
+  root.classList.remove('d26-flat', 'd26-no-glow', 'd26-still');
+  syncSkinOnly();
+}
+
+function liteShouldDegrade() {
+  try {
+    if (navigator.connection && navigator.connection.saveData) return true;
+  } catch {}
+  try {
+    if (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory > 0 && navigator.deviceMemory < 4) return true;
+  } catch {}
+  return false;
+}
+
+function applyLiteDegrade() {
+  if (!lite) return;
+  if (liteShouldDegrade()) {
+    applyBlur(0);
+  }
+}
+
 /**
  * Put the app into the shell the operator asked for, now.
  *
@@ -1203,7 +1258,9 @@ function deactivate() {
  * changes -- so picking a shell never needs a reload.
  */
 function sync() {
-  if (wantsSkin()) activate(); else deactivate();
+  if (wantsSkin()) { if (lite) deactivateLite(); activate(); }
+  else if (wantsLite()) { if (on) deactivate(); activateLite(); }
+  else { if (on) deactivate(); if (lite) deactivateLite(); }
   // Map settings are not skin settings: push them in either shell, so the
   // Desktop card can never show a value the map is not actually using.
   applyTopoSettings();

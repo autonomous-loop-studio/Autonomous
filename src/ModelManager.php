@@ -104,6 +104,27 @@ class ModelManager {
         if ($reasoning) {
             $out['reasoning'] = $reasoning;
         }
+        // Expose any structured tool-call / choice data the upstream returned,
+        // so callers (e.g. auto-detect) can inspect it instead of guessing from
+        // the extracted text. Only present when the provider actually sent it.
+        $rawData = json_decode((string)$this->lastRaw, true);
+        if (is_array($rawData)) {
+            if (isset($rawData['choices']) && is_array($rawData['choices'])) {
+                $out['choices'] = $rawData['choices'];
+            }
+            $toolCalls = [];
+            if (isset($rawData['tool_calls']) && is_array($rawData['tool_calls'])) {
+                $toolCalls = array_merge($toolCalls, $rawData['tool_calls']);
+            }
+            foreach (($rawData['choices'] ?? []) as $c) {
+                $mc = $c['message']['tool_calls'] ?? $c['delta']['tool_calls'] ?? null;
+                if (is_array($mc)) $toolCalls = array_merge($toolCalls, $mc);
+                if (isset($c['message']['function_call']) && is_array($c['message']['function_call'])) {
+                    $out['function_call'] = $c['message']['function_call'];
+                }
+            }
+            if ($toolCalls) $out['tool_calls'] = array_values($toolCalls);
+        }
         return $out;
     }
 

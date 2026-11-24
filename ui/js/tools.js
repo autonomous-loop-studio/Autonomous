@@ -31,11 +31,12 @@
 //
 // Nothing here runs arbitrary code or shells out.
 
-import { store } from './store.js?v=511';
-import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=511';
-import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=511';
-import { settingFor } from './agentConfig.js?v=511';
-import { trace } from './trace.js?v=511';
+import { store } from './store.js?v=512';
+import { isTrainingActive, scrubDrillArg, trainingDifficulty, trainingPassNow } from './training.js?v=512';
+import { asText, compactText, DISPLAY_TOOL_NAMES, MAX_DISPLAY_CHARS } from './utils.js?v=512';
+import { askApproval, sessionApproved, rememberApproval } from './approveDialog.js?v=512';
+import { settingFor } from './agentConfig.js?v=512';
+import { trace } from './trace.js?v=512';
 
 const NOTES_KEY = 'router_notes';
 const CUSTOM_TOOL_NAME_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -464,6 +465,13 @@ export const TOOL_REGISTRY = {
         const all = { ...((store.get('ui.todosByAgent')) || {}) };
         all[agentId] = clean;
         store.set('ui.todosByAgent', all);
+        // Persist which pass this plan was written for, so a stale plan from a
+        // previous pass can be detected (and hidden) before step 2 writes.
+        try {
+          const passes = { ...((store.get('ui.todosPassByAgent')) || {}) };
+          passes[agentId] = isTrainingActive() ? trainingPassNow() : 0;
+          store.set('ui.todosPassByAgent', passes);
+        } catch { /* no store */ }
         store.set('ui.todos', clean);
         store.emit('todos:changed', clean);
       } catch { /* no store */ }
@@ -1279,8 +1287,22 @@ export function bindSandboxTools(api) {
   };
 
   TOOL_REGISTRY.fetch_url.run = async (arg, _note, ctx) => {
+    // Tolerate both the string form ("http://...") and the object form
+    // ({"url":"http://..."}) so a model that sends the wrong envelope does
+    // not turn into "cannot resolve host [object Object]".
+    let url = arg;
+    if (typeof arg === 'string') {
+      try {
+        const parsed = JSON.parse(arg);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          url = parsed.url ?? parsed.href ?? parsed.link ?? parsed.page ?? parsed.target ?? arg;
+        }
+      } catch { /* not JSON — treat as a plain URL */ }
+    } else if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
+      url = arg.url ?? arg.href ?? arg.link ?? arg.page ?? arg.target ?? '';
+    }
     const res = await api.sandbox('fetch', {
-      url: String(arg ?? ''),
+      url: String(url ?? ''),
       // A display call is painted for the operator, so it gets the operator
       // budget; a model call keeps the small one it is about to pay for.
       max_chars: (ctx && ctx.display) ? MAX_DISPLAY_CHARS : 20000,
@@ -2622,10 +2644,20 @@ export async function runTool(name, arg, noteName, ctx) {
   if (agent) {
     const scope = Array.isArray(ctx?.toolScope) ? ctx.toolScope : toolsForAgent(agent);
     if (!scope.includes(name)) {
+      // Diagnostic only: record which tool was denied and the scope that was
+      // advertised, without changing the denial or the drill behaviour.
+      try { console.debug('[tool] not enabled', { name, agent: agent && agent.id, scope }); } catch { /* ignore */ }
       return `denied: ${name} is not enabled for this agent`;
     }
   } else if (def.custom) {
     return `denied: ${name} is not enabled for this agent`;
+  }
+  // Auto-correct a drill file path that carries the wrong pass number, so a
+  // direct runTool call (approvals, reruns) writes the pass in progress.
+  const writeTools = ['write_file', 'edit_file', 'append_file', 'ide_write', 'ide_edit'];
+  if (isTrainingActive() && writeTools.includes(name)) {
+    const a = agentFromCtx(ctx);
+    arg = scrubDrillArg(arg, a, trainingDifficulty(store.get('settings.trainingMode') || {}));
   }
   // Per-tool policy first: deny refuses outright (auto-deny says why),
   // allow skips the prompt, ask falls through to the Auto Approve check

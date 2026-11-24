@@ -458,8 +458,8 @@ eq(drillVerdictText(drillVerdict(cleanPass())), '17/17 \u00b7 clean \u00b7 1 pas
 {
   const calls = cleanPass().slice(0, 5);
   calls.push(call('read_file', { path: 'training/typo.txt' }, 'error', 'error: no such file'));
-  eq(drillVerdictText(drillVerdict(calls)), '5/17 \u00b7 1 failed at step 6',
-    'a failure names the step it happened on');
+  eq(drillVerdictText(drillVerdict(calls)), '5/17 \u00b7 1 failed at step 6: error: no such file',
+    'a failure names the step it happened on and quotes its error');
 }
 eq(drillVerdictText(null), '', 'no verdict renders nothing');
 
