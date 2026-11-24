@@ -15,6 +15,13 @@ usual file deploy.
 reads and compares alongside that cache-buster â€” see the first entry below.
 
 ---
+## 🧱 v512 — Sandbox training folders, .gitignore hardening, and the Linux parity pass
+
+* `sandbox/training/` and `sandbox/training-runs/` are tracked as empty folders (`.gitkeep`) with their contents ignored; the root `training/` and `training-runs/` rules are anchored so they no longer match the sandbox subdirs.
+* Folds in v511: Linux/macOS keystroke injection for Programs, the 4x4 captcha image grid, inline-SVG stop-sign tiles, a mobile-fitting browser viewport, `grep_code` surfacing server errors, and Windows/Linux storage permission helpers.
+* Version bumped to 512 — `VERSION` and `APP_VERSION` agree, and every `?v=` names 512 again (four references had been left at 513).
+
+---
 ## 🏷 v511 — Linux parity, captcha image, browser viewport, tooling
 
 * Programs: typing is no longer Windows-only; Linux/macOS use an available keystroke injector (xdotool/ydotool/wtype/osascript) and POSIX launches detach via setsid/nohup. Frontier drill grades on typed arguments so Linux agents can pass without a text-control read-back.

@@ -1939,9 +1939,13 @@ Failures come back as `{"error": "..."}` with HTTP 400 and a message meant for t
 
 **Newest first.** Each entry names what shipped in that release; everything older has been folded into the ✨ **What's inside** feature list and the 🔐 **Security** section above, where it stays as reference. The most recent release sits at the top.
 
-### 🏋 v509 — Browser screenshot viewer + captcha emoji tiles
+### 🧱 v512 — Linux parity, sandbox training folders, and a tidier repo
 
-*Browser screenshot viewer now centers and fits images (max-height/contain); captcha drill tiles render emoji via innerHTML so multi-codepoint emoji display correctly.*
+*Programs types on Linux/macOS through an available keystroke injector (xdotool/ydotool/wtype/osascript) and POSIX launches detach via setsid/nohup; the frontier drill grades typed arguments, so a Linux agent can pass without a text-control read-back.*
+
+*Captcha Lev.2 draws its 4x4 grid from captcha.jpg with boxes 5 and 6 as targets, Lev.3 stop-sign tiles are inline SVG, and the built-in browser viewport now fits on mobile.*
+
+*`sandbox/training/` and `sandbox/training-runs/` exist as empty tracked folders whose contents are ignored, and the root `training/` + `training-runs/` rules are anchored so they stop matching the sandbox subfolders. `grep_code` surfaces server errors instead of masking them.*
 
 *Full suite green: JS 46 files / 1,757 assertions, PHP 39 files.*
 

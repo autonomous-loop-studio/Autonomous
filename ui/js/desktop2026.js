@@ -89,7 +89,7 @@ function ensureCss() {
   if (document.querySelector('link[data-d26]')) return;
   const l = document.createElement('link');
   l.rel = 'stylesheet';
-  l.href = 'ui/css/desktop2026.css?v=513';
+  l.href = 'ui/css/desktop2026.css?v=512';
   l.dataset.d26 = '1';
   document.head.appendChild(l);
 }

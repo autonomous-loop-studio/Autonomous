@@ -1279,10 +1279,6 @@ export function drillStepRefusal(tool, agent, verdict, difficulty = undefined) {
     : Math.max(0, Math.min(Number(verdict && verdict.step) || 0, tasks.length));
   const next = complete ? tasks[0] : (tasks[step] || tasks[0]);
   if (name === String(next.tool || '').trim().toLowerCase()) return '';
-  // Housekeeping, not a step: a todo update may ride along once the pass has
-  // actually progressed. Before step 1 has passed it is an attempt to skip the
-  // drill's first step -- and "todo list cleared" used to reward exactly that.
-  if (name === 'todo_write' && !complete && step > 0) return '';
   const where = complete
     ? `The pass is complete — start the next one at step 1 (${tasks[0].tool})`
     : `You are at step ${step + 1}/${tasks.length}, and your next reply must be the ${next.tool} call and nothing else`;
@@ -1290,7 +1286,7 @@ export function drillStepRefusal(tool, agent, verdict, difficulty = undefined) {
   const exact = expected ? ` Next call: ${expected}.` : '';
   const inDrill = tasks.some(t => String(t.tool || '').trim().toLowerCase() === name);
   const housekeeping = name === 'todo_write'
-    ? ' A todo update is allowed only after a step has passed; step 1 comes first.'
+    ? ' A todo update runs only when the drill is waiting for todo_write; step 1 comes first.'
     : '';
   const refusal = (inDrill
     ? `${where}.${exact} Do not redo an earlier step or jump ahead; the drill runs in order.`
@@ -1681,7 +1677,11 @@ export function drillVerdictText(verdict) {
   if (verdict.complete) {
     bits.push(verdict.clean ? 'clean' : `${verdict.failures} failed`);
   } else if (verdict.failures) {
-    bits.push(`${verdict.failures} failed${verdict.failedAt ? ` at step ${verdict.failedAt}` : ''}`);
+    // The step says where it broke; the quoted error says what broke, and the
+    // operator fixes the second one, not the first.
+    const reason = String(verdict.failureReason || '').replace(/\s+/g, ' ').trim();
+    const quoted = reason ? `: ${reason.length > 120 ? reason.slice(0, 119) + '…' : reason}` : '';
+    bits.push(`${verdict.failures} failed${verdict.failedAt ? ` at step ${verdict.failedAt}` : ''}${quoted}`);
   } else if (verdict.offStep) {
     bits.push(`waiting for ${verdict.nextTool || 'the next step'} (last call: ${verdict.offTool})`);
   }
