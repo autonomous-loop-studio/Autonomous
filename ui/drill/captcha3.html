@@ -113,14 +113,15 @@
 <main>
   <p class="eyebrow">Loop Studio / local practice page</p>
   <h1>Captcha drill</h1>
-  <p class="lede">Select all squares containing a stop sign 🛑, then click Verify. This page is served locally and never leaves the machine.</p>
+  <p class="lede">Select all squares containing a stop sign, then click Verify. This page is served locally and never leaves the machine.</p>
   <div class="grid" id="grid"></div>
   <button class="verify" id="captcha-submit" type="button">Verify</button>
   <p id="captcha-result" role="status" aria-live="polite">Waiting for selections.</p>
   <p class="footnote">No network requests. Safe to replay.</p>
 </main>
 <script>
-  const TILES = ['🛑','🚗','🛑','🚙','🛑','🚕','🛑','🚓','🛑'];
+  const STOP = '<svg viewBox="0 0 100 100" width="44" height="44" aria-label="stop sign" role="img"><polygon points="30,5 70,5 95,30 95,70 70,95 30,95 5,70 5,30" fill="#ff2d2d" stroke="#fff" stroke-width="4"/><text x="50" y="58" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">STOP</text></svg>';
+  const TILES = [STOP,'🚗',STOP,'🚙',STOP,'🚕',STOP,'🚓',STOP];
   const EXPECTED = [0, 2, 4, 6, 8];
   const grid = document.getElementById('grid');
   const selected = new Set();
