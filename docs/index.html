@@ -43,7 +43,7 @@
   }
   a{color:var(--cyan); text-decoration:none}
   a:hover{text-decoration:underline}
-  img{display:block; max-width:100%; height:auto}
+  img,video{display:block; max-width:100%; height:auto}
   .wrap{max-width:1040px; margin:0 auto; padding:0 clamp(16px,4vw,22px)}
 
   header.top{border-bottom:1px solid var(--line)}
@@ -84,7 +84,7 @@
   figure{margin:clamp(22px,4vw,34px) 0 0}
   .shot{border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; background:var(--panel);
     box-shadow:0 30px 80px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(0,229,255,.06)}
-  .shot img{width:100%}
+  .shot img,.shot video{width:100%}
   .poster-tall{display:none}
   @media (max-width:640px){
     .poster-wide{display:none}
@@ -216,9 +216,7 @@
   </ul>
 
   <figure>
-    <div class="shot"><picture>
-        <img src="screenshots/banner-auton-1.gif?v=509" width="880" height="368" alt="A local agent's first run through the training drill stopping on a failed edit call, then — training mode back on — taking off and running every step of the drill in order, its closing tool calls landing in a few hundred milliseconds each.">
-      </picture></div>
+    <div class="shot"><video src="screenshots/banner-auton-1.mp4?v=509" width="880" height="368" autoplay muted loop playsinline preload="metadata" poster="screenshots/banner-auton-1-poster.jpg" aria-label="A local agent's first run through the training drill stopping on a failed edit call, then — training mode back on — taking off and running every step of the drill in order, its closing tool calls landing in a few hundred milliseconds each."></video></div>
     <figcaption class="feature-note">Your own fleet for $0, <strong>universally compatible</strong> with any local endpoint, provider, model or API, even when wrapped in cURL. Turn a free-tier frontier demo’s cURL endpoint into a <strong>fully autonomous agent</strong> complete with tools, persistent hive-mind shared memory and a browser they can actually drive. Specially designed tools and architecture keep you in the game. Stay below rate limits, never above. <strong>Built-in pacer / throttle</strong> keeps your swarm’s requests just below the limit. A 429 error no longer kills the loop. The system just <strong>queues</strong> the request(s) and out-waits the rate limit. Any pre-existing data that would normally be parsed by an agent is now parsed by the program itself. Instead of taking minutes to stream back, one word at a time, it’s <strong>instantaneous</strong>. A page’s source code, file searches or a 400k-line log file, saving your agent’s context window and your token limit. <strong>“Training Mode”</strong> auto-fits the agent’s harness through <strong>brute-force drills</strong>. The program is self-evolving, learning dialect, it remembers the syntax of the successful tool calls for the agents, per agent. <strong>“Auto near-miss corrections”</strong> and automatic retries turn even a 3B local model into an agent with frontier capabilities. <strong>Full-Duplex MCP protocols</strong> with passthrough options and built-in reverse proxy tunnels work as global mesh networks where friends can share agents and resources.</figcaption>
   </figure>
 </div>

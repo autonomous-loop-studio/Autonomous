@@ -102,6 +102,7 @@ storage/tunnels.json
 # The Pages copies must live under docs/ to be served by GitHub Pages.
 !docs/screenshots/Head-to-Head-Browser.mp4
 !docs/screenshots/Head-to-Head-Browser-Vertical.mp4
+!docs/screenshots/banner-auton-1.mp4
 
 # The IDE's revision log and its content-addressed blobs: a history of this
 # machine's edits, rewritten on every save. Never source, never staged.
