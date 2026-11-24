@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// browser_open tests -- the agent's browser must be watchable by default.
+// browser_open tests -- headless is the default; visible only when asked.
 //
 // The Browser drill used to pass while every call ran against a headless Edge:
 // the tool hardcoded `browserLaunch(true)`, so the model saw a clean result and
@@ -43,9 +43,9 @@ const reset = (next = {}) => {
 
 reset();
 const first = await open({ url: 'http://127.0.0.1:8080/router/ui/drill/browser.html' });
-ok(calls.some(c => c[0] === 'launch' && c[1] === false),
-  'browser_open launches visible when no headless flag is given');
-ok(first.includes('(visible window)'), 'the result says the window is visible');
+ok(calls.some(c => c[0] === 'launch' && c[1] === true),
+  'browser_open launches headless when no headless flag is given');
+ok(first.includes('(headless — no window to watch)'), 'the result says the window is headless');
 
 reset({ running: true, headless: true });
 const relaunched = await open({ url: 'http://127.0.0.1:8080/router/ui/drill/browser.html', headless: false });

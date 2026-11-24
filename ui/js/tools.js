@@ -1658,13 +1658,21 @@ export function bindSandboxTools(api) {
     const a = (arg && typeof arg === 'object' && !Array.isArray(arg)) ? arg : { url: typeof arg === 'string' ? arg : '' };
     const url = String(a.url || a.href || '').trim();
     if (!url) return 'error: browser_open needs a "url"';
-    // Visible is the default because this tool exists to be watched. A model
-    // that really wants a background browser must ask for it explicitly.
-    const wantHeadless = a.headless === true || String(a.headless).toLowerCase() === 'true';
+    // Headless is the default: it is faster, needs no OS window, and the
+    // built-in browser panel still shows the page. A model that wants a window
+    // the operator can watch (or a site that fingerprints headless) must ask
+    // for it explicitly with headless:false.
+    const headlessSpecified = a.headless !== undefined && a.headless !== null
+      && String(a.headless).trim() !== '';
+    const wantHeadless = headlessSpecified
+      ? (a.headless === true || String(a.headless).toLowerCase() === 'true')
+      : true;
     let st = await api.browserStatus();
     if (!st.enabled) return 'error: the browser is switched off (Config → Labs → Browser)';
     if (!st.available) return 'error: no Chrome or Edge is installed on this machine';
-    if (!st.running || !!st.headless !== wantHeadless) {
+    if (!st.running) {
+      st = await api.browserLaunch(wantHeadless);
+    } else if (headlessSpecified && !!st.headless !== wantHeadless) {
       st = await api.browserLaunch(wantHeadless);
     }
     const info = await api.browserNavigate(url);
